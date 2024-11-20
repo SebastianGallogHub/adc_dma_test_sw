@@ -20,3 +20,9 @@ domain active {zynq_fsbl}
 domain active {standalone_ps7_cortexa9_0}
 platform generate -quick
 platform generate
+platform generate
+platform generate
+platform clean
+platform generate
+platform active {adc_dma_bd_wrapper}
+platform config -updatehw {/home/sebas/Escritorio/proyecto/workspace/adc_dma_test/adc_dma_bd_wrapper.xsa}
