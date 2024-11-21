@@ -396,12 +396,14 @@
 /* Definitions for Fabric interrupts connected to ps7_scugic_0 */
 #define XPAR_FABRIC_AXI_DMA_0_MM2S_INTROUT_INTR 61U
 #define XPAR_FABRIC_AXI_DMA_0_S2MM_INTROUT_INTR 62U
+#define XPAR_FABRIC_TAR_0_INTROUT_INTR 63U
 
 /******************************************************************/
 
 /* Canonical definitions for Fabric interrupts connected to ps7_scugic_0 */
 #define XPAR_FABRIC_AXIDMA_0_MM2S_INTROUT_VEC_ID XPAR_FABRIC_AXI_DMA_0_MM2S_INTROUT_INTR
 #define XPAR_FABRIC_AXIDMA_0_S2MM_INTROUT_VEC_ID XPAR_FABRIC_AXI_DMA_0_S2MM_INTROUT_INTR
+#define XPAR_FABRIC_TAR_0_VEC_ID XPAR_FABRIC_TAR_0_INTROUT_INTR
 
 /******************************************************************/
 

@@ -57,7 +57,7 @@
 
 #define INTC_DEVICE_ID      XPAR_SCUGIC_SINGLE_DEVICE_ID
 #define DMA_RX_INTR_ID		XPAR_FABRIC_AXI_DMA_0_S2MM_INTROUT_INTR
-#define TAR_DR_INTR_ID		0x00//TODO falta actualizar al último cambio hecho para TAR.INTROUT
+#define TAR_DR_INTR_ID		XPAR_FABRIC_TAR_0_INTROUT_INTR
 
 //Funciones
 void ZMOD_Init();
@@ -105,7 +105,7 @@ int main()
 	Status = Xil_WaitForEventSet(1000000U, 1, &Error);
 	if (Status == XST_SUCCESS) {
 		LOG(1, "Receive error %d", Status);
-		goto Done;
+		return XST_FAILURE;
 	}
 
 	while(transferencias >= DMA_NUMBER_OF_TRANSFERS){	}
@@ -123,8 +123,6 @@ int main()
 
 	//Imprimir todos los valores recibidos junto a su dirección
 	PrintRxData();
-
-Done:
 
 	DisableIntrSystem(&Intc, DMA_RX_INTR_ID, TAR_DR_INTR_ID);
 

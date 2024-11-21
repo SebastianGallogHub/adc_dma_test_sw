@@ -36,8 +36,8 @@
 
 /* Definitions for peripheral TAR_0 */
 #define XPAR_TAR_0_DEVICE_ID 0
-#define XPAR_TAR_0_S00_AXI_BASEADDR 0x43C00000
-#define XPAR_TAR_0_S00_AXI_HIGHADDR 0x43C0FFFF
+#define XPAR_TAR_0_S00_AXI_BASEADDR 0x43C10000
+#define XPAR_TAR_0_S00_AXI_HIGHADDR 0x43C1FFFF
 
 
 /******************************************************************/
@@ -188,8 +188,8 @@
 
 
 /* Peripheral Definitions for peripheral AXI_ZMODADC1410_0 */
-#define XPAR_AXI_ZMODADC1410_0_S00_AXI_BASEADDR 0x43C10000
-#define XPAR_AXI_ZMODADC1410_0_S00_AXI_HIGHADDR 0x43C1FFFF
+#define XPAR_AXI_ZMODADC1410_0_S00_AXI_BASEADDR 0x43C00000
+#define XPAR_AXI_ZMODADC1410_0_S00_AXI_HIGHADDR 0x43C0FFFF
 
 
 /* Peripheral Definitions for peripheral PS7_AFI_0 */
@@ -396,12 +396,14 @@
 /* Definitions for Fabric interrupts connected to ps7_scugic_0 */
 #define XPAR_FABRIC_AXI_DMA_0_MM2S_INTROUT_INTR 61U
 #define XPAR_FABRIC_AXI_DMA_0_S2MM_INTROUT_INTR 62U
+#define XPAR_FABRIC_TAR_0_INTROUT_INTR 63U
 
 /******************************************************************/
 
 /* Canonical definitions for Fabric interrupts connected to ps7_scugic_0 */
 #define XPAR_FABRIC_AXIDMA_0_MM2S_INTROUT_VEC_ID XPAR_FABRIC_AXI_DMA_0_MM2S_INTROUT_INTR
 #define XPAR_FABRIC_AXIDMA_0_S2MM_INTROUT_VEC_ID XPAR_FABRIC_AXI_DMA_0_S2MM_INTROUT_INTR
+#define XPAR_FABRIC_TAR_0_VEC_ID XPAR_FABRIC_TAR_0_INTROUT_INTR
 
 /******************************************************************/
 

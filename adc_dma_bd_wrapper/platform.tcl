@@ -27,3 +27,15 @@ platform generate
 platform active {adc_dma_bd_wrapper}
 platform config -updatehw {/home/sebas/Escritorio/proyecto/workspace/adc_dma_test/adc_dma_bd_wrapper.xsa}
 platform generate -domains 
+platform active {adc_dma_bd_wrapper}
+platform config -updatehw {/home/sebas/Escritorio/proyecto/workspace/adc_dma_test/adc_dma_bd_wrapper.xsa}
+platform active {adc_dma_bd_wrapper}
+platform config -updatehw {/home/sebas/Escritorio/proyecto/workspace/adc_dma_test/adc_dma_bd_wrapper.xsa}
+platform config -updatehw {/home/sebas/Escritorio/proyecto/workspace/adc_dma_test/adc_dma_bd_wrapper.xsa}
+platform generate
+platform generate -domains standalone_ps7_cortexa9_0 
+platform clean
+platform clean
+platform config -updatehw {/home/sebas/Escritorio/proyecto/workspace/adc_dma_test/adc_dma_bd_wrapper.xsa}
+platform generate
+platform generate
