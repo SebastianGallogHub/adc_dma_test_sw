@@ -22,9 +22,9 @@
 #include "assert.h"
 
 // ZMOD Parameters
-#define ZMOD_BASE_ADDR  XPAR_AXI_ZMODADC1410_0_S00_AXI_BASEADDR
-#define ZMOD_ADC_IRQ  	XPAR_FABRIC_AXI_DMA_0_S2MM_INTROUT_INTR // Es el mismo que el de DMA porque no se usa
-#define IIC_BASE_ADDR	XPAR_PS7_I2C_1_BASEADDR
+#define ZMOD_BASE_ADDR  	XPAR_AXI_ZMODADC1410_0_S00_AXI_BASEADDR
+#define ZMOD_ADC_INTR_ID  	XPAR_FABRIC_AXI_DMA_0_S2MM_INTROUT_INTR // Es el mismo que el de DMA porque no está cableado
+#define IIC_BASE_ADDR		XPAR_PS7_I2C_1_BASEADDR
 
 // DMA Parameters
 #define DMA_DEV_ID				XPAR_AXI_DMA_0_DEVICE_ID
@@ -35,12 +35,8 @@
 #define TAR_BASE			XPAR_TAR_0_S00_AXI_BASEADDR
 #define TAR_START_OFF		TAR_S00_AXI_SLV_REG0_OFFSET
 #define TAR_COUNT_CFG_OFF	TAR_S00_AXI_SLV_REG1_OFFSET
-#define TAR_Start()	\
-	TAR_mWriteReg(TAR_BASE,TAR_START_OFF, 1);\
-	LOG(0,"TAR START")
-#define TAR_Stop()	\
-	TAR_mWriteReg(TAR_BASE,TAR_START_OFF, 0);\
-	LOG(0,"TAR STOP")
+#define TAR_Start()			TAR_mWriteReg(TAR_BASE,TAR_START_OFF, 1);
+#define TAR_Stop()			TAR_mWriteReg(TAR_BASE,TAR_START_OFF, 0);
 
 // Memoria
 #define MEM_BASE_ADDR			(XPAR_PS7_DDR_0_S_AXI_BASEADDR + 0x1000000)
@@ -86,6 +82,8 @@ int main()
 {
 	int Status;
 
+	CLEAR_SCREEN;
+
 	LOG(0, "--------------------- INICIO MAIN -----------------------");
 
 	ZMOD_Init();
@@ -94,7 +92,7 @@ int main()
 			DMA_Init(&AxiDma, DMA_NUMBER_OF_TRANSFERS, sizeof(u32)),
 			"Fallo al inicializar el DMA.");
 
-	TAR_Init(1000);
+	TAR_Init(10000);
 
 	ASSERT_SUCCESS(
 			SetupIntrSystem(&Intc, &AxiDma, DMA_RX_INTR_ID, TAR_DR_INTR_ID),
@@ -108,7 +106,7 @@ int main()
 		return XST_FAILURE;
 	}
 
-	while(transferencias >= DMA_NUMBER_OF_TRANSFERS){	}
+	while(transferencias <= DMA_NUMBER_OF_TRANSFERS){	}
 
 	TAR_Stop();
 	XAxiDma_Reset(&AxiDma);
@@ -151,6 +149,8 @@ void DisableIntrSystem(INTC *IntcInstancePtr, u16 RxIntrId, u16 TarIntrId)
 }
 int SetupIntrSystem(INTC *IntcInstancePtr, XAxiDma *AxiDmaPtr, u16 DmaRxIntrId, u16 TarIntrId)
 {
+	LOG(1, "SetupIntrSystem");
+
 	XAxiDma_BdRing *RxRingPtr = XAxiDma_GetRxRing(AxiDmaPtr);
 	XScuGic_Config *IntcConfig;
 
@@ -203,11 +203,11 @@ void ZMOD_Init()
 
 	// Crear el objeto ZMODADC1410 para configurar la ganancia y acoplamiento
 	ZMODADC1410 adcZmod(ZMOD_BASE_ADDR,
-						DMA_BASE_ADDR,
+						DMA_BASE_ADDR,    //Este parámetro se configura pero no se usa
 						IIC_BASE_ADDR,
-						MEM_BASE_ADDR,
-						ZMOD_ADC_IRQ,
-						DMA_RX_INTR_ID);
+						MEM_BASE_ADDR,    //Este parámetro se configura pero no se usa
+						ZMOD_ADC_INTR_ID, //Este parámetro se configura pero no se usa
+						DMA_RX_INTR_ID);  //Este parámetro se configura pero no se usa
 
 	//Canal 1
 	LOG(2, "CH1: LOW Gain; DC Coupling");
@@ -258,7 +258,7 @@ int DMA_Init(XAxiDma* AxiDma, u32 cntTransferencias, u32 transLen)
 	BdCount = (u32)XAxiDma_BdRingCntCalc(XAXIDMA_BD_MINIMUM_ALIGNMENT, DMA_RX_BD_SPACE);
 
 	ASSERT(
-			BdCount <= cntTransferencias,
+			BdCount >= cntTransferencias,
 			"No es posible alojar todas las transferencias en el espacio disponible "
 			"0x%x - 0x%x (%d)",
 			DMA_RX_BD_SPACE_BASE,
@@ -328,31 +328,31 @@ int DMA_Init(XAxiDma* AxiDma, u32 cntTransferencias, u32 transLen)
 	}
 
 	//Limpiando el buffer de llegada
-	RxBufferPtr = DMA_RX_BUFFER_BASE;
-	i = 0;
-	LOG(3,"Rx @ DIR");
+	RxBufferPtr = DMA_RX_BUFFER_BASE;	i = 0;
+//	LOG(3,"Rx @ DIR");
 	do
 	{
 		*((u8*)RxBufferPtr) = 0;
 
-		if(i<=10)
-		{
-			LOG(3, "0x%04X @ 0x%X", *((u8*)RxBufferPtr), RxBufferPtr);
-		}
+//		if(i<=10)
+//		{
+//			LOG(3, "0x%04X @ 0x%X", *((u8*)RxBufferPtr), RxBufferPtr);
+//		}
+//
+//		if((u8*)RxBufferPtr==(u8*)(DMA_RX_BUFFER_BASE+transLen*cntTransferencias))
+//		{
+//			LOG(3,"...");
+//			LOG(3, "0x%04X @ 0x%X**", *((u8*)RxBufferPtr), RxBufferPtr);
+//		}
 
-		if((u8*)RxBufferPtr==(u8*)(DMA_RX_BUFFER_BASE+transLen*cntTransferencias))
-		{
-			LOG(3,"...");
-			LOG(3, "0x%04X @ 0x%X**", *((u8*)RxBufferPtr), RxBufferPtr);
-		}
-
-		i ++;
+//		i ++;
 		RxBufferPtr += sizeof(u8);
 	}while(RxBufferPtr <= DMA_RX_BUFFER_HIGH);
 
-	RxBufferPtr -= sizeof(u8);
-	LOG(3, "...");
-	LOG(3, "0x%04X @ 0x%X", *((u8*)RxBufferPtr), RxBufferPtr);
+	LOG(2, "Buffer limpio");
+//	RxBufferPtr -= sizeof(u8);
+//	LOG(3, "...");
+//	LOG(3, "0x%04X @ 0x%X", *((u8*)RxBufferPtr), RxBufferPtr);
 
 	ASSERT_SUCCESS(
 			XAxiDma_BdRingSetCoalesce(RxRingPtr, 1, 100),

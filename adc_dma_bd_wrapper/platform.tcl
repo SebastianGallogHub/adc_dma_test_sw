@@ -39,3 +39,5 @@ platform clean
 platform config -updatehw {/home/sebas/Escritorio/proyecto/workspace/adc_dma_test/adc_dma_bd_wrapper.xsa}
 platform generate
 platform generate
+platform active {adc_dma_bd_wrapper}
+platform generate -domains 

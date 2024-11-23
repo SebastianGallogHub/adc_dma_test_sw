@@ -28,19 +28,6 @@
 
 #define CLEAR_SCREEN xil_printf("%c%c%c%c%c[H", 0x1B, 0x5B, 0x32, 0x4A, 0x1B)
 
-//extern int globalLogLevel;
-//
-//#define SetLogLevel(level) globalLogLevel = level
-//#define LogLevelUP() globalLogLevel++
-//#define LogLevelDOWN() do{if(globalLogLevel) globalLogLevel--;}while(0)
-//
-//#define LOG(fmt, ...) do {
-//	if (globalLogLevel){volatile int lvl = globalLogLevel;
-//	while(lvl){lvl--; xil_printf("\t");}}
-//	xil_printf ("" fmt, ##__VA_ARGS__);
-//	xil_printf ("\r\n");
-//} while (0)
-
 #define B2KB(bytes) bytes/1024
 #define B2MB(bytes) KB(bytes)/1024
 #define B2GB(bytes) MB(bytes)/1024
