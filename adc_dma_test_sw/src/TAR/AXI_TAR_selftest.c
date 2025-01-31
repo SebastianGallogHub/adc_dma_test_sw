@@ -1,7 +1,8 @@
 
 /***************************** Include Files *******************************/
-#include "TAR.h"
+#include "AXI_TAR.h"
 #include "xparameters.h"
+#include "stdio.h"
 #include "xil_io.h"
 
 /************************** Constant Definitions ***************************/
@@ -16,7 +17,7 @@
  * If the hardware system is not built correctly, this function may never
  * return to the caller.
  *
- * @param   baseaddr_p is the base address of the TARinstance to be worked on.
+ * @param   baseaddr_p is the base address of the AXI_TARinstance to be worked on.
  *
  * @return
  *
@@ -27,12 +28,12 @@
  * @note    Self test may fail if data memory and device are not on the same bus.
  *
  */
-XStatus TAR_Reg_SelfTest(void * baseaddr_p)
+XStatus AXI_TAR_Reg_SelfTest(void * baseaddr_p)
 {
 	u32 baseaddr;
 	int write_loop_index;
 	int read_loop_index;
-	//int Index;
+	int Index;
 
 	baseaddr = (u32) baseaddr_p;
 
@@ -46,9 +47,9 @@ XStatus TAR_Reg_SelfTest(void * baseaddr_p)
 	xil_printf("User logic slave module test...\n\r");
 
 	for (write_loop_index = 0 ; write_loop_index < 4; write_loop_index++)
-	  TAR_mWriteReg (baseaddr, write_loop_index*4, (write_loop_index+1)*READ_WRITE_MUL_FACTOR);
+	  AXI_TAR_mWriteReg (baseaddr, write_loop_index*4, (write_loop_index+1)*READ_WRITE_MUL_FACTOR);
 	for (read_loop_index = 0 ; read_loop_index < 4; read_loop_index++)
-	  if (TAR_mReadReg (baseaddr, read_loop_index*4) != (u32)(read_loop_index+1)*READ_WRITE_MUL_FACTOR){
+	  if ( AXI_TAR_mReadReg (baseaddr, read_loop_index*4) != (read_loop_index+1)*READ_WRITE_MUL_FACTOR){
 	    xil_printf ("Error reading register value at address %x\n", (int)baseaddr + read_loop_index*4);
 	    return XST_FAILURE;
 	  }

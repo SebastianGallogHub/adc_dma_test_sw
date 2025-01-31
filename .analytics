@@ -197,3 +197,180 @@ timestamp=[2024-11-22 21:06:42], mode=BUILD, duration=0:00:01.412, duration_ms=1
 timestamp=[2024-11-22 21:06:55], mode=BUILD, duration=0:00:09.461, duration_ms=9461, data={name=adc_dma_test_sw_system, configuration=Debug, clean_build=false}
 timestamp=[2024-11-22 21:15:19], mode=BUILD, duration=0:00:02.658, duration_ms=2658, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
 timestamp=[2024-11-22 21:15:31], mode=BUILD, duration=0:00:09.616, duration_ms=9616, data={name=adc_dma_test_sw_system, configuration=Debug, clean_build=false}
+timestamp=[2024-12-04 21:59:01], mode=WORKBENCH_START, duration=0:00:20.642, duration_ms=20642, data={}
+timestamp=[2024-12-04 21:59:02], mode=PLATFORM_REPOSITORY_INIT, duration=0:00:00.179, duration_ms=179, data={}
+timestamp=[2024-12-04 21:59:04], mode=WORKBENCH_UI_INIT, duration=0:00:02.816, duration_ms=2816, data={editors_count=1, platform_editors_count=0, projects_count=4, platform_projects_count=1, active_platform_editor=false, projects=RemoteSystemsTempFiles,adc_dma_bd_wrapper,adc_dma_test_sw,adc_dma_test_sw_system}
+timestamp=[2024-12-05 19:36:49], mode=WORKBENCH_START, duration=0:00:11.229, duration_ms=11229, data={}
+timestamp=[2024-12-05 19:36:49], mode=PLATFORM_REPOSITORY_INIT, duration=0:00:00.070, duration_ms=70, data={}
+timestamp=[2024-12-05 19:36:51], mode=WORKBENCH_UI_INIT, duration=0:00:01.906, duration_ms=1906, data={editors_count=1, platform_editors_count=0, projects_count=4, platform_projects_count=1, active_platform_editor=false, projects=RemoteSystemsTempFiles,adc_dma_bd_wrapper,adc_dma_test_sw,adc_dma_test_sw_system}
+timestamp=[2024-12-09 10:09:40], mode=WORKBENCH_START, duration=0:00:14.448, duration_ms=14448, data={}
+timestamp=[2024-12-09 10:09:41], mode=PLATFORM_REPOSITORY_INIT, duration=0:00:00.092, duration_ms=92, data={}
+timestamp=[2024-12-09 10:09:42], mode=WORKBENCH_UI_INIT, duration=0:00:01.872, duration_ms=1872, data={editors_count=5, platform_editors_count=2, projects_count=4, platform_projects_count=1, active_platform_editor=false, projects=RemoteSystemsTempFiles,adc_dma_bd_wrapper,adc_dma_test_sw,adc_dma_test_sw_system}
+timestamp=[2024-12-09 10:12:07], mode=PLATFORM_GENERATION, duration=0:00:44.380, duration_ms=44380, data={name=adc_dma_bd_wrapper}
+timestamp=[2024-12-09 10:12:14], mode=BUILD, duration=0:00:02.728, duration_ms=2728, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2024-12-09 10:31:01], mode=BUILD, duration=0:00:02.256, duration_ms=2256, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2024-12-09 10:31:15], mode=BUILD, duration=0:00:10.748, duration_ms=10748, data={name=adc_dma_test_sw_system, configuration=Debug, clean_build=false}
+timestamp=[2024-12-09 19:13:01], mode=WORKBENCH_START, duration=0:00:10.297, duration_ms=10297, data={}
+timestamp=[2024-12-09 19:13:02], mode=PLATFORM_REPOSITORY_INIT, duration=0:00:00.032, duration_ms=32, data={}
+timestamp=[2024-12-09 19:13:04], mode=WORKBENCH_UI_INIT, duration=0:00:02.221, duration_ms=2221, data={editors_count=1, platform_editors_count=0, projects_count=4, platform_projects_count=1, active_platform_editor=false, projects=RemoteSystemsTempFiles,adc_dma_bd_wrapper,adc_dma_test_sw,adc_dma_test_sw_system}
+timestamp=[2024-12-09 19:13:24], mode=BUILD, duration=0:00:02.122, duration_ms=2122, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2024-12-09 19:13:37], mode=BUILD, duration=0:00:09.874, duration_ms=9874, data={name=adc_dma_test_sw_system, configuration=Debug, clean_build=false}
+timestamp=[2024-12-09 19:26:34], mode=WORKBENCH_START, duration=0:00:11.081, duration_ms=11081, data={}
+timestamp=[2024-12-09 19:26:35], mode=PLATFORM_REPOSITORY_INIT, duration=0:00:00.079, duration_ms=79, data={}
+timestamp=[2024-12-09 19:26:36], mode=WORKBENCH_UI_INIT, duration=0:00:01.940, duration_ms=1940, data={editors_count=1, platform_editors_count=0, projects_count=4, platform_projects_count=1, active_platform_editor=false, projects=RemoteSystemsTempFiles,adc_dma_bd_wrapper,adc_dma_test_sw,adc_dma_test_sw_system}
+timestamp=[2024-12-09 20:34:16], mode=BUILD, duration=0:00:02.095, duration_ms=2095, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2024-12-09 20:35:12], mode=BUILD, duration=0:00:01.646, duration_ms=1646, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2024-12-09 20:35:24], mode=BUILD, duration=0:00:01.876, duration_ms=1876, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2024-12-09 20:35:37], mode=BUILD, duration=0:00:01.744, duration_ms=1744, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2024-12-09 20:35:46], mode=BUILD, duration=0:00:01.600, duration_ms=1600, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2024-12-09 20:36:00], mode=BUILD, duration=0:00:01.652, duration_ms=1652, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2024-12-09 20:36:08], mode=BUILD, duration=0:00:01.626, duration_ms=1626, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2024-12-09 20:36:17], mode=BUILD, duration=0:00:02.159, duration_ms=2159, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2024-12-09 20:36:32], mode=BUILD, duration=0:00:11.871, duration_ms=11871, data={name=adc_dma_test_sw_system, configuration=Debug, clean_build=false}
+timestamp=[2024-12-10 15:53:07], mode=WORKBENCH_START, duration=0:00:12.962, duration_ms=12962, data={}
+timestamp=[2024-12-10 15:53:08], mode=PLATFORM_REPOSITORY_INIT, duration=0:00:00.061, duration_ms=61, data={}
+timestamp=[2024-12-10 15:53:09], mode=WORKBENCH_UI_INIT, duration=0:00:01.805, duration_ms=1805, data={editors_count=9, platform_editors_count=6, projects_count=4, platform_projects_count=1, active_platform_editor=false, projects=RemoteSystemsTempFiles,adc_dma_bd_wrapper,adc_dma_test_sw,adc_dma_test_sw_system}
+timestamp=[2024-12-10 15:55:55], mode=PLATFORM_GENERATION, duration=0:00:19.639, duration_ms=19639, data={name=adc_dma_bd_wrapper}
+timestamp=[2024-12-10 15:56:01], mode=BUILD, duration=0:00:02.686, duration_ms=2686, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2024-12-10 15:56:55], mode=BUILD, duration=0:00:02.327, duration_ms=2327, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2024-12-10 15:57:08], mode=BUILD, duration=0:00:09.511, duration_ms=9511, data={name=adc_dma_test_sw_system, configuration=Debug, clean_build=false}
+timestamp=[2025-01-13 19:11:04], mode=WORKBENCH_START, duration=0:00:13.571, duration_ms=13571, data={}
+timestamp=[2025-01-13 19:11:05], mode=PLATFORM_REPOSITORY_INIT, duration=0:00:00.050, duration_ms=50, data={}
+timestamp=[2025-01-13 19:11:07], mode=WORKBENCH_UI_INIT, duration=0:00:02.821, duration_ms=2821, data={editors_count=9, platform_editors_count=6, projects_count=4, platform_projects_count=1, active_platform_editor=false, projects=RemoteSystemsTempFiles,adc_dma_bd_wrapper,adc_dma_test_sw,adc_dma_test_sw_system}
+timestamp=[2025-01-13 19:14:12], mode=PLATFORM_GENERATION, duration=0:00:23.242, duration_ms=23242, data={name=adc_dma_bd_wrapper}
+timestamp=[2025-01-13 19:14:19], mode=BUILD, duration=0:00:03.330, duration_ms=3330, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-13 19:14:38], mode=PLATFORM_GENERATION, duration=0:00:08.443, duration_ms=8443, data={name=adc_dma_bd_wrapper}
+timestamp=[2025-01-13 19:14:40], mode=BUILD, duration=0:00:01.831, duration_ms=1831, data={name=adc_dma_test_sw, configuration=Debug, clean_build=true}
+timestamp=[2025-01-13 19:14:41], mode=BUILD, duration=0:00:01.663, duration_ms=1663, data={name=adc_dma_test_sw_system, configuration=Debug, clean_build=true}
+timestamp=[2025-01-13 19:14:49], mode=PLATFORM_GENERATION, duration=0:00:07.703, duration_ms=7703, data={name=adc_dma_bd_wrapper}
+timestamp=[2025-01-13 19:14:51], mode=BUILD, duration=0:00:01.538, duration_ms=1538, data={name=adc_dma_test_sw, configuration=Debug, clean_build=true}
+timestamp=[2025-01-13 19:14:52], mode=BUILD, duration=0:00:01.393, duration_ms=1393, data={name=adc_dma_test_sw_system, configuration=Debug, clean_build=true}
+timestamp=[2025-01-13 19:15:34], mode=PLATFORM_GENERATION, duration=0:00:41.464, duration_ms=41464, data={name=adc_dma_bd_wrapper}
+timestamp=[2025-01-13 19:15:41], mode=BUILD, duration=0:00:03.416, duration_ms=3416, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-13 19:15:52], mode=PLATFORM_GENERATION, duration=0:00:07.463, duration_ms=7463, data={name=adc_dma_bd_wrapper}
+timestamp=[2025-01-13 19:15:53], mode=BUILD, duration=0:00:01.434, duration_ms=1434, data={name=adc_dma_test_sw, configuration=Debug, clean_build=true}
+timestamp=[2025-01-13 19:15:55], mode=BUILD, duration=0:00:01.594, duration_ms=1594, data={name=adc_dma_test_sw_system, configuration=Debug, clean_build=true}
+timestamp=[2025-01-13 19:16:08], mode=PLATFORM_GENERATION, duration=0:00:07.501, duration_ms=7501, data={name=adc_dma_bd_wrapper}
+timestamp=[2025-01-13 19:16:10], mode=BUILD, duration=0:00:01.383, duration_ms=1383, data={name=adc_dma_test_sw, configuration=Debug, clean_build=true}
+timestamp=[2025-01-13 19:16:11], mode=BUILD, duration=0:00:01.384, duration_ms=1384, data={name=adc_dma_test_sw_system, configuration=Debug, clean_build=true}
+timestamp=[2025-01-13 19:16:45], mode=PLATFORM_GENERATION, duration=0:00:28.621, duration_ms=28621, data={name=adc_dma_bd_wrapper}
+timestamp=[2025-01-13 19:16:53], mode=BUILD, duration=0:00:03.963, duration_ms=3963, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-13 19:18:57], mode=BUILD, duration=0:00:01.699, duration_ms=1699, data={name=adc_dma_test_sw, configuration=Debug, clean_build=true}
+timestamp=[2025-01-13 19:19:01], mode=BUILD, duration=0:00:03.851, duration_ms=3851, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-13 19:19:52], mode=BUILD, duration=0:00:01.715, duration_ms=1715, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-13 19:21:34], mode=BUILD, duration=0:00:01.643, duration_ms=1643, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-13 19:21:59], mode=BUILD, duration=0:00:01.603, duration_ms=1603, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-13 19:22:07], mode=BUILD, duration=0:00:01.717, duration_ms=1717, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-13 19:22:26], mode=BUILD, duration=0:00:02.309, duration_ms=2309, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-13 19:22:39], mode=BUILD, duration=0:00:09.803, duration_ms=9803, data={name=adc_dma_test_sw_system, configuration=Debug, clean_build=false}
+timestamp=[2025-01-15 19:27:49], mode=WORKBENCH_START, duration=0:00:11.959, duration_ms=11959, data={}
+timestamp=[2025-01-15 19:27:50], mode=PLATFORM_REPOSITORY_INIT, duration=0:00:00.054, duration_ms=54, data={}
+timestamp=[2025-01-15 19:27:52], mode=WORKBENCH_UI_INIT, duration=0:00:03.182, duration_ms=3182, data={editors_count=8, platform_editors_count=5, projects_count=4, platform_projects_count=1, active_platform_editor=false, projects=RemoteSystemsTempFiles,adc_dma_bd_wrapper,adc_dma_test_sw,adc_dma_test_sw_system}
+timestamp=[2025-01-18 09:50:32], mode=WORKBENCH_START, duration=0:00:12.061, duration_ms=12061, data={}
+timestamp=[2025-01-18 09:50:33], mode=PLATFORM_REPOSITORY_INIT, duration=0:00:00.099, duration_ms=99, data={}
+timestamp=[2025-01-18 09:50:34], mode=WORKBENCH_UI_INIT, duration=0:00:02.030, duration_ms=2030, data={editors_count=9, platform_editors_count=6, projects_count=4, platform_projects_count=1, active_platform_editor=false, projects=RemoteSystemsTempFiles,adc_dma_bd_wrapper,adc_dma_test_sw,adc_dma_test_sw_system}
+timestamp=[2025-01-18 09:52:15], mode=PLATFORM_GENERATION, duration=0:00:14.300, duration_ms=14300, data={name=adc_dma_bd_wrapper}
+timestamp=[2025-01-18 09:52:22], mode=BUILD, duration=0:00:03.326, duration_ms=3326, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-18 09:52:35], mode=BUILD, duration=0:00:09.429, duration_ms=9429, data={name=adc_dma_test_sw_system, configuration=Debug, clean_build=false}
+timestamp=[2025-01-18 10:41:10], mode=BUILD, duration=0:00:01.879, duration_ms=1879, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-18 10:41:46], mode=BUILD, duration=0:00:02.092, duration_ms=2092, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-18 10:42:01], mode=BUILD, duration=0:00:02.315, duration_ms=2315, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-18 10:42:30], mode=BUILD, duration=0:00:02.260, duration_ms=2260, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-18 10:42:40], mode=BUILD, duration=0:00:02.243, duration_ms=2243, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-18 10:42:53], mode=BUILD, duration=0:00:09.550, duration_ms=9550, data={name=adc_dma_test_sw_system, configuration=Debug, clean_build=false}
+timestamp=[2025-01-18 10:44:30], mode=BUILD, duration=0:00:01.448, duration_ms=1448, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-18 10:44:42], mode=BUILD, duration=0:00:09.068, duration_ms=9068, data={name=adc_dma_test_sw_system, configuration=Debug, clean_build=false}
+timestamp=[2025-01-18 10:45:33], mode=BUILD, duration=0:00:02.150, duration_ms=2150, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-18 10:45:46], mode=BUILD, duration=0:00:09.305, duration_ms=9305, data={name=adc_dma_test_sw_system, configuration=Debug, clean_build=false}
+timestamp=[2025-01-18 11:26:28], mode=BUILD, duration=0:00:01.957, duration_ms=1957, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-18 11:26:41], mode=BUILD, duration=0:00:09.703, duration_ms=9703, data={name=adc_dma_test_sw_system, configuration=Debug, clean_build=false}
+timestamp=[2025-01-18 11:41:58], mode=BUILD, duration=0:00:01.942, duration_ms=1942, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-18 11:42:10], mode=BUILD, duration=0:00:09.169, duration_ms=9169, data={name=adc_dma_test_sw_system, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 18:36:07], mode=WORKBENCH_START, duration=0:00:25.353, duration_ms=25353, data={}
+timestamp=[2025-01-22 18:36:10], mode=PLATFORM_REPOSITORY_INIT, duration=0:00:01.810, duration_ms=1810, data={}
+timestamp=[2025-01-22 18:36:14], mode=WORKBENCH_UI_INIT, duration=0:00:06.760, duration_ms=6760, data={editors_count=3, platform_editors_count=1, projects_count=4, platform_projects_count=1, active_platform_editor=false, projects=RemoteSystemsTempFiles,adc_dma_bd_wrapper,adc_dma_test_sw,adc_dma_test_sw_system}
+timestamp=[2025-01-22 18:36:39], mode=BUILD, duration=0:00:02.393, duration_ms=2393, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 18:36:56], mode=BUILD, duration=0:00:12.197, duration_ms=12197, data={name=adc_dma_test_sw_system, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 18:47:47], mode=BUILD, duration=0:00:03.411, duration_ms=3411, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 18:48:02], mode=BUILD, duration=0:00:12.283, duration_ms=12283, data={name=adc_dma_test_sw_system, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 18:48:06], mode=BUILD, duration=0:00:03.085, duration_ms=3085, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 18:48:20], mode=BUILD, duration=0:00:10.476, duration_ms=10476, data={name=adc_dma_test_sw_system, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 19:22:16], mode=WORKBENCH_START, duration=0:00:11.395, duration_ms=11395, data={}
+timestamp=[2025-01-22 19:22:17], mode=PLATFORM_REPOSITORY_INIT, duration=0:00:00.095, duration_ms=95, data={}
+timestamp=[2025-01-22 19:22:19], mode=WORKBENCH_UI_INIT, duration=0:00:02.595, duration_ms=2595, data={editors_count=5, platform_editors_count=3, projects_count=4, platform_projects_count=1, active_platform_editor=false, projects=RemoteSystemsTempFiles,adc_dma_bd_wrapper,adc_dma_test_sw,adc_dma_test_sw_system}
+timestamp=[2025-01-22 19:23:29], mode=BUILD, duration=0:00:01.999, duration_ms=1999, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 19:25:07], mode=BUILD, duration=0:00:01.660, duration_ms=1660, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 19:25:34], mode=BUILD, duration=0:00:01.765, duration_ms=1765, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 19:25:45], mode=BUILD, duration=0:00:01.736, duration_ms=1736, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 19:26:22], mode=BUILD, duration=0:00:02.284, duration_ms=2284, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 19:26:36], mode=BUILD, duration=0:00:10.724, duration_ms=10724, data={name=adc_dma_test_sw_system, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 19:27:34], mode=BUILD, duration=0:00:02.380, duration_ms=2380, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 19:27:48], mode=BUILD, duration=0:00:10.673, duration_ms=10673, data={name=adc_dma_test_sw_system, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 19:28:01], mode=BUILD, duration=0:00:01.992, duration_ms=1992, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 19:28:13], mode=BUILD, duration=0:00:09.756, duration_ms=9756, data={name=adc_dma_test_sw_system, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 19:29:09], mode=BUILD, duration=0:00:01.647, duration_ms=1647, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 19:29:21], mode=BUILD, duration=0:00:09.098, duration_ms=9098, data={name=adc_dma_test_sw_system, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 19:41:12], mode=BUILD, duration=0:00:02.051, duration_ms=2051, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 19:41:24], mode=BUILD, duration=0:00:09.554, duration_ms=9554, data={name=adc_dma_test_sw_system, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 19:41:59], mode=BUILD, duration=0:00:01.973, duration_ms=1973, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 19:42:11], mode=BUILD, duration=0:00:09.352, duration_ms=9352, data={name=adc_dma_test_sw_system, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 19:42:50], mode=BUILD, duration=0:00:02.002, duration_ms=2002, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 19:43:03], mode=BUILD, duration=0:00:09.459, duration_ms=9459, data={name=adc_dma_test_sw_system, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 19:45:57], mode=BUILD, duration=0:00:02.766, duration_ms=2766, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 19:46:15], mode=BUILD, duration=0:00:14.401, duration_ms=14401, data={name=adc_dma_test_sw_system, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 19:52:12], mode=BUILD, duration=0:00:01.764, duration_ms=1764, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 19:53:42], mode=BUILD, duration=0:00:02.042, duration_ms=2042, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 19:54:01], mode=BUILD, duration=0:00:02.257, duration_ms=2257, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 19:54:14], mode=BUILD, duration=0:00:10.916, duration_ms=10916, data={name=adc_dma_test_sw_system, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 19:55:04], mode=BUILD, duration=0:00:01.891, duration_ms=1891, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 19:55:17], mode=BUILD, duration=0:00:10.003, duration_ms=10003, data={name=adc_dma_test_sw_system, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 19:57:13], mode=BUILD, duration=0:00:02.068, duration_ms=2068, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 19:57:27], mode=BUILD, duration=0:00:10.056, duration_ms=10056, data={name=adc_dma_test_sw_system, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 19:59:23], mode=BUILD, duration=0:00:01.855, duration_ms=1855, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 19:59:36], mode=BUILD, duration=0:00:10.097, duration_ms=10097, data={name=adc_dma_test_sw_system, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 20:01:43], mode=BUILD, duration=0:00:01.899, duration_ms=1899, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 20:01:56], mode=BUILD, duration=0:00:09.724, duration_ms=9724, data={name=adc_dma_test_sw_system, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 20:25:35], mode=BUILD, duration=0:00:02.504, duration_ms=2504, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 20:25:52], mode=BUILD, duration=0:00:14.012, duration_ms=14012, data={name=adc_dma_test_sw_system, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 20:29:27], mode=BUILD, duration=0:00:02.513, duration_ms=2513, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 20:29:46], mode=BUILD, duration=0:00:16.020, duration_ms=16020, data={name=adc_dma_test_sw_system, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 20:33:20], mode=BUILD, duration=0:00:02.572, duration_ms=2572, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 20:33:36], mode=BUILD, duration=0:00:12.938, duration_ms=12938, data={name=adc_dma_test_sw_system, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 20:40:57], mode=BUILD, duration=0:00:02.735, duration_ms=2735, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 20:41:17], mode=BUILD, duration=0:00:16.416, duration_ms=16416, data={name=adc_dma_test_sw_system, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 20:55:50], mode=BUILD, duration=0:00:03.896, duration_ms=3896, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 20:56:06], mode=BUILD, duration=0:00:12.202, duration_ms=12202, data={name=adc_dma_test_sw_system, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 20:57:44], mode=BUILD, duration=0:00:02.677, duration_ms=2677, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 20:58:05], mode=BUILD, duration=0:00:18.129, duration_ms=18129, data={name=adc_dma_test_sw_system, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 20:58:52], mode=BUILD, duration=0:00:02.582, duration_ms=2582, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 20:59:09], mode=BUILD, duration=0:00:13.757, duration_ms=13757, data={name=adc_dma_test_sw_system, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 21:13:56], mode=BUILD, duration=0:00:02.294, duration_ms=2294, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 21:14:13], mode=BUILD, duration=0:00:14.035, duration_ms=14035, data={name=adc_dma_test_sw_system, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 21:14:45], mode=BUILD, duration=0:00:02.571, duration_ms=2571, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 21:15:02], mode=BUILD, duration=0:00:14.833, duration_ms=14833, data={name=adc_dma_test_sw_system, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 21:16:01], mode=BUILD, duration=0:00:02.575, duration_ms=2575, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 21:16:15], mode=BUILD, duration=0:00:11.427, duration_ms=11427, data={name=adc_dma_test_sw_system, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 21:17:24], mode=BUILD, duration=0:00:02.995, duration_ms=2995, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 21:17:43], mode=BUILD, duration=0:00:15.522, duration_ms=15522, data={name=adc_dma_test_sw_system, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 21:22:31], mode=BUILD, duration=0:00:02.429, duration_ms=2429, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 21:22:42], mode=BUILD, duration=0:00:07.649, duration_ms=7649, data={name=adc_dma_test_sw_system, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 21:22:45], mode=BUILD, duration=0:00:02.564, duration_ms=2564, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 21:22:59], mode=BUILD, duration=0:00:11.152, duration_ms=11152, data={name=adc_dma_test_sw_system, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 21:34:17], mode=BUILD, duration=0:00:02.368, duration_ms=2368, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 21:34:32], mode=BUILD, duration=0:00:11.514, duration_ms=11514, data={name=adc_dma_test_sw_system, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 21:35:47], mode=BUILD, duration=0:00:02.365, duration_ms=2365, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 21:36:01], mode=BUILD, duration=0:00:11.250, duration_ms=11250, data={name=adc_dma_test_sw_system, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 21:38:30], mode=BUILD, duration=0:00:02.379, duration_ms=2379, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-22 21:38:44], mode=BUILD, duration=0:00:11.759, duration_ms=11759, data={name=adc_dma_test_sw_system, configuration=Debug, clean_build=false}
+timestamp=[2025-01-29 18:24:12], mode=WORKBENCH_START, duration=0:00:09.900, duration_ms=9900, data={}
+timestamp=[2025-01-29 18:24:13], mode=PLATFORM_REPOSITORY_INIT, duration=0:00:00.110, duration_ms=110, data={}
+timestamp=[2025-01-29 18:24:14], mode=WORKBENCH_UI_INIT, duration=0:00:02.178, duration_ms=2178, data={editors_count=2, platform_editors_count=0, projects_count=4, platform_projects_count=1, active_platform_editor=false, projects=RemoteSystemsTempFiles,adc_dma_bd_wrapper,adc_dma_test_sw,adc_dma_test_sw_system}
+timestamp=[2025-01-29 18:38:42], mode=BUILD, duration=0:00:02.717, duration_ms=2717, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-29 18:38:58], mode=BUILD, duration=0:00:11.841, duration_ms=11841, data={name=adc_dma_test_sw_system, configuration=Debug, clean_build=false}
+timestamp=[2025-01-29 18:41:38], mode=BUILD, duration=0:00:02.626, duration_ms=2626, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-30 22:40:05], mode=WORKBENCH_START, duration=0:00:10.786, duration_ms=10786, data={}
+timestamp=[2025-01-30 22:40:05], mode=PLATFORM_REPOSITORY_INIT, duration=0:00:00.065, duration_ms=65, data={}
+timestamp=[2025-01-30 22:40:07], mode=WORKBENCH_UI_INIT, duration=0:00:02.004, duration_ms=2004, data={editors_count=2, platform_editors_count=0, projects_count=4, platform_projects_count=1, active_platform_editor=false, projects=RemoteSystemsTempFiles,adc_dma_bd_wrapper,adc_dma_test_sw,adc_dma_test_sw_system}
+timestamp=[2025-01-30 22:40:27], mode=PLATFORM_GENERATION, duration=0:00:11.853, duration_ms=11853, data={name=adc_dma_bd_wrapper}
+timestamp=[2025-01-30 22:40:33], mode=BUILD, duration=0:00:03.138, duration_ms=3138, data={name=adc_dma_test_sw, configuration=Debug, clean_build=false}
+timestamp=[2025-01-30 22:40:45], mode=BUILD, duration=0:00:09.194, duration_ms=9194, data={name=adc_dma_test_sw_system, configuration=Debug, clean_build=false}

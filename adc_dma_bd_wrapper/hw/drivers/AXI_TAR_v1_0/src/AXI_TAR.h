@@ -1,26 +1,26 @@
 
-#ifndef TAR_H
-#define TAR_H
+#ifndef AXI_TAR_H
+#define AXI_TAR_H
 
 
 /****************** Include Files ********************/
 #include "xil_types.h"
 #include "xstatus.h"
 
-#define TAR_S00_AXI_SLV_REG0_OFFSET 0
-#define TAR_S00_AXI_SLV_REG1_OFFSET 4
-#define TAR_S00_AXI_SLV_REG2_OFFSET 8
-#define TAR_S00_AXI_SLV_REG3_OFFSET 12
+#define AXI_TAR_S00_AXI_SLV_REG0_OFFSET 0
+#define AXI_TAR_S00_AXI_SLV_REG1_OFFSET 4
+#define AXI_TAR_S00_AXI_SLV_REG2_OFFSET 8
+#define AXI_TAR_S00_AXI_SLV_REG3_OFFSET 12
 
 
 /**************************** Type Definitions *****************************/
 /**
  *
- * Write a value to a TAR register. A 32 bit write is performed.
+ * Write a value to a AXI_TAR register. A 32 bit write is performed.
  * If the component is implemented in a smaller width, only the least
  * significant data is written.
  *
- * @param   BaseAddress is the base address of the TARdevice.
+ * @param   BaseAddress is the base address of the AXI_TARdevice.
  * @param   RegOffset is the register offset from the base to write to.
  * @param   Data is the data written to the register.
  *
@@ -28,30 +28,30 @@
  *
  * @note
  * C-style signature:
- * 	void TAR_mWriteReg(u32 BaseAddress, unsigned RegOffset, u32 Data)
+ * 	void AXI_TAR_mWriteReg(u32 BaseAddress, unsigned RegOffset, u32 Data)
  *
  */
-#define TAR_mWriteReg(BaseAddress, RegOffset, Data) \
+#define AXI_TAR_mWriteReg(BaseAddress, RegOffset, Data) \
   	Xil_Out32((BaseAddress) + (RegOffset), (u32)(Data))
 
 /**
  *
- * Read a value from a TAR register. A 32 bit read is performed.
+ * Read a value from a AXI_TAR register. A 32 bit read is performed.
  * If the component is implemented in a smaller width, only the least
  * significant data is read from the register. The most significant data
  * will be read as 0.
  *
- * @param   BaseAddress is the base address of the TAR device.
+ * @param   BaseAddress is the base address of the AXI_TAR device.
  * @param   RegOffset is the register offset from the base to write to.
  *
  * @return  Data is the data from the register.
  *
  * @note
  * C-style signature:
- * 	u32 TAR_mReadReg(u32 BaseAddress, unsigned RegOffset)
+ * 	u32 AXI_TAR_mReadReg(u32 BaseAddress, unsigned RegOffset)
  *
  */
-#define TAR_mReadReg(BaseAddress, RegOffset) \
+#define AXI_TAR_mReadReg(BaseAddress, RegOffset) \
     Xil_In32((BaseAddress) + (RegOffset))
 
 /************************** Function Prototypes ****************************/
@@ -63,7 +63,7 @@
  * If the hardware system is not built correctly, this function may never
  * return to the caller.
  *
- * @param   baseaddr_p is the base address of the TAR instance to be worked on.
+ * @param   baseaddr_p is the base address of the AXI_TAR instance to be worked on.
  *
  * @return
  *
@@ -74,6 +74,6 @@
  * @note    Self test may fail if data memory and device are not on the same bus.
  *
  */
-XStatus TAR_Reg_SelfTest(void * baseaddr_p);
+XStatus AXI_TAR_Reg_SelfTest(void * baseaddr_p);
 
-#endif // TAR_H
+#endif // AXI_TAR_H

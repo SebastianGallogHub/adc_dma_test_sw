@@ -36,16 +36,19 @@
  * De lo contrario sale de la función con XST_FAILURE
  * Puede especificarse un texto plano como salida de error
  * */
+static long st;
 #define ASSERT_SUCCESS(status, fmt, ...) do { \
-    if ((status) != XST_SUCCESS) { \
-    	xil_printf ("(status=%d)\t", status); \
+	st = status;	\
+    if ((st) != XST_SUCCESS) { \
+    	xil_printf ("(status=%d)\t", st); \
     	xil_printf ("" fmt "\r\n", ##__VA_ARGS__); \
     	return XST_FAILURE; \
     } \
 } while (0)
 #define ASSERT_SUCCESS_void(status, fmt, ...) do { \
-    if ((status) != XST_SUCCESS) { \
-    	xil_printf ("(status=%d)\t", status); \
+	st = status;	\
+    if ((st) != XST_SUCCESS) { \
+    	xil_printf ("(status=%d)\t", st); \
     	xil_printf ("" fmt "\r\n", ##__VA_ARGS__); \
     	return;\
     } \
