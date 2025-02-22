@@ -12,9 +12,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include "xil_printf.h"
-#include "xparameters.h"
 
-#include "./TAR/AXI_TAR.h"
+#include "AXI_TAR.h"
 #include "./Zmod/zmod.h"
 #include "./ZmodADC1410/zmodadc1410.h"
 
@@ -31,7 +30,7 @@
 // DMA Parameters
 #define DMA_DEV_ID				XPAR_AXI_DMA_0_DEVICE_ID
 #define DMA_BASE_ADDR  			XPAR_AXI_DMA_0_BASEADDR
-#define DMA_NUMBER_OF_TRANSFERS 100
+#define DMA_NUMBER_OF_TRANSFERS 50
 
 //-----------------------------------------------------------------------------
 // TAR Parameters
@@ -46,9 +45,11 @@
 // master_test
 #define master_COUNT_CFG_OFF	AXI_TAR_S00_AXI_SLV_REG1_OFFSET
 #define master_COUNT_OFF		AXI_TAR_S00_AXI_SLV_REG3_OFFSET
+#define master_INTR_COUNT_OFF	AXI_TAR_S00_AXI_SLV_REG2_OFFSET
 #define TAR_Start_master_test()	AXI_TAR_mWriteReg(TAR_BASE,TAR_CONFIG_OFF, 0x10);
 
-#define TAR_TRANSFER_COUNT 	30000000//300ms
+//#define TAR_TRANSFER_COUNT 	1000000//10ms
+#define TAR_TRANSFER_COUNT 	10000000//100ms
 
 //-----------------------------------------------------------------------------
 // Memoria
@@ -57,8 +58,8 @@
 #define DMA_RX_BD_SPACE_BASE	(MEM_BASE_ADDR)
 #define DMA_RX_BD_SPACE_HIGH	(MEM_BASE_ADDR + 0x0000FFFF)
 #define DMA_RX_BD_SPACE 		DMA_RX_BD_SPACE_HIGH - DMA_RX_BD_SPACE_BASE + 1
-#define DMA_RX_BUFFER_BASE		(MEM_BASE_ADDR + 0x00010000)
-#define DMA_RX_BUFFER_HIGH		(MEM_BASE_ADDR + 0x0002FFFF)
+#define DMA_RX_BUFFER_BASE		(MEM_BASE_ADDR + 0x000300000)
+#define DMA_RX_BUFFER_HIGH		(MEM_BASE_ADDR + 0x0004FFFFF)
 
 //-----------------------------------------------------------------------------
 //Interupciones
@@ -101,6 +102,7 @@ XTime tStart, tFinish, tElapsed;
 int main()
 {
 	int Status;
+	int TimeOut = 1000;
 	u32 slv_reg0, slv_reg1, slv_reg2, slv_reg3;
 
 	CLEAR_SCREEN;
@@ -108,17 +110,17 @@ int main()
 	LOG(0, "--------------------- INICIO MAIN -----------------------");
 	LOG(1, "PRUEBA SOLO DE LAS INTERRUPCIONES DE MASTER_TEST");
 
-//	ZMOD_Init();
-
-//	ASSERT_SUCCESS(
-//			DMA_Init(&AxiDma, DMA_NUMBER_OF_TRANSFERS, sizeof(u32)),
-//			"Fallo al inicializar el DMA.");
-
-	TAR_Init(TAR_TRANSFER_COUNT);//0.1ms
-
 	ASSERT_SUCCESS(
 			SetupIntrSystem(&Intc, &AxiDma, DMA_RX_INTR_ID, TAR_DR_INTR_ID),
 			"Fallo al inicializar el sistema de interrupciones");
+
+//	ASSERT_SUCCESS(
+//			DMA_Init(&AxiDma, DMA_NUMBER_OF_TRANSFERS, sizeof(u32)*8),
+//			"Fallo al inicializar el DMA.");
+
+	ZMOD_Init();
+
+	TAR_Init(TAR_TRANSFER_COUNT);
 
 	LOG(1, "----- Inicio interrupciones");
 	TAR_Start_master_test();
@@ -126,18 +128,22 @@ int main()
 
 	Status = Xil_WaitForEventSet(1000000U, 1, &Error);
 	if (Status == XST_SUCCESS) {
-		LOG(1, "Receive error %d", Status);
-		return XST_FAILURE;
+		LOG(0, "--> Receive error %d", Status);
+		goto goOut;
 	}
 
-	int TimeOut = 1000;
-	while(dmaTransferCount <= DMA_NUMBER_OF_TRANSFERS){
+	while(tarTransferCount <= DMA_NUMBER_OF_TRANSFERS){
 		if(!(TimeOut--))
 		{
 			TimeOut = 1000;
+			//Confirmo si está prendido
 			slv_reg0 = AXI_TAR_mReadReg(TAR_BASE, TAR_CONFIG_OFF);
+			//Valor de la cuenta de muestras configurado
 			slv_reg1 = AXI_TAR_mReadReg(TAR_BASE, master_COUNT_CFG_OFF);
+			//Valor de la cuenta de muestras actual
 			slv_reg3 = AXI_TAR_mReadReg(TAR_BASE, master_COUNT_OFF);
+			//Valor de la cuenta de interrupciones lanzadas != capturadas por core
+			slv_reg2 = AXI_TAR_mReadReg(TAR_BASE, master_INTR_COUNT_OFF);
 		}
 	}
 
@@ -158,8 +164,13 @@ int main()
 	DisableIntrSystem(&Intc, DMA_RX_INTR_ID, TAR_DR_INTR_ID);
 
 	LOG(0, "--------------------- FIN MAIN -----------------------");
-
 	return 0;
+
+goOut:
+	TAR_StopAll();
+	XAxiDma_Reset(&AxiDma);
+	LOG(0, "--------------------- FIN MAIN -----------------------");
+	return XST_FAILURE;
 }
 
 void PrintRxData()
@@ -184,7 +195,7 @@ int SetupIntrSystem(INTC *IntcInstancePtr, XAxiDma *AxiDmaPtr, u16 DmaRxIntrId, 
 {
 	LOG(1, "SetupIntrSystem");
 
-	XAxiDma_BdRing *RxRingPtr = XAxiDma_GetRxRing(AxiDmaPtr);
+//	XAxiDma_BdRing *RxRingPtr = XAxiDma_GetRxRing(AxiDmaPtr);
 	XScuGic_Config *IntcConfig;
 
 	IntcConfig = XScuGic_LookupConfig(INTC_DEVICE_ID);
@@ -222,38 +233,38 @@ int SetupIntrSystem(INTC *IntcInstancePtr, XAxiDma *AxiDmaPtr, u16 DmaRxIntrId, 
 	return XST_SUCCESS;
 }
 
-//void ZMOD_Init()
-//{
-//	LOG(1, "ZMOD_Init");
-//	/*
-//	 * Esta función utiliza la clase ZMODADC1410 para comunicarse con
-//	 * ZMOD1410 AXI ADAPTER y configurar el ZMOD140 a través del
-//	 * LLC. Este es su único propósito.
-//	 *
-//	 * El resto de las comunicaciones se realizarán mediante TAR+DMA
-//	 * */
-//
-//	// Crear el objeto ZMODADC1410 para configurar la ganancia y acoplamiento
-//	ZMODADC1410 adcZmod(ZMOD_BASE_ADDR,
-//						DMA_BASE_ADDR,    //Este parámetro se configura pero no se usa
-//						IIC_BASE_ADDR,
-//						MEM_BASE_ADDR,    //Este parámetro se configura pero no se usa
-//						ZMOD_ADC_INTR_ID, //Este parámetro se configura pero no se usa
-//						DMA_RX_INTR_ID);  //Este parámetro se configura pero no se usa
-//
-//	//Canal 1
-//	LOG(2, "CH1: LOW Gain; DC Coupling");
-//	adcZmod.setGain(0, 0);
-//	adcZmod.setCoupling(0, 0); //0 for DC Coupling, 1 for AC Coupling
-//
-//	//Canal 2
-//	LOG(2, "CH2: LOW Gain; DC Coupling");
-//	adcZmod.setGain(1, 0);
-//	adcZmod.setCoupling(1, 0); //0 for DC Coupling, 1 for AC Coupling
-//
-//	return;
-//}
-//
+void ZMOD_Init()
+{
+	LOG(1, "ZMOD_Init");
+	/*
+	 * Esta función utiliza la clase ZMODADC1410 para comunicarse con
+	 * ZMOD1410 AXI ADAPTER y configurar el ZMOD140 a través del
+	 * LLC. Este es su único propósito.
+	 *
+	 * El resto de las comunicaciones se realizarán mediante AXI_TAR + AXI_DMA
+	 * */
+
+	// Crear el objeto ZMODADC1410 para configurar la ganancia y acoplamiento
+	ZMODADC1410 adcZmod(ZMOD_BASE_ADDR,
+						DMA_BASE_ADDR,    //Este parámetro se configura pero no se usa
+						IIC_BASE_ADDR,
+						MEM_BASE_ADDR,    //Este parámetro se configura pero no se usa
+						ZMOD_ADC_INTR_ID, //Este parámetro se configura pero no se usa
+						DMA_RX_INTR_ID);  //Este parámetro se configura pero no se usa
+
+	//Canal 1
+	LOG(2, "CH1: LOW Gain; DC Coupling");
+	adcZmod.setGain(0, 0);
+	adcZmod.setCoupling(0, 0); //0 for DC Coupling, 1 for AC Coupling
+
+	//Canal 2
+	LOG(2, "CH2: LOW Gain; DC Coupling");
+	adcZmod.setGain(1, 0);
+	adcZmod.setCoupling(1, 0); //0 for DC Coupling, 1 for AC Coupling
+
+	return;
+}
+
 //int DMA_Init(XAxiDma* AxiDma, u32 cntTransferencias, u32 dataLen)
 //{
 //	LOG(1, "DMA_Init");
@@ -413,83 +424,196 @@ int SetupIntrSystem(INTC *IntcInstancePtr, XAxiDma *AxiDmaPtr, u16 DmaRxIntrId, 
 //
 //	return XST_SUCCESS;
 //}
-//void DMA_RxCallBack(XAxiDma_BdRing *RxRingPtr)
-//{
-//	// Cuento las transferencias hechas para finalizar el bucle principal
-//	// Debería hacerse una interrupción cada transferencia
-//
-//	if (dmaTransferCount >= DMA_NUMBER_OF_TRANSFERS)
-//		return;
-//
-//	int BdCount;
-//	XAxiDma_Bd *BdPtr;
-//
-//	BdCount = XAxiDma_BdRingFromHw(RxRingPtr, XAXIDMA_ALL_BDS, &BdPtr);
-//	dmaTransferCount += BdCount;
-//
-//	XAxiDma_BdRingFree(RxRingPtr, BdCount, BdPtr);
-//
-//	return;
-//}
-//void DMA_RxIntrHandler(void *Callback)
-//{
-//	XAxiDma_BdRing *RxRingPtr = (XAxiDma_BdRing *) Callback;
-//	u32 IrqStatus;
-//	int TimeOut;
-//
-//	/* Read pending interrupts */
-//	IrqStatus = XAxiDma_BdRingGetIrq(RxRingPtr);
-//
-//	/* Acknowledge pending interrupts */
-//	XAxiDma_BdRingAckIrq(RxRingPtr, IrqStatus);
-//
-//	/*
-//	 * If no interrupt is asserted, we do not do anything
-//	 */
-//	if (!(IrqStatus & XAXIDMA_IRQ_ALL_MASK)) {
-//		return;
-//	}
-//
-//	/*
-//	 * If error interrupt is asserted, raise error flag, reset the
-//	 * hardware to recover from the error, and return with no further
-//	 * processing.
-//	 */
-//	if ((IrqStatus & XAXIDMA_IRQ_ERROR_MASK)) {
-//
-//		//Esto imprime valores importantes de los registros de RxRingPtr
-//		// por consola
-//		XAxiDma_BdRingDumpRegs(RxRingPtr);
-//
-//		Error = 1;
-//
-//		/* Reset could fail and hang
-//		 * NEED a way to handle this or do not call it??
-//		 */
-//		XAxiDma_Reset(&AxiDma);
-//
-//		TimeOut = 10000;
-//
-//		while (TimeOut) {
-//			if (XAxiDma_ResetIsDone(&AxiDma)) {
-//				break;
-//			}
-//
-//			TimeOut -= 1;
-//		}
-//
-//		return;
-//	}
-//
-//	/*
-//	 * If completion interrupt is asserted, call RX call back function
-//	 * to handle the processed BDs and then raise the according flag.
-//	 */
-//	if ((IrqStatus & (XAXIDMA_IRQ_DELAY_MASK | XAXIDMA_IRQ_IOC_MASK)))
-//		DMA_RxCallBack(RxRingPtr);
-//
-//	return;
-//}
+
+/* Corregido por chati*/
+//#define RX_BD_SPACE_BASE	(MEM_BASE_ADDR)
+//#define RX_BD_SPACE_HIGH	(MEM_BASE_ADDR + 0x0000FFFF)
+//#define RX_BUFFER_BASE		(MEM_BASE_ADDR + 0x00200000)
+//#define RX_BUFFER_HIGH		(MEM_BASE_ADDR + 0x003FFFFF)
+//#define NUMBER_OF_BDS_PER_PKT		1
+//#define NUMBER_OF_PKTS_TO_TRANSFER 	10
+//#define NUMBER_OF_BDS_TO_RECEIVE	10
+//#define NUMBER_OF_BDS_TO_TRANSFER	(NUMBER_OF_PKTS_TO_TRANSFER * NUMBER_OF_BDS_PER_PKT)
+//#define MAX_PKT_LEN			0x100
+
+void isAligned(u32 direccion)
+{
+	if (direccion % XAXIDMA_BD_MINIMUM_ALIGNMENT == 0) {
+		xil_printf("La dirección 0x%X está alineada.\r\n", direccion);
+	} else {
+		xil_printf("La dirección 0x%X NO está alineada.\r\n", direccion);
+	}
+}
+int DMA_Init(XAxiDma* AxiDma, u32 cntTransferencias, u32 dataLen)
+{
+    LOG(1, "DMA_Init");
+
+    XAxiDma_Config *Config;
+    XAxiDma_BdRing *RxRingPtr;
+    XAxiDma_Bd BdTemplate, *BdPtr, *BdCurPtr;
+    UINTPTR RxBufferPtr;
+    u32 i, BdCount;
+    u32 coalesceCounter = 10;
+    int status;
+
+    Config = XAxiDma_LookupConfig(DMA_DEV_ID);
+    ASSERT(Config != NULL, "No config found for %d", DMA_DEV_ID);
+
+    ASSERT_SUCCESS(
+    		XAxiDma_CfgInitialize(AxiDma, Config), "DMA initialization failed");
+    ASSERT(
+    		XAxiDma_HasSg(AxiDma), "Device configured as Simple mode");
+
+    RxRingPtr = XAxiDma_GetRxRing(AxiDma);
+
+    XAxiDma_BdRingIntDisable(RxRingPtr, XAXIDMA_IRQ_ALL_MASK);
+
+    // Reinicio del DMA para evitar estados incorrectos
+    XAxiDma_Reset(AxiDma);
+    while (!XAxiDma_ResetIsDone(AxiDma));
+
+    BdCount = XAxiDma_BdRingCntCalc(XAXIDMA_BD_MINIMUM_ALIGNMENT, DMA_RX_BD_SPACE);
+    ASSERT(
+    		BdCount >= cntTransferencias, "No hay suficientes BDs para las transferencias");
+
+    status = XAxiDma_BdRingCreate(RxRingPtr, DMA_RX_BD_SPACE_BASE, DMA_RX_BD_SPACE_BASE,
+                                  XAXIDMA_BD_MINIMUM_ALIGNMENT, cntTransferencias);
+    ASSERT_SUCCESS(
+    		status, "Rx bd create failed");
+
+    XAxiDma_BdClear(&BdTemplate);
+    ASSERT_SUCCESS(
+    		XAxiDma_BdRingClone(RxRingPtr, &BdTemplate), "Rx bd clone failed");
+
+    ASSERT_SUCCESS(
+    		XAxiDma_BdRingAlloc(RxRingPtr, cntTransferencias, &BdPtr), "Rx bd alloc failed");
+
+    BdCurPtr = BdPtr;
+    RxBufferPtr = DMA_RX_BUFFER_BASE;
+
+    // Alinear el buffer a 64 bits
+    RxBufferPtr = (RxBufferPtr + 63) & ~0x3F;
+
+    for (i = 0; i < cntTransferencias; i++) {
+        status = XAxiDma_BdSetBufAddr(BdCurPtr, RxBufferPtr);
+    	ASSERT_SUCCESS(
+    			status, "Rx set buffer addr %x on BD %x failed %d\r\n",(unsigned int)RxBufferPtr,(UINTPTR)BdCurPtr);
+
+    	status = XAxiDma_BdSetLength(BdCurPtr, dataLen, RxRingPtr->MaxTransferLen);
+    	ASSERT_SUCCESS(
+    			status, "Rx set length %d on BD %x failed %d\r\n", dataLen, (UINTPTR)BdCurPtr);
+
+        XAxiDma_BdSetCtrl(BdCurPtr, 0);
+        XAxiDma_BdSetId(BdCurPtr, RxBufferPtr);
+
+        RxBufferPtr += dataLen;
+        BdCurPtr = (XAxiDma_Bd *)XAxiDma_BdRingNext(RxRingPtr, BdCurPtr);
+    }
+
+    // Limpieza del buffer de llegada
+    memset((void*)DMA_RX_BUFFER_BASE, 0, DMA_RX_BUFFER_HIGH - DMA_RX_BUFFER_BASE);
+
+
+    Xil_DCacheFlushRange((UINTPTR)BdPtr, cntTransferencias * sizeof(XAxiDma_Bd));
+    Xil_DCacheFlushRange((UINTPTR)DMA_RX_BUFFER_BASE, cntTransferencias * dataLen);
+
+    ASSERT_SUCCESS(
+    		XAxiDma_BdRingSetCoalesce(RxRingPtr, coalesceCounter, 100), "Rx set coalesce failed");
+    ASSERT_SUCCESS(
+    		XAxiDma_BdRingToHw(RxRingPtr, cntTransferencias, BdPtr), "Rx ToHw failed");
+
+    XAxiDma_BdRingIntEnable(RxRingPtr, XAXIDMA_IRQ_ALL_MASK);
+    XAxiDma_BdRingEnableCyclicDMA(RxRingPtr);
+    XAxiDma_SelectCyclicMode(AxiDma, XAXIDMA_DEVICE_TO_DMA, 1);
+
+    // Iniciar DMA explícitamente
+    status = XAxiDma_BdRingStart(RxRingPtr);
+    ASSERT_SUCCESS(
+    		status, "Error starting XAxiDma_BdRingStart");
+
+    LOG(2, "DMA configurado para recibir %d transferencias. Longitud %d bytes", cntTransferencias, dataLen);
+    LOG(2, "Interrupciones cada %d", coalesceCounter);
+    LOG(2, "Modo cíclico activado");
+
+    return XST_SUCCESS;
+}
+void DMA_RxCallBack(XAxiDma_BdRing *RxRingPtr)
+{
+	// Cuento las transferencias hechas para finalizar el bucle principal
+	// Debería hacerse una interrupción cada transferencia
+
+	if (dmaTransferCount >= DMA_NUMBER_OF_TRANSFERS)
+		return;
+
+	int BdCount;
+	XAxiDma_Bd *BdPtr;
+
+	BdCount = XAxiDma_BdRingFromHw(RxRingPtr, XAXIDMA_ALL_BDS, &BdPtr);
+	dmaTransferCount += BdCount;
+
+	XAxiDma_BdRingFree(RxRingPtr, BdCount, BdPtr);
+
+	return;
+}
+void DMA_RxIntrHandler(void *Callback)
+{
+	XAxiDma_BdRing *RxRingPtr = (XAxiDma_BdRing *) Callback;
+	u32 IrqStatus;
+	int TimeOut;
+
+	/* Read pending interrupts */
+	IrqStatus = XAxiDma_BdRingGetIrq(RxRingPtr);
+
+	/* Acknowledge pending interrupts */
+	XAxiDma_BdRingAckIrq(RxRingPtr, IrqStatus);
+
+	/*
+	 * If no interrupt is asserted, we do not do anything
+	 */
+	if (!(IrqStatus & XAXIDMA_IRQ_ALL_MASK)) {
+		return;
+	}
+
+	/*
+	 * If error interrupt is asserted, raise error flag, reset the
+	 * hardware to recover from the error, and return with no further
+	 * processing.
+	 */
+	if ((IrqStatus & XAXIDMA_IRQ_ERROR_MASK)) {
+
+		//Esto imprime valores importantes de los registros de RxRingPtr
+		// por consola
+		XAxiDma_BdRingDumpRegs(RxRingPtr);
+
+		Error = 1;
+
+		/* Reset could fail and hang
+		 * NEED a way to handle this or do not call it??
+		 */
+		XAxiDma_Reset(&AxiDma);
+
+		TimeOut = 10000;
+
+		while (TimeOut) {
+			if (XAxiDma_ResetIsDone(&AxiDma)) {
+				break;
+			}
+
+			TimeOut -= 1;
+		}
+
+		return;
+	}
+
+	/*
+	 * If completion interrupt is asserted, call RX call back function
+	 * to handle the processed BDs and then raise the according flag.
+	 */
+	if ((IrqStatus & (XAXIDMA_IRQ_DELAY_MASK | XAXIDMA_IRQ_IOC_MASK)))
+		DMA_RxCallBack(RxRingPtr);
+
+	return;
+}
 
 void xil_printf_floatFormat(float num, int* whole, int* thousanths)
 {
