@@ -11,6 +11,7 @@
 #include <string.h>
 #include <unistd.h>
 #include "zmodadc1410.h"
+#include "../Zmod/zmod.h"
 
 /**
  * Initialize a ZMOD ADC1410 instance.

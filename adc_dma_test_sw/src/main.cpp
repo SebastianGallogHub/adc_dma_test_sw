@@ -14,8 +14,8 @@
 #include "xil_printf.h"
 
 #include "AXI_TAR.h"
-#include "./Zmod/zmod.h"
-#include "./ZmodADC1410/zmodadc1410.h"
+//#include "./Zmod/zmod.h"
+//#include "./ZmodADC1410/zmodadc1410.h"
 
 #include "log.h"
 #include "assert.h"
@@ -23,8 +23,28 @@
 //-----------------------------------------------------------------------------
 // ZMOD Parameters
 #define ZMOD_BASE_ADDR  	XPAR_AXI_ZMODADC1410_0_S00_AXI_BASEADDR
-#define ZMOD_ADC_INTR_ID  	XPAR_FABRIC_AXI_DMA_0_S2MM_INTROUT_INTR // Es el mismo que el de DMA porque no está cableado
-#define IIC_BASE_ADDR		XPAR_PS7_I2C_1_BASEADDR
+//#define ZMOD_ADC_INTR_ID  	XPAR_FABRIC_AXI_DMA_0_S2MM_INTROUT_INTR // Es el mismo que el de DMA porque no está cableado
+//#define IIC_BASE_ADDR		XPAR_PS7_I2C_1_BASEADDR
+#define ZMOD_REG_ADDR_CR 				0x00	///< CR					register address
+#define ZMOD_REGFLD_CR_RST 				ZMOD_REG_ADDR_CR, 31, 1	///< RST 			field of CR register
+
+#define ZMODADC1410_REG_ADDR_TRIG			0x1C	///< TRIG				register address
+#define ZMODADC1410_REGFLD_TRIG_SC1_AC_DC	ZMODADC1410_REG_ADDR_TRIG, 19, 1	///< SC1_AC_DC	field of TRIG register
+#define ZMODADC1410_REGFLD_TRIG_SC2_AC_DC	ZMODADC1410_REG_ADDR_TRIG, 20, 1	///< SC2_AC_DC 	field of TRIG register
+#define ZMODADC1410_REGFLD_TRIG_SC1_HG_LG	ZMODADC1410_REG_ADDR_TRIG, 21, 1	///< SC1_HG_LG 	field of TRIG register
+#define ZMODADC1410_REGFLD_TRIG_SC2_HG_LG	ZMODADC1410_REG_ADDR_TRIG, 22, 1	///< SC2_HG_LG 	field of TRIG register
+
+typedef enum ZMODADC1410_SC{
+	SC1, SC2,
+} ZmodADC1410_SC;
+
+typedef enum ZOMODADC1410_COUPLING {
+	DC_COUPLING,AC_COUPLING,
+} ZmodADC1410_COUPLING;
+
+typedef enum ZMODADC1410_GAIN {
+	LOW_GAIN, HIGH_GAIN,
+} ZmodADC1410_GAIN;
 
 //-----------------------------------------------------------------------------
 // DMA Parameters
@@ -72,7 +92,14 @@
 
 //-----------------------------------------------------------------------------
 //Funciones
-void ZMOD_Init();
+void ZMODADC1410_Init();
+void ZMODADC1410_SetGain(ZmodADC1410_SC channel, ZmodADC1410_GAIN gain);
+void ZMODADC1410_SetCoupling(ZmodADC1410_SC channel, ZmodADC1410_COUPLING coupling);
+uint16_t ZMODADC1410_ChannelData(ZmodADC1410_SC channel, uint32_t data);
+int16_t ZMODADC1410SignedChannelData(uint8_t channel, uint32_t data);
+
+void ZMOD_WriteRegFld(uint8_t regAddr, uint8_t lsbBit, uint8_t noBits, uint32_t value);
+int32_t ZMOD_ToSigned(uint32_t value, uint8_t noBits);
 
 int DMA_Init(XAxiDma*, u32 cnt, u32 len);
 int DMA_SG_Cyclic_Rx_Init(u32 cnt, u32 len);
@@ -123,7 +150,7 @@ int main()
 				DMA_Init(&AxiDma, DMA_NUMBER_OF_TRANSFERS, sizeof(u32)),
 				"Fallo al inicializar el DMA.");
 
-	//	ZMOD_Init();
+		ZMODADC1410_Init();
 
 		TAR_Init(TAR_TRANSFER_COUNT);
 
@@ -247,36 +274,100 @@ int SetupIntrSystem(INTC *IntcInstancePtr, XAxiDma *AxiDmaPtr, u16 DmaRxIntrId, 
 	return XST_SUCCESS;
 }
 
-void ZMOD_Init()
+void ZMODADC1410_Init()
 {
 	LOG(1, "ZMOD_Init");
-	/*
-	 * Esta función utiliza la clase ZMODADC1410 para comunicarse con
-	 * ZMOD1410 AXI ADAPTER y configurar el ZMOD140 a través del
-	 * LLC. Este es su único propósito.
-	 *
-	 * El resto de las comunicaciones se realizarán mediante AXI_TAR + AXI_DMA
-	 * */
-
-	// Crear el objeto ZMODADC1410 para configurar la ganancia y acoplamiento
-	ZMODADC1410 adcZmod(ZMOD_BASE_ADDR,
-						DMA_BASE_ADDR,    //Este parámetro se configura pero no se usa
-						IIC_BASE_ADDR,
-						MEM_BASE_ADDR,    //Este parámetro se configura pero no se usa
-						ZMOD_ADC_INTR_ID, //Este parámetro se configura pero no se usa
-						DMA_RX_INTR_ID);  //Este parámetro se configura pero no se usa
+//	/*
+//	 * Esta función utiliza la clase ZMODADC1410 para comunicarse con
+//	 * ZMOD1410 AXI ADAPTER y configurar el ZMOD140 a través del
+//	 * LLC. Este es su único propósito.
+//	 *
+//	 * El resto de las comunicaciones se realizarán mediante AXI_TAR + AXI_DMA
+//	 * */
+//
+//	// Crear el objeto ZMODADC1410 para configurar la ganancia y acoplamiento
+//	ZMODADC1410 adcZmod(ZMOD_BASE_ADDR,
+//						DMA_BASE_ADDR,    //Este parámetro se configura pero no se usa
+//						IIC_BASE_ADDR,
+//						MEM_BASE_ADDR,    //Este parámetro se configura pero no se usa
+//						ZMOD_ADC_INTR_ID, //Este parámetro se configura pero no se usa
+//						DMA_RX_INTR_ID);  //Este parámetro se configura pero no se usa
+//
+//	//Canal 1
+//	LOG(2, "CH1: LOW Gain; DC Coupling");
+//	adcZmod.setGain(0, 0);
+//	adcZmod.setCoupling(0, 0); //0 for DC Coupling, 1 for AC Coupling
+//
+//	//Canal 2
+//	LOG(2, "CH2: LOW Gain; DC Coupling");
+//	adcZmod.setGain(1, 0);
+//	adcZmod.setCoupling(1, 0); //0 for DC Coupling, 1 for AC Coupling
 
 	//Canal 1
-	LOG(2, "CH1: LOW Gain; DC Coupling");
-	adcZmod.setGain(0, 0);
-	adcZmod.setCoupling(0, 0); //0 for DC Coupling, 1 for AC Coupling
+	ZMOD_WriteRegFld(ZMOD_REGFLD_CR_RST, 1);
+	ZMOD_WriteRegFld(ZMOD_REGFLD_CR_RST, 0);
+
+	ZMODADC1410_SetGain(SC1, LOW_GAIN);
+	ZMODADC1410_SetCoupling(SC1, DC_COUPLING);
 
 	//Canal 2
-	LOG(2, "CH2: LOW Gain; DC Coupling");
-	adcZmod.setGain(1, 0);
-	adcZmod.setCoupling(1, 0); //0 for DC Coupling, 1 for AC Coupling
+	ZMODADC1410_SetGain(SC2, LOW_GAIN);
+	ZMODADC1410_SetCoupling(SC2, DC_COUPLING);
 
 	return;
+}
+void ZMODADC1410_SetGain(ZmodADC1410_SC channel, ZmodADC1410_GAIN gain)
+{
+	if(channel == SC1)
+		ZMOD_WriteRegFld(ZMODADC1410_REGFLD_TRIG_SC1_HG_LG, gain);
+	else
+		ZMOD_WriteRegFld(ZMODADC1410_REGFLD_TRIG_SC2_HG_LG, gain);
+}
+void ZMODADC1410_SetCoupling(ZmodADC1410_SC channel, ZmodADC1410_COUPLING coupling)
+{
+	if(channel == SC1)
+		ZMOD_WriteRegFld(ZMODADC1410_REGFLD_TRIG_SC1_AC_DC, coupling);
+	else
+		ZMOD_WriteRegFld(ZMODADC1410_REGFLD_TRIG_SC2_AC_DC, coupling);
+}
+uint16_t ZMODADC1410_ChannelData(ZmodADC1410_SC channel, uint32_t data)
+{
+	//					   SC2			 SC1
+	return (channel ? (data >> 2) : (data >> 18)) & 0x00003FFF;
+}
+int16_t ZMODADC1410_SignedChannelData(ZmodADC1410_SC channel, uint32_t data) {
+	return ZMOD_ToSigned(ZMODADC1410_ChannelData(channel, data), 14);
+}
+void ZMOD_WriteRegFld(uint8_t regAddr, uint8_t lsbBit, uint8_t noBits, uint32_t value)
+{
+	uint32_t regMask = ((1 << noBits) - 1) << lsbBit;
+	uint32_t regValue = Xil_In32(ZMOD_BASE_ADDR + regAddr);
+
+	// align value to bit lsb_bit
+	value <<= lsbBit;
+
+	// mask out any bits outside specified field
+	value &= regMask;
+
+	// mask out bits corresponding to the specified field
+	regValue &= ~regMask;
+
+	// set the values for the field bits
+	regValue |= value;
+
+	Xil_Out32(ZMOD_BASE_ADDR + regAddr, regValue);
+}
+int32_t ZMOD_ToSigned(uint32_t value, uint8_t noBits)
+{
+	// align value to bit 31 (left justify), to preserve sign
+	value <<= 32 - noBits;
+
+	int32_t sValue = (int32_t)value;
+
+	// align value to bit 0 (right justify)
+	sValue >>= (32 - noBits);
+
+	return sValue;
 }
 
 int DMA_Init(XAxiDma* AxiDma, u32 cntTransferencias, u32 dataLen)

@@ -48,7 +48,7 @@ ZMOD::ZMOD(uintptr_t baseAddress, uintptr_t dmaAddress, uintptr_t iicAddress, ui
 		enum dma_direction direction, int zmodInterrupt, int dmaInterrupt) {
 	baseAddr = fnInitZmod(baseAddress,
 			zmodInterrupt, (void *)fnZmodInterruptHandler, (void *)this);
-	//dmaAddr = fnInitDMA(dmaAddress, direction, dmaInterrupt);
+	dmaAddr = fnInitDMA(dmaAddress, direction, dmaInterrupt);
 	flashAddr = fnInitFlash(iicAddress, flashAddress);
 
 	this->direction = direction;

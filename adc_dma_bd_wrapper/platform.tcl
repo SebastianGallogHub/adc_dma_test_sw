@@ -109,3 +109,4 @@ platform config -updatehw {/home/sebas/Escritorio/proyecto/workspace/adc_dma_tes
 platform clean
 platform clean
 platform generate
+platform generate
