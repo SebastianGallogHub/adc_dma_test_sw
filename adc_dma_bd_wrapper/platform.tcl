@@ -96,3 +96,16 @@ platform active {adc_dma_bd_wrapper}
 platform config -updatehw {/home/sebas/Escritorio/proyecto/workspace/adc_dma_test/adc_dma_bd_wrapper.xsa}
 platform clean
 platform generate
+platform active {adc_dma_bd_wrapper}
+bsp reload
+bsp config stdin "ps7_uart_0"
+bsp reload
+bsp config stdin "ps7_uart_0"
+bsp config stdout "ps7_uart_0"
+bsp write
+platform generate
+platform active {adc_dma_bd_wrapper}
+platform config -updatehw {/home/sebas/Escritorio/proyecto/workspace/adc_dma_test/adc_dma_bd_wrapper.xsa}
+platform clean
+platform clean
+platform generate
