@@ -33,7 +33,7 @@ void ZMODADC1410_Init();
 void ZMODADC1410_SetGain(ZmodADC1410_SC channel, ZmodADC1410_GAIN gain);
 void ZMODADC1410_SetCoupling(ZmodADC1410_SC channel, ZmodADC1410_COUPLING coupling);
 uint16_t ZMODADC1410_ChannelData(ZmodADC1410_SC channel, uint32_t data);
-int16_t ZMODADC1410SignedChannelData(uint8_t channel, uint32_t data);
+int16_t ZMODADC1410_SignedChannelData(uint8_t channel, uint32_t data);
 
 
 #endif /* SRC_ZMODADC1410_H_ */

@@ -9,6 +9,7 @@
 #define SRC_TAR_CONFIG_H_
 
 #include "xparameters.h"
+#include "xil_types.h"
 #include "xil_io.h"
 #include "AXI_TAR.h"
 
@@ -49,12 +50,12 @@
 #endif
 #endif
 
+#define TAR_DMA_TRANSFER_LEN	sizeof(u32)
+
 #define TAR_DR_INTR_ID		XPAR_FABRIC_AXI_TAR_0_INTROUT_INTR
 
 extern u32 tarTransferCount;
 
 void TAR_Init(u32);
-void TAR_IntrHandler(void *Callback);
-
 
 #endif /* SRC_TAR_CONFIG_H_ */

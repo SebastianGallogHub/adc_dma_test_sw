@@ -56,7 +56,7 @@ void ZMODADC1410_SetCoupling(ZmodADC1410_SC channel, ZmodADC1410_COUPLING coupli
 }
 uint16_t ZMODADC1410_ChannelData(ZmodADC1410_SC channel, uint32_t data)
 {
-	//					   SC2			 SC1
+	//					SC2(LSB)	  SC1(MSB)
 	return (channel ? (data >> 2) : (data >> 18)) & 0x00003FFF;
 }
 int16_t ZMODADC1410_SignedChannelData(ZmodADC1410_SC channel, uint32_t data) {

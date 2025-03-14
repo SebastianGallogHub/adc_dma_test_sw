@@ -25,17 +25,14 @@
 #define DMA_RX_BUFFER_BASE		(MEM_BASE_ADDR + 0x000300000)
 #define DMA_RX_BUFFER_HIGH		(MEM_BASE_ADDR + 0x0004FFFFF)
 
-#define DMA_RX_INTR_ID		XPAR_FABRIC_AXI_DMA_0_S2MM_INTROUT_INTR
+#define DMA_RX_INTR_ID			XPAR_FABRIC_AXI_DMA_0_S2MM_INTROUT_INTR
 
 extern u32 dmaIntCount;
 extern u32 dmaTransferCount;
 extern u32 Error;
 
-static XAxiDma AxiDma;
-
-int DMA_Init(XAxiDma*, u32 cnt, u32 len);
-int DMA_SG_Cyclic_Rx_Init(u32 cnt, u32 len);
-void DMA_RxCallBack(XAxiDma_BdRing *RxRingPtr);
-void DMA_RxIntrHandler(void *Callback);
+int DMA_Init();
+void DMA_Reset();
+int DMA_RxInit(u32 cnt, u32 len);
 
 #endif /* SRC_DMA_CONFIG_H_ */

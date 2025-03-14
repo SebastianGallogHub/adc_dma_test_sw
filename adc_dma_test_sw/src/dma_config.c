@@ -6,49 +6,80 @@
  */
 
 #include "dma_config.h"
+#include "interrupt_config.h"
 #include "assert.h"
 #include "log.h"
 
+void DMA_RxIntrHandler(void *Callback);
+
+XAxiDma AxiDma;
+Intr_Config dmaIntrConfig;
 u32 dmaIntCount = 0;
 u32 dmaTransferCount = 0;
 u32 Error = 0;
 
-int DMA_Init(XAxiDma* AxiDma, u32 cntTransferencias, u32 dataLen)
+void DMA_Reset()
+{
+	int TimeOut = 10000;
+
+	XAxiDma_Reset(&AxiDma);
+
+	while (TimeOut--)
+	{
+		if (XAxiDma_ResetIsDone(&AxiDma))
+			break;
+	}
+}
+int DMA_Init()
+{
+	XAxiDma_Config *Config;
+	XAxiDma_BdRing *RxRingPtr;
+
+	// Obtengo la configuración del DMA usando un identificador predefinido
+	Config = XAxiDma_LookupConfig(DMA_DEV_ID);
+	ASSERT(Config != NULL, "No config found for %d", DMA_DEV_ID);
+
+	// Inicializo la instancia del DMA con la configuración obtenida.
+	ASSERT_SUCCESS(
+			XAxiDma_CfgInitialize(&AxiDma, Config), "DMA initialization failed");
+
+	// Cargo la configuración de interrupciones
+	RxRingPtr = XAxiDma_GetRxRing(&AxiDma);
+
+	//dmaIntrConfig
+	dmaIntrConfig.IntrId = DMA_RX_INTR_ID;
+	dmaIntrConfig.Handler = (void*)DMA_RxIntrHandler;
+	dmaIntrConfig.CallBackRef = RxRingPtr;
+
+	AddIntrHandler(&dmaIntrConfig);
+
+	return 0;
+}
+int DMA_RxInit(u32 cntTransferencias, u32 dataLen)
 {
     LOG(1, "DMA_Init");
 
-    XAxiDma_Config *Config;
     XAxiDma_BdRing *RxRingPtr;
     XAxiDma_Bd BdTemplate, *BdPtr, *BdCurPtr;
     UINTPTR RxBufferPtr;
-    u32 i, BdCount;
+    u32 BdCount;
     int status;
-
-    // Obtengo la configuración del DMA usando un identificador predefinido
-    Config = XAxiDma_LookupConfig(DMA_DEV_ID);
-    ASSERT(Config != NULL, "No config found for %d", DMA_DEV_ID);
-
-    // Inicializo la instancia del DMA con la configuración obtenida.
-    ASSERT_SUCCESS(
-    		XAxiDma_CfgInitialize(AxiDma, Config), "DMA initialization failed");
 
     // Verifico que el dispositivo esté configurado en modo Scatter-Gather (SG)
     // y no en modo simple.
-    ASSERT(XAxiDma_HasSg(AxiDma), "Device configured as Simple mode");
+    ASSERT(XAxiDma_HasSg(&AxiDma), "Device configured as Simple mode");
 
-    RxRingPtr = XAxiDma_GetRxRing(AxiDma);
+    RxRingPtr = XAxiDma_GetRxRing(&AxiDma);
 
     // Deshabilito todas las interrupciones del anillo para evitar activaciones indeseadas durante la configuración
     XAxiDma_BdRingIntDisable(RxRingPtr, XAXIDMA_IRQ_ALL_MASK);
 
     // Reinicio del DMA para evitar estados incorrectos
-    XAxiDma_Reset(AxiDma);
-    while (!XAxiDma_ResetIsDone(AxiDma));
+    DMA_Reset();
 
     // Calculo la cantidad de BDs disponibles en el espacio asignado para la recepción
     BdCount = XAxiDma_BdRingCntCalc(XAXIDMA_BD_MINIMUM_ALIGNMENT, DMA_RX_BD_SPACE);
-    ASSERT(
-    		BdCount >= cntTransferencias, "No hay suficientes BDs para las transferencias");
+    ASSERT(BdCount >= cntTransferencias, "No hay suficientes BDs para las transferencias");
 
     // Creo el ringbuffer de BDs para la recepción, asignando el espacio de memoria definido
     status = XAxiDma_BdRingCreate(RxRingPtr, DMA_RX_BD_SPACE_BASE, DMA_RX_BD_SPACE_BASE,
@@ -72,7 +103,7 @@ int DMA_Init(XAxiDma* AxiDma, u32 cntTransferencias, u32 dataLen)
     RxBufferPtr = (RxBufferPtr + 63) & ~0x3F;
 
     // Configuro cada BD para las transferencias de recepción:
-    for (i = 0; i < cntTransferencias; i++) {
+    for (u32 i = 0; i < cntTransferencias; i++) {
     	// Asigno la dirección del buffer para el BD actual
         status = XAxiDma_BdSetBufAddr(BdCurPtr, RxBufferPtr);
     	ASSERT_SUCCESS(
@@ -112,7 +143,7 @@ int DMA_Init(XAxiDma* AxiDma, u32 cntTransferencias, u32 dataLen)
 
     LOG(2, "Modo cíclico activado");
     XAxiDma_BdRingEnableCyclicDMA(RxRingPtr);					// Activo el modo cíclico
-    XAxiDma_SelectCyclicMode(AxiDma, XAXIDMA_DEVICE_TO_DMA, 1); // Configuro DMA para operar en modo cíclico
+    XAxiDma_SelectCyclicMode(&AxiDma, XAXIDMA_DEVICE_TO_DMA, 1); // Configuro DMA para operar en modo cíclico
 
     // Iniciar DMA explícitamente
     status = XAxiDma_BdRingStart(RxRingPtr);

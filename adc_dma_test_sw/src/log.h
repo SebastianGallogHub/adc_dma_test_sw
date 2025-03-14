@@ -26,7 +26,7 @@
 
 #define LOG_LINE LOG(2, ">--------------------------------<");
 
-#define CLEAR_SCREEN xil_printf("%c%c%c%c%c[H", 0x1B, 0x5B, 0x32, 0x4A, 0x1B)
+#define LOG_CLEAR_SCREEN xil_printf("%c%c%c%c%c[H", 0x1B, 0x5B, 0x32, 0x4A, 0x1B)
 
 #define B2KB(bytes) bytes/1024
 #define B2MB(bytes) KB(bytes)/1024
