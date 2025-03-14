@@ -6,4 +6,194 @@
  */
 
 #include "dma_config.h"
+#include "assert.h"
+#include "log.h"
 
+u32 dmaIntCount = 0;
+u32 dmaTransferCount = 0;
+u32 Error = 0;
+
+int DMA_Init(XAxiDma* AxiDma, u32 cntTransferencias, u32 dataLen)
+{
+    LOG(1, "DMA_Init");
+
+    XAxiDma_Config *Config;
+    XAxiDma_BdRing *RxRingPtr;
+    XAxiDma_Bd BdTemplate, *BdPtr, *BdCurPtr;
+    UINTPTR RxBufferPtr;
+    u32 i, BdCount;
+    int status;
+
+    // Obtengo la configuración del DMA usando un identificador predefinido
+    Config = XAxiDma_LookupConfig(DMA_DEV_ID);
+    ASSERT(Config != NULL, "No config found for %d", DMA_DEV_ID);
+
+    // Inicializo la instancia del DMA con la configuración obtenida.
+    ASSERT_SUCCESS(
+    		XAxiDma_CfgInitialize(AxiDma, Config), "DMA initialization failed");
+
+    // Verifico que el dispositivo esté configurado en modo Scatter-Gather (SG)
+    // y no en modo simple.
+    ASSERT(XAxiDma_HasSg(AxiDma), "Device configured as Simple mode");
+
+    RxRingPtr = XAxiDma_GetRxRing(AxiDma);
+
+    // Deshabilito todas las interrupciones del anillo para evitar activaciones indeseadas durante la configuración
+    XAxiDma_BdRingIntDisable(RxRingPtr, XAXIDMA_IRQ_ALL_MASK);
+
+    // Reinicio del DMA para evitar estados incorrectos
+    XAxiDma_Reset(AxiDma);
+    while (!XAxiDma_ResetIsDone(AxiDma));
+
+    // Calculo la cantidad de BDs disponibles en el espacio asignado para la recepción
+    BdCount = XAxiDma_BdRingCntCalc(XAXIDMA_BD_MINIMUM_ALIGNMENT, DMA_RX_BD_SPACE);
+    ASSERT(
+    		BdCount >= cntTransferencias, "No hay suficientes BDs para las transferencias");
+
+    // Creo el ringbuffer de BDs para la recepción, asignando el espacio de memoria definido
+    status = XAxiDma_BdRingCreate(RxRingPtr, DMA_RX_BD_SPACE_BASE, DMA_RX_BD_SPACE_BASE,
+                                  XAXIDMA_BD_MINIMUM_ALIGNMENT, cntTransferencias);
+    ASSERT_SUCCESS(status, "Rx bd create failed");
+
+    // Inicializo el ringbuffer de BDs con un template vacío
+    XAxiDma_BdClear(&BdTemplate);
+    ASSERT_SUCCESS(
+    		XAxiDma_BdRingClone(RxRingPtr, &BdTemplate), "Rx bd clone failed");
+
+    // Reservo la cantidad de BDs necesarios para las transferencias y obtiene el primer BD
+    LOG(2, "DMA configurado para recibir %d transferencias. Longitud %d bytes", cntTransferencias, dataLen);
+    ASSERT_SUCCESS(
+    		XAxiDma_BdRingAlloc(RxRingPtr, cntTransferencias, &BdPtr), "Rx bd alloc failed");
+
+    BdCurPtr = BdPtr;
+    RxBufferPtr = DMA_RX_BUFFER_BASE;
+
+    // Alinear el buffer a 64 bits para cumplir requisitos de hardware
+    RxBufferPtr = (RxBufferPtr + 63) & ~0x3F;
+
+    // Configuro cada BD para las transferencias de recepción:
+    for (i = 0; i < cntTransferencias; i++) {
+    	// Asigno la dirección del buffer para el BD actual
+        status = XAxiDma_BdSetBufAddr(BdCurPtr, RxBufferPtr);
+    	ASSERT_SUCCESS(
+    			status, "Rx set buffer addr %x on BD %x failed %d\r\n",(unsigned int)RxBufferPtr,(UINTPTR)BdCurPtr);
+
+    	// Configuro la longitud de datos a transferir, respetando el máximo permitido
+    	status = XAxiDma_BdSetLength(BdCurPtr, dataLen, RxRingPtr->MaxTransferLen);
+    	ASSERT_SUCCESS(
+    			status, "Rx set length %d on BD %x failed %d\r\n", dataLen, (UINTPTR)BdCurPtr);
+
+    	// Asigno un identificador al BD basado en la dirección del buffer, para su seguimiento posterior
+        XAxiDma_BdSetCtrl(BdCurPtr, 0);
+        XAxiDma_BdSetId(BdCurPtr, RxBufferPtr);
+
+        // Actualizo el puntero del buffer para la siguiente transferencia y avanzo al siguiente BD del ringbuffer
+        RxBufferPtr += dataLen;
+        BdCurPtr = (XAxiDma_Bd *)XAxiDma_BdRingNext(RxRingPtr, BdCurPtr);
+    }
+
+    // Limpieza del buffer de llegada
+    memset((void*)DMA_RX_BUFFER_BASE, 0, DMA_RX_BUFFER_HIGH - DMA_RX_BUFFER_BASE);
+
+    // Me aseguro que las actualizaciones en la memoria se reflejen correctamente
+    // realizando un flush de la cache para los BDs y el buffer de recepción
+    Xil_DCacheFlushRange((UINTPTR)BdPtr, cntTransferencias * sizeof(XAxiDma_Bd));
+    Xil_DCacheFlushRange((UINTPTR)DMA_RX_BUFFER_BASE, cntTransferencias * dataLen);
+
+    LOG(2, "Interrupciones cada %d transacciones", DMA_COALESCE);
+    ASSERT_SUCCESS(
+    		XAxiDma_BdRingSetCoalesce(RxRingPtr, DMA_COALESCE, 100), "Rx set coalesce failed");
+
+    // Paso el anillo de BDs configurado al hardware para que comience a usarse
+    ASSERT_SUCCESS(
+    		XAxiDma_BdRingToHw(RxRingPtr, cntTransferencias, BdPtr), "Rx ToHw failed");
+
+    XAxiDma_BdRingIntEnable(RxRingPtr, XAXIDMA_IRQ_ALL_MASK);	// Habilito interrupciones
+
+    LOG(2, "Modo cíclico activado");
+    XAxiDma_BdRingEnableCyclicDMA(RxRingPtr);					// Activo el modo cíclico
+    XAxiDma_SelectCyclicMode(AxiDma, XAXIDMA_DEVICE_TO_DMA, 1); // Configuro DMA para operar en modo cíclico
+
+    // Iniciar DMA explícitamente
+    status = XAxiDma_BdRingStart(RxRingPtr);
+    ASSERT_SUCCESS(
+    		status, "Error starting XAxiDma_BdRingStart");
+
+    LOG(2, "Primer buffer de datos: direccion 0x%08x",  (unsigned int)XAxiDma_BdGetId(BdPtr));
+
+    return XST_SUCCESS;
+}
+void DMA_RxCallBack(XAxiDma_BdRing *RxRingPtr)
+{
+	// Cuento las transferencias hechas para finalizar el bucle principal
+	// Debería hacerse una interrupción cada transferencia
+
+	if (dmaTransferCount >= DMA_NUMBER_OF_TRANSFERS)
+		return;
+
+	int BdCount;
+	XAxiDma_Bd *BdPtr;
+
+	BdCount = XAxiDma_BdRingFromHw(RxRingPtr, XAXIDMA_ALL_BDS, &BdPtr);
+	dmaTransferCount += BdCount;
+	dmaIntCount ++;
+
+	XAxiDma_BdRingFree(RxRingPtr, BdCount, BdPtr);
+
+	return;
+}
+void DMA_RxIntrHandler(void *Callback)
+{
+	XAxiDma_BdRing *RxRingPtr = (XAxiDma_BdRing *) Callback;
+	u32 IrqStatus;
+	int TimeOut;
+
+	/* Read pending interrupts */
+	IrqStatus = XAxiDma_BdRingGetIrq(RxRingPtr);
+
+	/* Acknowledge pending interrupts */
+	XAxiDma_BdRingAckIrq(RxRingPtr, IrqStatus);
+
+	// If no interrupt is asserted, we do not do anything
+	if (!(IrqStatus & XAXIDMA_IRQ_ALL_MASK)) {
+		return;
+	}
+
+	/*
+	 * If error interrupt is asserted, raise error flag, reset the
+	 * hardware to recover from the error, and return with no further
+	 * processing.
+	 */
+	if ((IrqStatus & XAXIDMA_IRQ_ERROR_MASK)) {
+
+		//Esto imprime valores importantes de los registros de RxRingPtr
+		// por consola
+		XAxiDma_BdRingDumpRegs(RxRingPtr);
+
+		Error = 1;
+
+		/* Reset could fail and hang
+		 * NEED a way to handle this or do not call it??
+		 */
+		XAxiDma_Reset(&AxiDma);
+
+		TimeOut = 10000;
+
+		while (TimeOut) {
+			if (XAxiDma_ResetIsDone(&AxiDma)) {
+				break;
+			}
+			TimeOut -= 1;
+		}
+		return;
+	}
+
+	/*
+	 * If completion interrupt is asserted, call RX call back function
+	 * to handle the processed BDs and then raise the according flag.
+	 */
+	if ((IrqStatus & (XAXIDMA_IRQ_DELAY_MASK | XAXIDMA_IRQ_IOC_MASK)))
+		DMA_RxCallBack(RxRingPtr);
+
+	return;
+}
