@@ -12,18 +12,18 @@
 
 typedef enum TAR_SERIAL_COMMANDS_ENUM
 {
-	TAR_NONE = 0,
-	TAR_START,
-	TAR_A_H_LOW,
-	TAR_A_H_HIGH,
-	TAR_B_H_LOW,
-	TAR_B_H_HIGH,
+	TONE = 0,
+	START,
+	CH1_H_LOW,
+	CH1_H_HIGH,
+	CH2_H_LOW,
+	CH2_H_HIGH,
 }tar_command;
 
 typedef enum TAR_CHANNEL_ENUM
 {
-	TAR_CH_A = 0x01,
-	TAR_CH_B = 0x10,
+	CH1 = 0x01,
+	CH2 = 0x10,
 }tar_channel;
 
 // Todas las funciones que devuelvan int es porque devuelven un código de error.
