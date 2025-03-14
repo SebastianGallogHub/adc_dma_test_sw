@@ -23,8 +23,6 @@
 //-----------------------------------------------------------------------------
 // ZMOD Parameters
 #define ZMOD_BASE_ADDR  	XPAR_AXI_ZMODADC1410_0_S00_AXI_BASEADDR
-//#define ZMOD_ADC_INTR_ID  	XPAR_FABRIC_AXI_DMA_0_S2MM_INTROUT_INTR // Es el mismo que el de DMA porque no está cableado
-//#define IIC_BASE_ADDR		XPAR_PS7_I2C_1_BASEADDR
 #define ZMOD_REG_ADDR_CR 				0x00	///< CR					register address
 #define ZMOD_REGFLD_CR_RST 				ZMOD_REG_ADDR_CR, 31, 1	///< RST 			field of CR register
 
@@ -50,7 +48,9 @@ typedef enum ZMODADC1410_GAIN {
 // DMA Parameters
 #define DMA_DEV_ID				XPAR_AXI_DMA_0_DEVICE_ID
 #define DMA_BASE_ADDR  			XPAR_AXI_DMA_0_BASEADDR
-#define DMA_NUMBER_OF_TRANSFERS 200
+#define DMA_COALESCE			10
+#define DMA_NUMBER_OF_TRANSFERS 500
+#define DMA_NUMBER_OF_INT 		DMA_NUMBER_OF_TRANSFERS/DMA_COALESCE
 
 //-----------------------------------------------------------------------------
 // TAR Parameters
@@ -131,16 +131,22 @@ int main()
 {
 	int Status;
 	int TimeOut = 1000;
-	u32 slv_reg0, slv_reg1, slv_reg2, slv_reg3;
+//	u32 slv_reg0, slv_reg1, slv_reg2, slv_reg3;
+	char respuesta = 0;
+	int i = 0;
 
 //	CLEAR_SCREEN;
 
 	LOG(0, "--------------------- INICIO MAIN -----------------------");
 	LOG(1, "PRUEBA SOLO DE LAS INTERRUPCIONES DE MASTER_TEST");
 
-	for (int i = 0; i<=10; i++)
-	{
+	ZMODADC1410_Init();
 
+	TAR_Init(TAR_TRANSFER_COUNT);
+
+	do
+	{
+		i ++;
 		LOG(0, "--------------------- (%d) -----------------------", i);
 		ASSERT_SUCCESS(
 				SetupIntrSystem(&Intc, &AxiDma, DMA_RX_INTR_ID, TAR_DR_INTR_ID),
@@ -149,10 +155,6 @@ int main()
 		ASSERT_SUCCESS(
 				DMA_Init(&AxiDma, DMA_NUMBER_OF_TRANSFERS, sizeof(u32)),
 				"Fallo al inicializar el DMA.");
-
-		ZMODADC1410_Init();
-
-		TAR_Init(TAR_TRANSFER_COUNT);
 
 		LOG(1, "----- Inicio interrupciones");
 		TAR_Start_master_test();
@@ -164,22 +166,27 @@ int main()
 			goto goOut;
 		}
 
-		while(tarTransferCount <= DMA_NUMBER_OF_TRANSFERS){
-			if(!(TimeOut--))
-			{
-				TimeOut = 1000;
-				//Confirmo si está prendido
-				slv_reg0 = AXI_TAR_mReadReg(TAR_BASE, TAR_CONFIG_OFF);
-				//Valor de la cuenta de muestras configurado
-				slv_reg1 = AXI_TAR_mReadReg(TAR_BASE, master_COUNT_CFG_OFF);
-				//Valor de la cuenta de muestras actual
-				slv_reg3 = AXI_TAR_mReadReg(TAR_BASE, master_COUNT_OFF);
-				//Valor de la cuenta de interrupciones lanzadas != capturadas por core
-				slv_reg2 = AXI_TAR_mReadReg(TAR_BASE, master_INTR_COUNT_OFF);
-			}
+		while(dmaTransferCount < DMA_NUMBER_OF_TRANSFERS){ // Espero hasta que se den las transacciones
+//			if(!(TimeOut--))
+//			{
+//				TimeOut = 1000;
+//				//Confirmo si está prendido
+//				slv_reg0 = AXI_TAR_mReadReg(TAR_BASE, TAR_CONFIG_OFF);
+//				//Valor de la cuenta de muestras configurado
+//				slv_reg1 = AXI_TAR_mReadReg(TAR_BASE, master_COUNT_CFG_OFF);
+//				//Valor de la cuenta de muestras actual
+//				slv_reg3 = AXI_TAR_mReadReg(TAR_BASE, master_COUNT_OFF);
+//				//Valor de la cuenta de interrupciones lanzadas != capturadas por core
+//				slv_reg2 = AXI_TAR_mReadReg(TAR_BASE, master_INTR_COUNT_OFF);
+//			}
 		}
 
+		DisableIntrSystem(&Intc, DMA_RX_INTR_ID, TAR_DR_INTR_ID);
+
+		XTime_GetTime(&tFinish);
+
 		TAR_StopAll();
+
 		XAxiDma_Reset(&AxiDma);
 
 		TimeOut = 10000;
@@ -190,14 +197,14 @@ int main()
 			TimeOut--;
 		}
 
-		DisableIntrSystem(&Intc, DMA_RX_INTR_ID, TAR_DR_INTR_ID);
-
 		//Imprimir todos los valores recibidos junto a su dirección
 		PrintRxData();
 		dmaIntCount = 0;
 		dmaTransferCount = 0;
 		tarTransferCount = 0;
-	}
+		printf("¿Continuar?");
+		scanf(" %c", &respuesta);
+	}while(respuesta=='s' || respuesta=='S');
 
 	LOG(0, "--------------------- FIN MAIN -----------------------");
 	return 0;
@@ -213,22 +220,24 @@ void PrintRxData()
 {
 	u32* buffer  = (u32*)DMA_RX_BUFFER_BASE;
 	LOG_LINE;LOG_LINE;
-	LOG(1, "Datos recibidos");
+	LOG(1, "Datos recibidos (%d ms)", GetElapsed_ms);
 
+	LOG(2, "--------------------------------------");
+	LOG(2, "\t\t\tCH1 \t|\tCH2", tarTransferCount);
+	for (u32 i = 0; i<= dmaTransferCount; i+=1){
+		LOG(2, "%d)\t%d  \t|\t%d\t\t[0x%08x]", i,  (u16)((buffer[i] >> 16) & 0xffff), (u16)(buffer[i] & 0xffFF), &buffer[i]);
+	}
+	LOG(2, "--------------------------------------");
 	LOG(2, "Interrupciones recibidas por DMA: %d", dmaIntCount);
 	LOG(2, "Transferencias recibidas por DMA: %d", dmaTransferCount);
 	LOG(2, "Transferencias lanzadas por TAR: %d", tarTransferCount);
-	LOG(2, "--------------------------------------");
-	LOG(2, "\t\t\tCH1 \t|\tCH2", tarTransferCount);
-	for (u32 i = 0; i<= dmaTransferCount; i++){
-		LOG(2, "%d)\t%d  \t|\t%d\t\t[0x%08x]", i,  (u16)((buffer[i] >> 16) & 0xffff), (u16)(buffer[i] & 0xffFF), &buffer[i]);
-	}
 
 	return;
 }
 
 void DisableIntrSystem(INTC *IntcInstancePtr, u16 RxIntrId, u16 TarIntrId)
 {
+	LOG(1, "DisableIntrSystem");
 	XScuGic_Disconnect(IntcInstancePtr, TarIntrId);
 	XScuGic_Disconnect(IntcInstancePtr, RxIntrId);
 }
@@ -276,43 +285,32 @@ int SetupIntrSystem(INTC *IntcInstancePtr, XAxiDma *AxiDmaPtr, u16 DmaRxIntrId, 
 
 void ZMODADC1410_Init()
 {
-	LOG(1, "ZMOD_Init");
-//	/*
-//	 * Esta función utiliza la clase ZMODADC1410 para comunicarse con
-//	 * ZMOD1410 AXI ADAPTER y configurar el ZMOD140 a través del
-//	 * LLC. Este es su único propósito.
-//	 *
-//	 * El resto de las comunicaciones se realizarán mediante AXI_TAR + AXI_DMA
-//	 * */
-//
-//	// Crear el objeto ZMODADC1410 para configurar la ganancia y acoplamiento
-//	ZMODADC1410 adcZmod(ZMOD_BASE_ADDR,
-//						DMA_BASE_ADDR,    //Este parámetro se configura pero no se usa
-//						IIC_BASE_ADDR,
-//						MEM_BASE_ADDR,    //Este parámetro se configura pero no se usa
-//						ZMOD_ADC_INTR_ID, //Este parámetro se configura pero no se usa
-//						DMA_RX_INTR_ID);  //Este parámetro se configura pero no se usa
-//
-//	//Canal 1
-//	LOG(2, "CH1: LOW Gain; DC Coupling");
-//	adcZmod.setGain(0, 0);
-//	adcZmod.setCoupling(0, 0); //0 for DC Coupling, 1 for AC Coupling
-//
-//	//Canal 2
-//	LOG(2, "CH2: LOW Gain; DC Coupling");
-//	adcZmod.setGain(1, 0);
-//	adcZmod.setCoupling(1, 0); //0 for DC Coupling, 1 for AC Coupling
+	LOG(1, "ZMODADC1410_Init");
+	/*
+	 * Esta función utiliza la clase ZMODADC1410 para comunicarse con
+	 * ZMOD1410 AXI ADAPTER y configurar el ZMOD140 a través del
+	 * LLC. Este es su único propósito.
+	 *
+	 * El resto de las comunicaciones se realizarán mediante AXI_TAR + AXI_DMA
+	 * */
 
-	//Canal 1
+	// Reseteo el IP AXI_ZmodADC1410
 	ZMOD_WriteRegFld(ZMOD_REGFLD_CR_RST, 1);
 	ZMOD_WriteRegFld(ZMOD_REGFLD_CR_RST, 0);
 
+	//Canal 1
+	LOG(2, "CH1: LOW Gain; DC Coupling");
 	ZMODADC1410_SetGain(SC1, LOW_GAIN);
 	ZMODADC1410_SetCoupling(SC1, DC_COUPLING);
 
 	//Canal 2
+	LOG(2, "CH2: LOW Gain; DC Coupling");
 	ZMODADC1410_SetGain(SC2, LOW_GAIN);
 	ZMODADC1410_SetCoupling(SC2, DC_COUPLING);
+
+	// Retardo para que las configuraciones surtan efecto
+	int TimeOut = 10000;
+	while (TimeOut--){}
 
 	return;
 }
@@ -379,7 +377,6 @@ int DMA_Init(XAxiDma* AxiDma, u32 cntTransferencias, u32 dataLen)
     XAxiDma_Bd BdTemplate, *BdPtr, *BdCurPtr;
     UINTPTR RxBufferPtr;
     u32 i, BdCount;
-    u32 coalesceCounter = 10;
     int status;
 
     // Obtengo la configuración del DMA usando un identificador predefinido
@@ -392,8 +389,7 @@ int DMA_Init(XAxiDma* AxiDma, u32 cntTransferencias, u32 dataLen)
 
     // Verifico que el dispositivo esté configurado en modo Scatter-Gather (SG)
     // y no en modo simple.
-    ASSERT(
-    		XAxiDma_HasSg(AxiDma), "Device configured as Simple mode");
+    ASSERT(XAxiDma_HasSg(AxiDma), "Device configured as Simple mode");
 
     RxRingPtr = XAxiDma_GetRxRing(AxiDma);
 
@@ -412,8 +408,7 @@ int DMA_Init(XAxiDma* AxiDma, u32 cntTransferencias, u32 dataLen)
     // Creo el ringbuffer de BDs para la recepción, asignando el espacio de memoria definido
     status = XAxiDma_BdRingCreate(RxRingPtr, DMA_RX_BD_SPACE_BASE, DMA_RX_BD_SPACE_BASE,
                                   XAXIDMA_BD_MINIMUM_ALIGNMENT, cntTransferencias);
-    ASSERT_SUCCESS(
-    		status, "Rx bd create failed");
+    ASSERT_SUCCESS(status, "Rx bd create failed");
 
     // Inicializo el ringbuffer de BDs con un template vacío
     XAxiDma_BdClear(&BdTemplate);
@@ -421,6 +416,7 @@ int DMA_Init(XAxiDma* AxiDma, u32 cntTransferencias, u32 dataLen)
     		XAxiDma_BdRingClone(RxRingPtr, &BdTemplate), "Rx bd clone failed");
 
     // Reservo la cantidad de BDs necesarios para las transferencias y obtiene el primer BD
+    LOG(2, "DMA configurado para recibir %d transferencias. Longitud %d bytes", cntTransferencias, dataLen);
     ASSERT_SUCCESS(
     		XAxiDma_BdRingAlloc(RxRingPtr, cntTransferencias, &BdPtr), "Rx bd alloc failed");
 
@@ -459,14 +455,17 @@ int DMA_Init(XAxiDma* AxiDma, u32 cntTransferencias, u32 dataLen)
     Xil_DCacheFlushRange((UINTPTR)BdPtr, cntTransferencias * sizeof(XAxiDma_Bd));
     Xil_DCacheFlushRange((UINTPTR)DMA_RX_BUFFER_BASE, cntTransferencias * dataLen);
 
+    LOG(2, "Interrupciones cada %d transacciones", DMA_COALESCE);
     ASSERT_SUCCESS(
-    		XAxiDma_BdRingSetCoalesce(RxRingPtr, coalesceCounter, 100), "Rx set coalesce failed");
+    		XAxiDma_BdRingSetCoalesce(RxRingPtr, DMA_COALESCE, 100), "Rx set coalesce failed");
 
     // Paso el anillo de BDs configurado al hardware para que comience a usarse
     ASSERT_SUCCESS(
     		XAxiDma_BdRingToHw(RxRingPtr, cntTransferencias, BdPtr), "Rx ToHw failed");
 
     XAxiDma_BdRingIntEnable(RxRingPtr, XAXIDMA_IRQ_ALL_MASK);	// Habilito interrupciones
+
+    LOG(2, "Modo cíclico activado");
     XAxiDma_BdRingEnableCyclicDMA(RxRingPtr);					// Activo el modo cíclico
     XAxiDma_SelectCyclicMode(AxiDma, XAXIDMA_DEVICE_TO_DMA, 1); // Configuro DMA para operar en modo cíclico
 
@@ -475,9 +474,6 @@ int DMA_Init(XAxiDma* AxiDma, u32 cntTransferencias, u32 dataLen)
     ASSERT_SUCCESS(
     		status, "Error starting XAxiDma_BdRingStart");
 
-    LOG(2, "DMA configurado para recibir %d transferencias. Longitud %d bytes", cntTransferencias, dataLen);
-    LOG(2, "Interrupciones cada %d transacciones", coalesceCounter);
-    LOG(2, "Modo cíclico activado");
     LOG(2, "Primer buffer de datos: direccion 0x%08x",  (unsigned int)XAxiDma_BdGetId(BdPtr));
 
     return XST_SUCCESS;
@@ -513,9 +509,7 @@ void DMA_RxIntrHandler(void *Callback)
 	/* Acknowledge pending interrupts */
 	XAxiDma_BdRingAckIrq(RxRingPtr, IrqStatus);
 
-	/*
-	 * If no interrupt is asserted, we do not do anything
-	 */
+	// If no interrupt is asserted, we do not do anything
 	if (!(IrqStatus & XAXIDMA_IRQ_ALL_MASK)) {
 		return;
 	}
