@@ -14,8 +14,8 @@
 
 #define UART_INT_IRQ_ID       XPAR_XUARTPS_0_INTR
 
-#define RECV_BUFFER_SIZE    3
+#define RECV_BUFFER_SIZE      3
 
-int UART_Init();
+//int UART_Init();
 
 #endif /* SRC_UART_CONFIG_H_ */

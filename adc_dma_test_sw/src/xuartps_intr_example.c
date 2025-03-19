@@ -30,32 +30,33 @@ static u8 RecvBuffer[TEST_BUFFER_SIZE];	/* Buffer for Receiving Data */
 volatile int TotalReceivedCount;
 volatile int TotalSentCount;
 
+#ifdef XUARTPS_INTR_EXAMPLE
+int main(void)
+{
+	int Status;
 
-//int main(void)
-//{
-//	int Status;
-//
-//	/* Run the UartPs Interrupt example, specify the the Device ID */
-//	Status = UartPsIntrExample(&InterruptController, &UartPs,
-//				   UART_DEVICE_ID, UART_INT_IRQ_ID);
-//
-//	xil_printf("--- INICIO ---\n");
-//	while(1){
-//		if(TotalReceivedCount)
-//		{
-//			TotalReceivedCount=0;
-////			xil_printf("Datos: %s\n", RecvBuffer);
-////			memset(RecvBuffer, 0, TEST_BUFFER_SIZE);
-//		}
-//	}
-//	if (Status != XST_SUCCESS) {
-//		xil_printf("UART Interrupt Example Test Failed\r\n");
-//		return XST_FAILURE;
-//	}
-//
-//	xil_printf("Successfully ran UART Interrupt Example Test\r\n");
-//	return XST_SUCCESS;
-//}
+	/* Run the UartPs Interrupt example, specify the the Device ID */
+	Status = UartPsIntrExample(&InterruptController, &UartPs,
+				   UART_DEVICE_ID, UART_INT_IRQ_ID);
+
+	xil_printf("--- INICIO ---\n");
+	while(1){
+		if(TotalReceivedCount)
+		{
+			TotalReceivedCount=0;
+//			xil_printf("Datos: %s\n", RecvBuffer);
+//			memset(RecvBuffer, 0, TEST_BUFFER_SIZE);
+		}
+	}
+	if (Status != XST_SUCCESS) {
+		xil_printf("UART Interrupt Example Test Failed\r\n");
+		return XST_FAILURE;
+	}
+
+	xil_printf("Successfully ran UART Interrupt Example Test\r\n");
+	return XST_SUCCESS;
+}
+#endif // XUARTPS_INTR_EXAMPLE
 
 
 int UartPsIntrExample(INTC *IntcInstPtr, XUartPs *UartInstPtr, u16 DeviceId, u16 UartIntrId)
