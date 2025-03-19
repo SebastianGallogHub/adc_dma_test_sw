@@ -48,7 +48,7 @@ int DMA_Init()
 
 	//dmaIntrConfig
 	dmaIntrConfig.IntrId = DMA_RX_INTR_ID;
-	dmaIntrConfig.Handler = (void*)DMA_RxIntrHandler;
+	dmaIntrConfig.Handler = (Xil_ExceptionHandler)DMA_RxIntrHandler;
 	dmaIntrConfig.CallBackRef = RxRingPtr;
 
 	AddIntrHandler(&dmaIntrConfig);

@@ -20,7 +20,7 @@
 typedef struct InterruptionHandlerConfig
 {
 	u16 IntrId;
-	void* Handler;
+	Xil_ExceptionHandler Handler;
 	void* CallBackRef;
 }Intr_Config;
 
