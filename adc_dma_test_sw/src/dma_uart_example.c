@@ -26,6 +26,7 @@
 
 //#define DMA_BUFFER_SIZE		1024	/* Length of the Dma Transfers */
 #define DMA_BUFFER_SIZE		64
+#define DMA_TX_CHANNEL		0
 #define TIMEOUT_LIMIT 		0x2000	/* Loop count for timeout */
 
 /*----------------------------------------------------------------*/
@@ -33,26 +34,30 @@
 #define UART_DEVICE_ID      	XPAR_XUARTPS_0_DEVICE_ID
 #define UART_INT_IRQ_ID     	XPAR_XUARTPS_0_INTR
 #define UART_TX_RX_FIFO_ADDR	XPAR_XUARTPS_0_BASEADDR + XUARTPS_FIFO_OFFSET
-#define UART_TX_RX_FIFO_SIZE	16
+#define UART_TX_RX_FIFO_SIZE	44
 // El FIFO según el manual funciona como tx y rx fifo
 
 /*----------------------------------------------------------------*/
 
 //static u32 Src[DMA_BUFFER_SIZE] __attribute__ ((aligned (32)));
-static uint8_t Src[DMA_BUFFER_SIZE] __attribute__ ((aligned (32))) =
-		"Hola, esta es una prueba de DMA a UART0";
+//static uint8_t Src[DMA_BUFFER_SIZE] __attribute__ ((aligned (32))) =
+static uint8_t Src[DMA_BUFFER_SIZE] =
+		"Hola, esta es una prueba de DMA a UART0\n";
 
-XDmaPs 	DmaInst;
-XUartPs UartInst;		/* Instance of the UART Device */
+XDmaPs 		DmaInst;
+XDmaPs_Cmd 	DmaCmd; 	// Comando para configurar transacción dma
+XUartPs 	UartInst;	/* Instance of the UART Device */
+int 		uartTxDone = 1;
 
 /*----------------------------------------------------------------*/
 
 int UART_Init(XUartPs *UartInstPtr, u16 DeviceId, u16 UartIntrId);
 void UART_Handler(void *CallBackRef, u32 Event, unsigned int EventData);
-void XUartPs_InterruptHandler_Wrapper(XUartPs *InstancePtr);
+void XUartPs_InterruptHandler_Wrapper(void *CallBackRef);
 
 int DMA_Init(XDmaPs* DmaInstPtr, u16 DeviceId);
-void DMA_SendBurst();
+void DMA_UART_Config(uint8_t *buffer, u32 length);
+void DMA_UART_Send();
 void DMA_DoneHandler(unsigned int Channel, XDmaPs_Cmd *DmaCmd, void *CallbackRef);
 
 /*----------------------------------------------------------------*/
@@ -61,7 +66,7 @@ void DMA_DoneHandler(unsigned int Channel, XDmaPs_Cmd *DmaCmd, void *CallbackRef
 #ifdef DMA_UART_EXAMPLE
 int main()
 {
-	int i;
+//	int i;
 
 	// Configurar buffer de datos
 //	for (i = 0; i < DMA_BUFFER_SIZE; i++) {
@@ -78,16 +83,25 @@ int main()
 			DMA_Init(&DmaInst, DMA_DEVICE_ID),
 			"Error al configurar DMA");
 
+	// Configura las ráfagas
+	DMA_UART_Config(Src, UART_TX_RX_FIFO_SIZE);
+
 	ASSERT_SUCCESS(
 			SetupIntrSystem(),
 			"Error al configurar interrupciones");
 
+	while(!XUartPs_IsTransmitEmpty(&UartInst));
+
 	// Iniciar transmisión
-	DMA_SendBurst();
+	DMA_UART_Send();
+
+//	while(!uartTxDone);
+	while(!XUartPs_IsTransmitEmpty(&UartInst));
+
+//	LOG(3, "Fin prueba de transmisión de UART por DMA");
+	xil_printf("Fin prueba de transmisión de UART por DMA");
 
 	while(1);
-
-	LOG(3, "Prueba de transmisión de UART por DMA exitosa");
 
 	return 0;
 }
@@ -95,12 +109,10 @@ int main()
 
 /*----------------------------------------------------------------*/
 
+Intr_Config uartIntrConfig;
 int UART_Init(XUartPs *UartInstPtr, u16 DeviceId, u16 UartIntrId){
-	LOG(2, "UART_Init");
-
 	u32 IntrMask;
 	XUartPs_Config *Config;
-	Intr_Config intrConfig;
 
 	Config = XUartPs_LookupConfig(DeviceId);
 	ASSERT(Config != NULL, "No config found for %d", DeviceId);
@@ -114,10 +126,12 @@ int UART_Init(XUartPs *UartInstPtr, u16 DeviceId, u16 UartIntrId){
 			XUartPs_SelfTest(UartInstPtr),
 			"Fallo self test de UART");
 
-	intrConfig.IntrId = UartIntrId;
-	intrConfig.Handler = (Xil_ExceptionHandler)XUartPs_InterruptHandler_Wrapper;
-	intrConfig.CallBackRef = (void *)UartInstPtr;
-	AddIntrHandler(&intrConfig);
+	LOG(1, "UART_Init");
+
+	uartIntrConfig.IntrId = UartIntrId;
+	uartIntrConfig.Handler = (Xil_ExceptionHandler)XUartPs_InterruptHandler;
+	uartIntrConfig.CallBackRef = (void *)UartInstPtr;
+	AddIntrHandler(&uartIntrConfig);
 
 	XUartPs_SetHandler(UartInstPtr, (XUartPs_Handler)UART_Handler, UartInstPtr);
 
@@ -140,7 +154,8 @@ int UART_Init(XUartPs *UartInstPtr, u16 DeviceId, u16 UartIntrId){
 
 	return XST_SUCCESS;
 }
-void XUartPs_InterruptHandler_Wrapper(XUartPs *InstancePtr){
+void XUartPs_InterruptHandler_Wrapper(void *CallBackRef){
+	XUartPs *InstancePtr = (XUartPs*)CallBackRef;
 	u32 IsrStatus;
 
 	Xil_AssertVoid(InstancePtr != NULL);
@@ -159,19 +174,22 @@ void XUartPs_InterruptHandler_Wrapper(XUartPs *InstancePtr){
 	if((IsrStatus & ((u32)XUARTPS_IXR_TXEMPTY)) != (u32)0) {
 		//todo manejar interrupicón por TX_EMPTY
 		//todo iniciar una nueva transacción DMA por 16 elementos
-		DMA_SendBurst();
+//		DMA_UART_Send();
+		uartTxDone = 1;
+		IsrStatus=IsrStatus;
 	}
 
 	if((IsrStatus & ((u32)XUARTPS_IXR_TXFULL)) != (u32)0) {
 		//todo manejar interrupicón por TX_FULL
+		IsrStatus=IsrStatus;
 	}
 
 	// Por último llamo a la función original que debía estar conectada al evento
-	// para no romper con la cadena que ejecuta UART_Handler
+	// para no romper con la cadena que ejecuta UART_Handler para la recepción
 	XUartPs_InterruptHandler(InstancePtr);
 }
 void UART_Handler(void *CallBackRef, u32 Event, unsigned int EventData){
-//	XUartPs *UartInstPtr = (XUartPs *) CallBackRef;
+	XUartPs *UartInstPtr = (XUartPs *) CallBackRef;
 //
 //	/* All of the data has been sent */
 //	if (Event == XUARTPS_EVENT_SENT_DATA) {
@@ -196,24 +214,10 @@ void UART_Handler(void *CallBackRef, u32 Event, unsigned int EventData){
 
 /*----------------------------------------------------------------*/
 
+Intr_Config dmaFaultIntrConfig, dmaCh0IntrConfig;
 int DMA_Init(XDmaPs* DmaInstPtr, u16 DeviceId){
-	LOG(2, "DMA_Init");
+	LOG(1, "DMA_Init");
 	XDmaPs_Config *Config;
-	XDmaPs_Cmd DmaCmd;
-	Intr_Config faultIntrConfig, ch0IntrConfig;
-
-
-	memset(&DmaCmd, 0, sizeof(XDmaPs_Cmd));
-
-	DmaCmd.ChanCtrl.SrcBurstSize = 1;
-	DmaCmd.ChanCtrl.SrcBurstLen = 1;
-	DmaCmd.ChanCtrl.SrcInc = 1;
-	DmaCmd.ChanCtrl.DstBurstSize = 1;
-	DmaCmd.ChanCtrl.DstBurstLen = 1;
-	DmaCmd.ChanCtrl.DstInc = 0;
-	DmaCmd.BD.SrcAddr = (u32) Src;
-	DmaCmd.BD.DstAddr = (u32) UART_TX_RX_FIFO_ADDR;
-	DmaCmd.BD.Length = UART_TX_RX_FIFO_SIZE;
 
 	Config = XDmaPs_LookupConfig(DeviceId);
 	ASSERT(Config != NULL, "No config found for %d", DeviceId);
@@ -222,22 +226,44 @@ int DMA_Init(XDmaPs* DmaInstPtr, u16 DeviceId){
 			XDmaPs_CfgInitialize(DmaInstPtr, Config, Config->BaseAddress),
 			"Fallo al configurar DMA");
 
-	faultIntrConfig.IntrId = DMA_FAULT_INTR;
-	faultIntrConfig.Handler = (Xil_ExceptionHandler)XDmaPs_FaultISR;
-	faultIntrConfig.CallBackRef = (void *)DmaInstPtr;
-	AddIntrHandler(&faultIntrConfig);
+	dmaFaultIntrConfig.IntrId = DMA_FAULT_INTR;
+	dmaFaultIntrConfig.Handler = (Xil_ExceptionHandler)XDmaPs_FaultISR;
+	dmaFaultIntrConfig.CallBackRef = (void *)DmaInstPtr;
+	AddIntrHandler(&dmaFaultIntrConfig);
 
-	ch0IntrConfig.IntrId = DMA_DONE_INTR_0;
-	ch0IntrConfig.Handler = (Xil_ExceptionHandler)XDmaPs_DoneISR_0;
-	ch0IntrConfig.CallBackRef = (void *)DmaInstPtr;
-	AddIntrHandler(&ch0IntrConfig);
+	dmaCh0IntrConfig.IntrId = DMA_DONE_INTR_0;
+	dmaCh0IntrConfig.Handler = (Xil_ExceptionHandler)XDmaPs_DoneISR_0;
+	dmaCh0IntrConfig.CallBackRef = (void *)DmaInstPtr;
+	AddIntrHandler(&dmaCh0IntrConfig);
 
-	XDmaPs_SetDoneHandler(DmaInstPtr, 0, DMA_DoneHandler, (void *)DmaInstPtr);
+	XDmaPs_SetDoneHandler(DmaInstPtr, DMA_TX_CHANNEL, DMA_DoneHandler, (void *)DmaInstPtr);
 
 	return XST_SUCCESS;
 }
-void DMA_SendBurst(){
-	//todo XDmaPs_Start
+void DMA_UART_Config(uint8_t *buffer, u32 length){
+	// Reseteo la estructura
+	memset(&DmaCmd, 0, sizeof(XDmaPs_Cmd));
+
+	// Transferencias de 4 palabras (SrcBurstLen) de 4 bytes (SrcBurstSize)
+	// Esto optimiza las transacciones axi
+	DmaCmd.ChanCtrl.SrcBurstSize = 1;
+	DmaCmd.ChanCtrl.DstBurstSize = 1;
+	DmaCmd.ChanCtrl.SrcBurstLen = 4; // Transferencia optimizada para AXI
+	DmaCmd.ChanCtrl.DstBurstLen = 4; // Idem
+
+	// Incremento de memoria en origen, pero no en destino (FIFO)
+	DmaCmd.ChanCtrl.SrcInc = 1; // bool
+	DmaCmd.ChanCtrl.DstInc = 0; // bool
+
+	// Dirección de origen es el buffer y de destino el FIFO de UART
+	DmaCmd.BD.SrcAddr = (u32) buffer;
+	DmaCmd.BD.DstAddr = (u32) UART_TX_RX_FIFO_ADDR;
+	DmaCmd.BD.Length = length;
+}
+void DMA_UART_Send(){
+	while(!uartTxDone);
+	uartTxDone = 0;
+	XDmaPs_Start(&DmaInst, DMA_TX_CHANNEL, &DmaCmd, 0);
 }
 void DMA_DoneHandler(unsigned int Channel, XDmaPs_Cmd *DmaCmd, void *CallbackRef){
 	/* done handler */
