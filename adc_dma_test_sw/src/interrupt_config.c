@@ -59,7 +59,7 @@ int SetupIntrSystem()
 			"Falla al inicializar las configuraciones de INTC");
 
 	for (int i = 0; i < handlerIdx; i++) {
-		XScuGic_SetPriorityTriggerType(&Intc, handlers[i]->IntrId, 0xA0, 0x3);
+		XScuGic_SetPriorityTriggerType(&Intc, handlers[i]->IntrId, handlers[i]->Priority, 0x3);
 		ASSERT_SUCCESS(
 				XScuGic_Connect(&Intc, handlers[i]->IntrId, (Xil_InterruptHandler)handlers[i]->Handler, handlers[i]->CallBackRef),
 				"Failed to connect interruption handler TAR_IntrHandler");

@@ -22,6 +22,7 @@ typedef struct InterruptionHandlerConfig
 	u16 IntrId;
 	Xil_ExceptionHandler Handler;
 	void* CallBackRef;
+	u8 Priority;
 }Intr_Config;
 
 void AddIntrHandler(Intr_Config* handlerConfig);

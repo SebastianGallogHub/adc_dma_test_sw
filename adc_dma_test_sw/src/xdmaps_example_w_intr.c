@@ -4,7 +4,7 @@
  *  Created on: Mar 14, 2025
  *      Author: sebas
  */
-
+#ifdef XDMAPS_EXAMPLE_W_INTR
 #include <stdio.h>
 #include <stdlib.h>
 #include "sleep.h"
@@ -56,7 +56,7 @@ static int Dst[DMA_LENGTH] __attribute__ ((aligned (32)));
 XDmaPs DmaInstance;
 XScuGic GicInstance;
 
-#ifdef XDMAPS_EXAMPLE_W_INTR
+
 int main(void)
 {
 	int Status;
@@ -71,7 +71,7 @@ int main(void)
 	}
 
 }
-#endif // XDMAPS_EXAMPLE_W_INTR
+
 
 int XDmaPs_Example_W_Intr(XScuGic *GicPtr, u16 DeviceId)
 {
@@ -311,4 +311,4 @@ void DmaDoneHandler(unsigned int Channel, XDmaPs_Cmd *DmaCmd, void *CallbackRef)
 	Checked[Channel] = Status;
 }
 
-
+#endif // XDMAPS_EXAMPLE_W_INTR

@@ -47,7 +47,8 @@ static uint8_t Src[DMA_BUFFER_SIZE] =
 XDmaPs 		DmaInst;
 XDmaPs_Cmd 	DmaCmd; 	// Comando para configurar transacción dma
 XUartPs 	UartInst;	/* Instance of the UART Device */
-int 		uartTxDone = 1;
+int 		uartTxDone = 0;
+int 		dmaTxDone = 1;
 
 /*----------------------------------------------------------------*/
 
@@ -60,9 +61,30 @@ void DMA_UART_Config(uint8_t *buffer, u32 length);
 void DMA_UART_Send();
 void DMA_DoneHandler(unsigned int Channel, XDmaPs_Cmd *DmaCmd, void *CallbackRef);
 
+Intr_Config dmaFaultIntrConfig = {
+		DMA_FAULT_INTR,
+		(Xil_ExceptionHandler)XDmaPs_FaultISR,
+		(void *)&DmaInst,
+		0xA0
+};
+
+Intr_Config dmaCh0IntrConfig = {
+		DMA_DONE_INTR_0,
+		(Xil_ExceptionHandler)XDmaPs_DoneISR_0,
+		(void *)&DmaInst,
+		0xA0
+};
+
+Intr_Config uartIntrConfig = {
+		UART_INT_IRQ_ID,
+		(Xil_ExceptionHandler)XUartPs_InterruptHandler_Wrapper,
+		(void *)&UartInst,
+		0x00 // Interrupción con prioridad más alta
+};
+
 /*----------------------------------------------------------------*/
 
-#define DMA_UART_EXAMPLE
+//#define DMA_UART_EXAMPLE
 #ifdef DMA_UART_EXAMPLE
 int main()
 {
@@ -94,12 +116,14 @@ int main()
 
 	// Iniciar transmisión
 	DMA_UART_Send();
+//	xil_printf("Fin prueba de transmisión de UART por DMA");
+//	XUartPs_Send(&UartInst, Src, DMA_BUFFER_SIZE);
 
-//	while(!uartTxDone);
-	while(!XUartPs_IsTransmitEmpty(&UartInst));
+	while(!uartTxDone);
+//	while(!XUartPs_IsTransmitEmpty(&UartInst));
 
 //	LOG(3, "Fin prueba de transmisión de UART por DMA");
-	xil_printf("Fin prueba de transmisión de UART por DMA");
+//	xil_printf("Fin prueba de transmisión de UART por DMA");
 
 	while(1);
 
@@ -109,7 +133,6 @@ int main()
 
 /*----------------------------------------------------------------*/
 
-Intr_Config uartIntrConfig;
 int UART_Init(XUartPs *UartInstPtr, u16 DeviceId, u16 UartIntrId){
 	u32 IntrMask;
 	XUartPs_Config *Config;
@@ -128,9 +151,9 @@ int UART_Init(XUartPs *UartInstPtr, u16 DeviceId, u16 UartIntrId){
 
 	LOG(1, "UART_Init");
 
-	uartIntrConfig.IntrId = UartIntrId;
-	uartIntrConfig.Handler = (Xil_ExceptionHandler)XUartPs_InterruptHandler;
-	uartIntrConfig.CallBackRef = (void *)UartInstPtr;
+//	uartIntrConfig.IntrId = UartIntrId;
+//	uartIntrConfig.Handler = (Xil_ExceptionHandler)XUartPs_InterruptHandler_Wrapper;
+//	uartIntrConfig.CallBackRef = (void *)UartInstPtr;
 	AddIntrHandler(&uartIntrConfig);
 
 	XUartPs_SetHandler(UartInstPtr, (XUartPs_Handler)UART_Handler, UartInstPtr);
@@ -214,7 +237,6 @@ void UART_Handler(void *CallBackRef, u32 Event, unsigned int EventData){
 
 /*----------------------------------------------------------------*/
 
-Intr_Config dmaFaultIntrConfig, dmaCh0IntrConfig;
 int DMA_Init(XDmaPs* DmaInstPtr, u16 DeviceId){
 	LOG(1, "DMA_Init");
 	XDmaPs_Config *Config;
@@ -226,14 +248,14 @@ int DMA_Init(XDmaPs* DmaInstPtr, u16 DeviceId){
 			XDmaPs_CfgInitialize(DmaInstPtr, Config, Config->BaseAddress),
 			"Fallo al configurar DMA");
 
-	dmaFaultIntrConfig.IntrId = DMA_FAULT_INTR;
-	dmaFaultIntrConfig.Handler = (Xil_ExceptionHandler)XDmaPs_FaultISR;
-	dmaFaultIntrConfig.CallBackRef = (void *)DmaInstPtr;
+//	dmaFaultIntrConfig.IntrId = DMA_FAULT_INTR;
+//	dmaFaultIntrConfig.Handler = (Xil_ExceptionHandler)XDmaPs_FaultISR;
+//	dmaFaultIntrConfig.CallBackRef = (void *)DmaInstPtr;
 	AddIntrHandler(&dmaFaultIntrConfig);
-
-	dmaCh0IntrConfig.IntrId = DMA_DONE_INTR_0;
-	dmaCh0IntrConfig.Handler = (Xil_ExceptionHandler)XDmaPs_DoneISR_0;
-	dmaCh0IntrConfig.CallBackRef = (void *)DmaInstPtr;
+//
+//	dmaCh0IntrConfig.IntrId = DMA_DONE_INTR_0;
+//	dmaCh0IntrConfig.Handler = (Xil_ExceptionHandler)XDmaPs_DoneISR_0;
+//	dmaCh0IntrConfig.CallBackRef = (void *)DmaInstPtr;
 	AddIntrHandler(&dmaCh0IntrConfig);
 
 	XDmaPs_SetDoneHandler(DmaInstPtr, DMA_TX_CHANNEL, DMA_DoneHandler, (void *)DmaInstPtr);
@@ -261,12 +283,13 @@ void DMA_UART_Config(uint8_t *buffer, u32 length){
 	DmaCmd.BD.Length = length;
 }
 void DMA_UART_Send(){
-	while(!uartTxDone);
-	uartTxDone = 0;
+	while(!dmaTxDone);
+	dmaTxDone = 0;
 	XDmaPs_Start(&DmaInst, DMA_TX_CHANNEL, &DmaCmd, 0);
 }
 void DMA_DoneHandler(unsigned int Channel, XDmaPs_Cmd *DmaCmd, void *CallbackRef){
 	/* done handler */
+	dmaTxDone = 1;
 //	volatile int *Checked = (volatile int *)CallbackRef;
 //	int Index;
 //	int Status = 1;
