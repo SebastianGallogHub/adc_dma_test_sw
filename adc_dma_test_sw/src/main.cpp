@@ -12,10 +12,10 @@
 #include "zmodadc1410.h"
 #include "interrupt_config.h"
 #include "uart_config.h"
-#include "dma_config.h"
 #include "tar_config.h"
 #include "tar_hal.h"
 #include "assert.h"
+#include "axi_dma_config.h"
 #include "log.h"
 
 
@@ -104,18 +104,18 @@ goOut:
 
 void PrintRxData()
 {
-	u32* buffer  = (u32*)DMA_RX_BUFFER_BASE;
+	u32* buffer  = (u32*)AXI_DMA_RX_BUFFER_BASE;
 	LOG_LINE;LOG_LINE;
 	LOG(1, "Datos recibidos (%d ms)", GetElapsed_ms);
 
 	LOG(2, "--------------------------------------");
 	LOG(2, "\t\t\tCH1 \t|\tCH2", tarTransferCount);
-	for (u32 i = 0; i<= dmaTransferCount; i+=1){
+	for (u32 i = 0; i<= axiDmaTransferCount; i+=1){
 		LOG(2, "%d)\t%d  \t|\t%d\t\t[0x%08x]", i,  (u16)((buffer[i] >> 16) & 0xffff), (u16)(buffer[i] & 0xffFF), &buffer[i]);
 	}
 	LOG(2, "--------------------------------------");
-	LOG(2, "Interrupciones recibidas por DMA: %d", dmaIntCount);
-	LOG(2, "Transferencias recibidas por DMA: %d", dmaTransferCount);
+	LOG(2, "Interrupciones recibidas por DMA: %d", axiDmaIntCount);
+	LOG(2, "Transferencias recibidas por DMA: %d", axiDmaTransferCount);
 	LOG(2, "Transferencias lanzadas por TAR: %d", tarTransferCount);
 
 	return;
