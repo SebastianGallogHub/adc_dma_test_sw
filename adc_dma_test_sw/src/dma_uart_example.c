@@ -4,7 +4,7 @@
  *  Created on: Mar 18, 2025
  *      Author: sebas
  */
-
+#ifdef DMA_UART_EXAMPLE
 #include "xdmaps.h"
 #include "xuartps.h"
 #include "xscugic.h"
@@ -85,7 +85,7 @@ Intr_Config uartIntrConfig = {
 /*----------------------------------------------------------------*/
 
 //#define DMA_UART_EXAMPLE
-#ifdef DMA_UART_EXAMPLE
+
 int main()
 {
 //	int i;
@@ -129,7 +129,7 @@ int main()
 
 	return 0;
 }
-#endif // DMA_UART_EXAMPLE
+
 
 /*----------------------------------------------------------------*/
 
@@ -312,3 +312,4 @@ void DMA_DoneHandler(unsigned int Channel, XDmaPs_Cmd *DmaCmd, void *CallbackRef
 //	Checked[Channel] = Status;
 }
 
+#endif // DMA_UART_EXAMPLE

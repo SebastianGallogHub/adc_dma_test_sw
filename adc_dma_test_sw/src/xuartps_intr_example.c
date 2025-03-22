@@ -13,6 +13,8 @@
 #include "xil_io.h"
 #include "xil_cache.h"
 
+#include "interrupt_config.h"
+
 /************************** Constant Definitions **************************/
 
 #define UART_DEVICE_ID		XPAR_XUARTPS_0_DEVICE_ID
@@ -34,8 +36,6 @@
 
 
 /************************** Function Prototypes *****************************/
-
-void interrupt_init();
 
 void DMA_Init2();
 void DmaDoneHandler(unsigned int Channel, XDmaPs_Cmd *DmaCmd, void *CallbackRef);
@@ -63,6 +63,26 @@ unsigned int Channel = 0;
 XDmaPs_Cmd DmaCmd2;
 volatile int Checked;
 
+Intr_Config dmaFaultIntrConfig = {
+		DMA_FAULT_INTR,
+		(Xil_ExceptionHandler)XDmaPs_FaultISR,
+		(void *)&DmaInstance,
+		0xA0
+};
+
+Intr_Config dmaCh0IntrConfig = {
+		DMA_DONE_INTR_0,
+		(Xil_ExceptionHandler)XDmaPs_DoneISR_0,
+		(void *)&DmaInstance,
+		0xA0
+};
+
+Intr_Config uartIntrConfig = {
+		UART_INT_IRQ_ID,
+		(Xil_ExceptionHandler)XUartPs_InterruptHandler_Wrapper,
+		(void *)&UartPs,
+		0x70 // Interrupción con prioridad más alta
+};
 
 int main (void){
 
@@ -70,7 +90,7 @@ int main (void){
 
 	UART_Init();
 
-	interrupt_init();
+	SetupIntrSystem();
 
 	return DMA_UART_Send(0);
 }
@@ -90,63 +110,14 @@ void DMA_Init2(){
 
 	XDmaPs_SetDoneHandler(&DmaInstance, Channel, DmaDoneHandler,(void *)&Checked);
 
+	AddIntrHandler(&dmaFaultIntrConfig);
+	AddIntrHandler(&dmaCh0IntrConfig);
+
 }
 void DmaDoneHandler(unsigned int Channel, XDmaPs_Cmd *DmaCmd, void *CallbackRef){
 	volatile int *Checked = (volatile int *)CallbackRef;
 
 	*Checked = 1;
-}
-//----------------------------------------------------------------------
-//----------------------------------------------------------------------
-//----------------------------------------------------------------------
-//----------------------------------------------------------------------
-//----------------------------------------------------------------------
-void interrupt_init(){
-	XScuGic_Config* IntcConfig;
-
-	IntcConfig = XScuGic_LookupConfig(INTC_DEVICE_ID);
-
-	XScuGic_CfgInitialize(&InterruptController, IntcConfig,
-				IntcConfig->CpuBaseAddress);
-
-	Xil_ExceptionRegisterHandler(XIL_EXCEPTION_ID_INT,
-			(Xil_ExceptionHandler) XScuGic_InterruptHandler,
-			&InterruptController);
-
-	//---------------------------------------------------------------
-
-	XScuGic_SetPriorityTriggerType(&InterruptController, UART_INT_IRQ_ID, 0x70, 0x3);
-
-	XScuGic_Connect(&InterruptController, UART_INT_IRQ_ID,
-			(Xil_ExceptionHandler) XUartPs_InterruptHandler_Wrapper,
-			(void*) &UartPs);
-
-	XScuGic_Enable(&InterruptController, UART_INT_IRQ_ID);
-
-	//---------------------------------------------------------------
-
-	XScuGic_SetPriorityTriggerType(&InterruptController, DMA_FAULT_INTR, 0xA0, 0x3);
-
-	XScuGic_Connect(&InterruptController, DMA_FAULT_INTR,
-						 (Xil_InterruptHandler)XDmaPs_FaultISR,
-						 (void *)&DmaInstance);
-
-	XScuGic_Enable(&InterruptController, DMA_FAULT_INTR);
-
-	//---------------------------------------------------------------
-
-	XScuGic_SetPriorityTriggerType(&InterruptController, DMA_DONE_INTR_0, 0xA0, 0x3);
-
-	XScuGic_Connect(&InterruptController,
-					 DMA_DONE_INTR_0,
-					 (Xil_InterruptHandler)XDmaPs_DoneISR_0,
-					 (void *)&DmaInstance);
-
-	XScuGic_Enable(&InterruptController, DMA_DONE_INTR_0);
-
-	//---------------------------------------------------------------
-
-	Xil_ExceptionEnable();
 }
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
@@ -171,6 +142,8 @@ void UART_Init() {
 	XUartPs_SetInterruptMask(&UartPs, IntrMask);
 
 	XUartPs_SetRecvTimeout(&UartPs, 8);
+
+	AddIntrHandler(&uartIntrConfig);
 }
 int DMA_UART_Send(int send_normal) {
 	int Index;
