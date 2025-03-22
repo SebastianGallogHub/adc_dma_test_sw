@@ -21,9 +21,6 @@
 #define UART_INT_IRQ_ID		XPAR_XUARTPS_0_INTR
 #define UART_TX_RX_FIFO_ADDR	XPAR_XUARTPS_0_BASEADDR + XUARTPS_FIFO_OFFSET
 
-#define INTC				XScuGic
-#define INTC_DEVICE_ID		XPAR_SCUGIC_SINGLE_DEVICE_ID
-
 #define TEST_BUFFER_SIZE	40
 
 #define DMA_DEVICE_ID 		XPAR_XDMAPS_1_DEVICE_ID
@@ -48,9 +45,8 @@ void Handler(void *CallBackRef, u32 Event, unsigned int EventData);
 
 /************************** Variable Definitions ***************************/
 
-XDmaPs DmaInstance;
-XUartPs UartPs	;		/* Instance of the UART Device */
-INTC InterruptController;	/* Instance of the Interrupt Controller */
+XDmaPs 	DmaPs;
+XUartPs UartPs;
 
 static u8 SendBuffer[TEST_BUFFER_SIZE];	/* Buffer for Transmitting Data */
 static u8 RecvBuffer[TEST_BUFFER_SIZE];	/* Buffer for Receiving Data */
@@ -66,14 +62,14 @@ volatile int Checked;
 Intr_Config dmaFaultIntrConfig = {
 		DMA_FAULT_INTR,
 		(Xil_ExceptionHandler)XDmaPs_FaultISR,
-		(void *)&DmaInstance,
+		(void *)&DmaPs,
 		0xA0
 };
 
 Intr_Config dmaCh0IntrConfig = {
 		DMA_DONE_INTR_0,
 		(Xil_ExceptionHandler)XDmaPs_DoneISR_0,
-		(void *)&DmaInstance,
+		(void *)&DmaPs,
 		0xA0
 };
 
@@ -100,15 +96,16 @@ int main (void){
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 void DMA_Init2(){
+	XDmaPs *DmaPsPtr = &DmaPs;
 	XDmaPs_Config *DmaCfg;
 
 	DmaCfg = XDmaPs_LookupConfig(DMA_DEVICE_ID);
 
-	XDmaPs_CfgInitialize(&DmaInstance, DmaCfg, DmaCfg->BaseAddress);
+	XDmaPs_CfgInitialize(DmaPsPtr, DmaCfg, DmaCfg->BaseAddress);
 
 	Xil_ExceptionInit();
 
-	XDmaPs_SetDoneHandler(&DmaInstance, Channel, DmaDoneHandler,(void *)&Checked);
+	XDmaPs_SetDoneHandler(DmaPsPtr, Channel, DmaDoneHandler,(void *)&Checked);
 
 	AddIntrHandler(&dmaFaultIntrConfig);
 	AddIntrHandler(&dmaCh0IntrConfig);
@@ -125,27 +122,30 @@ void DmaDoneHandler(unsigned int Channel, XDmaPs_Cmd *DmaCmd, void *CallbackRef)
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 void UART_Init() {
-	XUartPs_Config* Config;
+	XUartPs *UartPsPtr = &UartPs;
+	XUartPs_Config *Config;
 	u32 IntrMask;
 
 	Config = XUartPs_LookupConfig(UART_DEVICE_ID);
 
-	XUartPs_CfgInitialize(&UartPs, Config, Config->BaseAddress);
+	XUartPs_CfgInitialize(UartPsPtr, Config, Config->BaseAddress);
 
-	XUartPs_SetHandler(&UartPs, (XUartPs_Handler) Handler, &UartPs);
+	XUartPs_SetHandler(UartPsPtr, (XUartPs_Handler) Handler, UartPsPtr);
 
 	IntrMask =
 		XUARTPS_IXR_TOUT | XUARTPS_IXR_PARITY  | XUARTPS_IXR_FRAMING |
 		XUARTPS_IXR_OVER | XUARTPS_IXR_TXEMPTY | XUARTPS_IXR_RXFULL  |
 		XUARTPS_IXR_RXOVR;
 
-	XUartPs_SetInterruptMask(&UartPs, IntrMask);
+	XUartPs_SetInterruptMask(UartPsPtr, IntrMask);
 
-	XUartPs_SetRecvTimeout(&UartPs, 8);
+	XUartPs_SetRecvTimeout(UartPsPtr, 8);
 
 	AddIntrHandler(&uartIntrConfig);
 }
 int DMA_UART_Send(int send_normal) {
+	XDmaPs *DmaPsPtr = &DmaPs;
+	XUartPs *UartPsPtr = &UartPs;
 	int Index;
 
 	for (Index = 0; Index < TEST_BUFFER_SIZE; Index++) {
@@ -163,11 +163,11 @@ int DMA_UART_Send(int send_normal) {
 	 * función (o modificando los datos del RXBuffer pero creo que esto es más
 	 * seguro)
 	 */
-	XUartPs_Recv(&UartPs, RecvBuffer, TEST_BUFFER_SIZE);
+	XUartPs_Recv(UartPsPtr, RecvBuffer, TEST_BUFFER_SIZE);
 
 	if (send_normal) {
 		// Esto enviaría los datos directamente byte a byte por UART
-		XUartPs_Send(&UartPs, SendBuffer, TEST_BUFFER_SIZE);
+		XUartPs_Send(UartPsPtr, SendBuffer, TEST_BUFFER_SIZE);
 	}
 	else {
 
@@ -190,9 +190,9 @@ int DMA_UART_Send(int send_normal) {
 		DmaCmd2.BD.Length = TEST_BUFFER_SIZE * sizeof(u8);
 
 		// Espero a que se haya mandado todo lo disponible en el TX_FIFO
-		while(!XUartPs_IsTransmitEmpty(&UartPs));
+		while(!XUartPs_IsTransmitEmpty(UartPsPtr));
 
-		XDmaPs_Start(&DmaInstance, Channel, &DmaCmd2, 0);
+		XDmaPs_Start(DmaPsPtr, Channel, &DmaCmd2, 0);
 	}
 
 	while (1) {
@@ -244,8 +244,8 @@ void XUartPs_InterruptHandler_Wrapper(XUartPs *InstancePtr){
 }
 void Handler(void *CallBackRef, u32 Event, unsigned int EventData)
 {
-	XUartPs *UartInst = (XUartPs*)CallBackRef;
-	XUartPsBuffer *bufferPtr = &UartInst->ReceiveBuffer;
+	XUartPs *UartPsPtr = (XUartPs*)CallBackRef;
+	XUartPsBuffer *ReceiveBufferPtr = &UartPsPtr->ReceiveBuffer;
 	u32 bytesLeidos = 0;
 	u32 IntrMask;
 
@@ -254,11 +254,11 @@ void Handler(void *CallBackRef, u32 Event, unsigned int EventData)
 		TotalSentCount += EventData;
 
 		// Reactivo la interrupción. Al parecer se desactiva en XUartPs_InterruptHandler
-		IntrMask = XUartPs_GetInterruptMask(UartInst);
+		IntrMask = XUartPs_GetInterruptMask(UartPsPtr);
 
 		IntrMask |= XUARTPS_IXR_TXEMPTY;
 
-		XUartPs_SetInterruptMask(UartInst, IntrMask);
+		XUartPs_SetInterruptMask(UartPsPtr, IntrMask);
 	}
 
 	/* All of the data has been received */
@@ -266,13 +266,13 @@ void Handler(void *CallBackRef, u32 Event, unsigned int EventData)
 		Event == XUARTPS_EVENT_RECV_TOUT) {
 
 		bytesLeidos =
-				bufferPtr->RequestedBytes - bufferPtr->RemainingBytes - TotalReceivedCount;
+				ReceiveBufferPtr->RequestedBytes - ReceiveBufferPtr->RemainingBytes - TotalReceivedCount;
 
 		TotalReceivedCount += bytesLeidos;
 
 		// Para hacer un apéndice de lo que fue llegando, cambio la información del buffer
 		// de RX de modo que el siguiente byte comience donde terminó el mensaje anterior.
-		bufferPtr->NextBytePtr = RecvBuffer + TotalReceivedCount;
+		ReceiveBufferPtr->NextBytePtr = RecvBuffer + TotalReceivedCount;
 	}
 
 	if (Event == XUARTPS_EVENT_RECV_ERROR ||
