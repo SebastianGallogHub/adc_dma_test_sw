@@ -115,13 +115,17 @@ void interrupt_init(){
 
 	//---------------------------------------------------------------
 
-		XScuGic_Connect(&InterruptController, UART_INT_IRQ_ID,
-				(Xil_ExceptionHandler) XUartPs_InterruptHandler_Wrapper,
-				(void*) &UartPs);
+	XScuGic_SetPriorityTriggerType(&InterruptController, UART_INT_IRQ_ID, 0x70, 0x3);
 
-		XScuGic_Enable(&InterruptController, UART_INT_IRQ_ID);
+	XScuGic_Connect(&InterruptController, UART_INT_IRQ_ID,
+			(Xil_ExceptionHandler) XUartPs_InterruptHandler_Wrapper,
+			(void*) &UartPs);
+
+	XScuGic_Enable(&InterruptController, UART_INT_IRQ_ID);
 
 	//---------------------------------------------------------------
+
+	XScuGic_SetPriorityTriggerType(&InterruptController, DMA_FAULT_INTR, 0xA0, 0x3);
 
 	XScuGic_Connect(&InterruptController, DMA_FAULT_INTR,
 						 (Xil_InterruptHandler)XDmaPs_FaultISR,
@@ -131,13 +135,14 @@ void interrupt_init(){
 
 	//---------------------------------------------------------------
 
+	XScuGic_SetPriorityTriggerType(&InterruptController, DMA_DONE_INTR_0, 0xA0, 0x3);
+
 	XScuGic_Connect(&InterruptController,
 					 DMA_DONE_INTR_0,
 					 (Xil_InterruptHandler)XDmaPs_DoneISR_0,
 					 (void *)&DmaInstance);
 
 	XScuGic_Enable(&InterruptController, DMA_DONE_INTR_0);
-
 
 	//---------------------------------------------------------------
 
@@ -175,18 +180,30 @@ int DMA_UART_Send(int send_normal) {
 		RecvBuffer[Index] = 0;
 	}
 
+	/*
+	 * El buffer y su tamaño se configuran en esta función no bloqueante
+	 *
+	 * A partir de ahora se registrará si una interrupción RX se da y
+	 * se leen TODOS los bytes disponibles en el RX_FIFO y se guardan en buffer
+	 *
+	 * Una vez recibidos todos los datos se debería reiniciar la recepción con esta
+	 * función (o modificando los datos del RXBuffer pero creo que esto es más
+	 * seguro)
+	 */
 	XUartPs_Recv(&UartPs, RecvBuffer, TEST_BUFFER_SIZE);
 
-
 	if (send_normal) {
+		// Esto enviaría los datos directamente byte a byte por UART
 		XUartPs_Send(&UartPs, SendBuffer, TEST_BUFFER_SIZE);
 	}
 	else {
 
-		// para que en Handler se reciba la cantidad de enviados a través de EventData
 		xil_printf("\r\nSeteando  DMA PARA ENVIAR POR UART\r\n");
+
+		// Para que en Handler se reciba la cantidad de enviados a través de EventData
 		UartPs.SendBuffer.RequestedBytes = TEST_BUFFER_SIZE;
 
+		// Confiuro el control de DMA para enviar datos desde el buffer Src al TX_FIFO de UART
 		memset(&DmaCmd2, 0, sizeof(XDmaPs_Cmd));
 
 		DmaCmd2.ChanCtrl.SrcBurstSize = 1;
@@ -199,13 +216,11 @@ int DMA_UART_Send(int send_normal) {
 		DmaCmd2.BD.DstAddr = (u32) UART_TX_RX_FIFO_ADDR;
 		DmaCmd2.BD.Length = TEST_BUFFER_SIZE * sizeof(u8);
 
-		// Espero a que el mensaje anterior se haya mandado para mandar por DMA
+		// Espero a que se haya mandado todo lo disponible en el TX_FIFO
 		while(!XUartPs_IsTransmitEmpty(&UartPs));
 
 		XDmaPs_Start(&DmaInstance, Channel, &DmaCmd2, 0);
 	}
-
-//	XUartPs_Recv(&UartPs, RecvBuffer, TEST_BUFFER_SIZE);
 
 	while (1) {
 		if ((TotalSentCount >= TEST_BUFFER_SIZE)
@@ -254,7 +269,6 @@ void XUartPs_InterruptHandler_Wrapper(XUartPs *InstancePtr){
 	// para no romper con la cadena que ejecuta UART_Handler para la recepción
 	XUartPs_InterruptHandler(InstancePtr);
 }
-int quedaronBtesEnElRxFIFO = 0;
 void Handler(void *CallBackRef, u32 Event, unsigned int EventData)
 {
 	XUartPs *UartInst = (XUartPs*)CallBackRef;
@@ -278,20 +292,14 @@ void Handler(void *CallBackRef, u32 Event, unsigned int EventData)
 	if (Event == XUARTPS_EVENT_RECV_DATA ||
 		Event == XUARTPS_EVENT_RECV_TOUT) {
 
-//		cntMaxBytesALeer =  TEST_BUFFER_SIZE - TotalReceivedCount;
-
-		//XUartPs_Recv((XUartPs*)CallBackRef, bufferPtr, cntMaxBytesALeer);
-
-		// bufferPtr.RequestedBytes = TEST_BUFFER_SIZE
 		bytesLeidos =
 				bufferPtr->RequestedBytes - bufferPtr->RemainingBytes - TotalReceivedCount;
 
 		TotalReceivedCount += bytesLeidos;
 
-		// Sólo recibo lo que entra en el buffer
+		// Para hacer un apéndice de lo que fue llegando, cambio la información del buffer
+		// de RX de modo que el siguiente byte comience donde terminó el mensaje anterior.
 		bufferPtr->NextBytePtr = RecvBuffer + TotalReceivedCount;
-
-		quedaronBtesEnElRxFIFO = (bytesLeidos < EventData);
 	}
 
 	if (Event == XUARTPS_EVENT_RECV_ERROR ||
