@@ -32,6 +32,8 @@ static XUartPs UartPs;
 static u8 SendBuffer[BUFFER_SIZE];	/* Buffer for Transmitting Data */
 static u8 RecvBuffer[BUFFER_SIZE];	/* Buffer for Receiving Data */
 
+volatile int receivedCommand = 0;
+
 volatile int TotalReceivedCount;
 volatile int TotalSentCount;
 int TotalErrorCount;
@@ -78,22 +80,27 @@ void UARTPS_0_Init() {
 }
 
 void UARTPS_0_Test() {
-	UARTPS_0_SendAsync();
+	UARTPS_0_ConfigSendAsync();
+
+//	UARTPS_0_SendAsync();
 
 	while (1) {
-			if ((TotalSentCount >= BUFFER_SIZE)
-		&& (TotalReceivedCount >= BUFFER_SIZE)) {
-			break;
+//			if ((TotalSentCount >= BUFFER_SIZE)
+//		&& (TotalReceivedCount >= BUFFER_SIZE)) {
+//			break;
+//		}
+		if(receivedCommand)
+		{
+			receivedCommand = 0;
+			UARTPS_0_SendAsync();
 		}
 	}
 
-	xil_printf("Recibido: (%d chr)\n%s \n", TotalReceivedCount, RecvBuffer);
-	xil_printf("\nSuccessfully ran UART Interrupt Example Test\r\n");
+//	xil_printf("Recibido: (%d chr)\n%s \n", TotalReceivedCount, RecvBuffer);
+//	xil_printf("\nSuccessfully ran UART Interrupt Example Test\r\n");
 }
 
-int UARTPS_0_SendAsync() {
-	XUartPs *UartPsPtr = &UartPs;
-
+int UARTPS_0_ConfigSendAsync() {
 	/*
 	 * El buffer de recepción y su tamaño se configuran en esta función no bloqueante
 	 *
@@ -104,9 +111,9 @@ int UARTPS_0_SendAsync() {
 	 * función (o modificando los datos del RXBuffer pero creo que esto es más
 	 * seguro)
 	 */
-	XUartPs_Recv(UartPsPtr, RecvBuffer, BUFFER_SIZE);
+	XUartPs_Recv(&UartPs, RecvBuffer, BUFFER_SIZE);
 
-	xil_printf("\r\nSeteando  DMA PARA ENVIAR POR UART\r\n");
+//	xil_printf("Seteando  DMA PARA ENVIAR POR UART\r\n");
 
 	// Para que en Handler se reciba la cantidad de enviados a través de EventData
 	UartPs.SendBuffer.RequestedBytes = BUFFER_SIZE;
@@ -114,12 +121,13 @@ int UARTPS_0_SendAsync() {
 	DMAPS_ConfigSend((u32)SendBuffer, (u32)UART_TX_RX_FIFO_ADDR,
 			 1, 4, BUFFER_SIZE*sizeof(u8));
 
-	// Espero a que se haya mandado todo lo disponible en el TX_FIFO
-	while(!XUartPs_IsTransmitEmpty(UartPsPtr));
-
-	DMAPS_Send();
-
 	return 0;
+}
+
+void UARTPS_0_SendAsync() {
+	// Espero a que se haya mandado todo lo disponible en el TX_FIFO
+	while(!XUartPs_IsTransmitEmpty(&UartPs));
+	DMAPS_Send();
 }
 
 void XUartPs_InterruptHandler_Wrapper(XUartPs *InstancePtr){
@@ -138,7 +146,7 @@ void XUartPs_InterruptHandler_Wrapper(XUartPs *InstancePtr){
 	if((IsrStatus & ((u32)XUARTPS_IXR_TXEMPTY)) != (u32)0) {
 		// Sé que puedo enviar este mensaje por acá porque TXEMPTY
 		if(DMAPS_Done()){
-			xil_printf("\r\nSuccessfully ran DMA Interrupt Example Test\r\n");
+//			xil_printf("\r\nSuccessfully ran DMA Interrupt Example Test\r\n");
 		}
 	}
 
@@ -155,13 +163,10 @@ void XUartPs_InterruptHandler_Wrapper(XUartPs *InstancePtr){
 void UART_O_Handler(void *CallBackRef, u32 Event, unsigned int EventData)
 {
 	XUartPs *UartPsPtr = (XUartPs*)CallBackRef;
-	XUartPsBuffer *ReceiveBufferPtr = &UartPsPtr->ReceiveBuffer;
-	u32 bytesLeidos = 0;
+//	XUartPsBuffer *ReceiveBufferPtr = &UartPsPtr->ReceiveBuffer;
 	u32 IntrMask;
 
 	if (Event == XUARTPS_EVENT_SENT_DATA) {
-		TotalSentCount += EventData;
-
 		// Reactivo la interrupción. Al parecer se desactiva en XUartPs_InterruptHandler
 		IntrMask = XUartPs_GetInterruptMask(UartPsPtr);
 
@@ -173,22 +178,28 @@ void UART_O_Handler(void *CallBackRef, u32 Event, unsigned int EventData)
 	if (Event == XUARTPS_EVENT_RECV_DATA ||
 		Event == XUARTPS_EVENT_RECV_TOUT) {
 
-		bytesLeidos =
-				ReceiveBufferPtr->RequestedBytes - ReceiveBufferPtr->RemainingBytes - TotalReceivedCount;
+		for (unsigned int i = 0; i < EventData; i++) {
+			if(RecvBuffer[i] == '%'){
+				receivedCommand = 1;
+				break;
+			}
+		}
 
-		TotalReceivedCount += bytesLeidos;
-
-		// Para hacer un apéndice de lo que fue llegando, cambio la información del buffer
-		// de RX de modo que el siguiente byte comience donde terminó el mensaje anterior.
-		ReceiveBufferPtr->NextBytePtr = RecvBuffer + TotalReceivedCount;
+		/*
+		 * Para que EventData refleje el valor real de los bytes recibidos en la interrupción
+		 * se debe relanzar la lectura. De este modo también se pisan los datos viejos de
+		 * RecvBuffer. A su vez, la recepción por interrupción nunca termina porque
+		 * ReceiveBufferPtr->RemainingBytes != 0 siempre
+		 * */
+		XUartPs_Recv(&UartPs, RecvBuffer, BUFFER_SIZE);
 	}
 
 	if (Event == XUARTPS_EVENT_RECV_ERROR ||
 		Event == XUARTPS_EVENT_PARE_FRAME_BRKE ||
 		Event == XUARTPS_EVENT_RECV_ORERR) {
 
-		TotalReceivedCount += EventData;
-		TotalErrorCount++;
+//		TotalReceivedCount += EventData;
+//		TotalErrorCount++;
 
 //		XUartPs_Recv((XUartPs*)CallBackRef, RecvBuffer, TEST_BUFFER_SIZE);
 	}

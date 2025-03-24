@@ -39,12 +39,10 @@ void DisableIntrSystem()
 	{
 		XScuGic_Disconnect(&Intc, handlers[i]->IntrId);
 	}
-//	XScuGic_Disconnect(IntcInstancePtr, TarIntrId);
-//	XScuGic_Disconnect(IntcInstancePtr, RxIntrId);
 }
 int SetupIntrSystem()
 {
-	LOG(1, "SetupIntrSystem");
+//	LOG(1, "SetupIntrSystem");
 
 	XScuGic_Config *IntcConfig;
 

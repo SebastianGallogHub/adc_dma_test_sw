@@ -18,8 +18,10 @@
 
 void UARTPS_0_Init();
 
-int UARTPS_0_SendAsync();
-
 void UARTPS_0_Test();
+
+int UARTPS_0_ConfigSendAsync();
+
+void UARTPS_0_SendAsync();
 
 #endif /* SRC_XUARTPS_0_H_ */
