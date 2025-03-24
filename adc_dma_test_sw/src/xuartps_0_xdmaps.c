@@ -54,8 +54,6 @@ void DMAPS_Init(){
 
 	XDmaPs_CfgInitialize(DmaPsPtr, DmaCfg, DmaCfg->BaseAddress);
 
-	Xil_ExceptionInit();
-
 	XDmaPs_SetDoneHandler(DmaPsPtr, DMA_CHANNEL, DMAPS_DoneHandler, (void *)&Checked);
 
 	AddIntrHandler(&dmaFaultIntrConfig);
@@ -63,9 +61,7 @@ void DMAPS_Init(){
 }
 
 void DMAPS_ConfigSend(u32 src, u32 dst, int burstSize, int burstLen, unsigned int transferLen){
-	XDmaPs *DmaPsPtr = &DmaPs;
-
-	// Confiuro el control de DMA para enviar datos desde el buffer Src al TX_FIFO de UART
+	// Configuro el control de DMA para enviar datos desde el buffer Src al TX_FIFO de UART
 	memset(&DmaCmd, 0, sizeof(XDmaPs_Cmd));
 
 	DmaCmd.ChanCtrl.SrcBurstSize = burstSize;

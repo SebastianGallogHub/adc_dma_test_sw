@@ -46,7 +46,6 @@ int SetupIntrSystem()
 {
 	LOG(1, "SetupIntrSystem");
 
-//	XAxiDma_BdRing *RxRingPtr = XAxiDma_GetRxRing(AxiDmaPtr);
 	XScuGic_Config *IntcConfig;
 
 	IntcConfig = XScuGic_LookupConfig(INTC_DEVICE_ID);
@@ -66,26 +65,13 @@ int SetupIntrSystem()
 				"Failed to connect interruption handler TAR_IntrHandler");
 		XScuGic_Enable(&Intc, handlers[i]->IntrId);
 	}
-//	//Interrupción TAR
-//	XScuGic_SetPriorityTriggerType(&Intc, TarIntrId, 0xA0, 0x3);
-//	ASSERT_SUCCESS(
-//			XScuGic_Connect(&Intc, TarIntrId, (Xil_InterruptHandler)TAR_IntrHandler, (void *)TAR_BASE),
-//			"Failed to connect interruption handler TAR_IntrHandler");
-//	XScuGic_Enable(&Intc, TarIntrId);
-//
-//	//Interrupción DMA
-//	XScuGic_SetPriorityTriggerType(&Intc, DmaRxIntrId, 0xA0, 0x3);
-//	ASSERT_SUCCESS(
-//			XScuGic_Connect(&Intc, DmaRxIntrId, (Xil_InterruptHandler)DMA_RxIntrHandler, RxRingPtr),
-//			"Failed to connect interruption handler DMA_RxIntrHandler");
-//	XScuGic_Enable(&Intc, DmaRxIntrId);
 
 	//Interrupción de hardware
-	Xil_ExceptionInit();
 	Xil_ExceptionRegisterHandler(
 			XIL_EXCEPTION_ID_INT,
 			(Xil_ExceptionHandler)INTC_HANDLER,
 			(void *)&Intc);
+
 	Xil_ExceptionEnable();
 
 	return XST_SUCCESS;

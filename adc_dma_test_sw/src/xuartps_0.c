@@ -29,8 +29,8 @@ void UART_O_Handler(void *CallBackRef, u32 Event, unsigned int EventData);
 
 static XUartPs UartPs;
 
-static u8 SendBuffer[TEST_BUFFER_SIZE];	/* Buffer for Transmitting Data */
-static u8 RecvBuffer[TEST_BUFFER_SIZE];	/* Buffer for Receiving Data */
+static u8 SendBuffer[BUFFER_SIZE];	/* Buffer for Transmitting Data */
+static u8 RecvBuffer[BUFFER_SIZE];	/* Buffer for Receiving Data */
 
 volatile int TotalReceivedCount;
 volatile int TotalSentCount;
@@ -68,7 +68,7 @@ void UARTPS_0_Init() {
 
 	AddIntrHandler(&uartIntrConfig);
 
-	for (i = 0; i < TEST_BUFFER_SIZE-1; i++) {
+	for (i = 0; i < BUFFER_SIZE-1; i++) {
 		SendBuffer[i] = (i % 26) + 'A';
 	}
 
@@ -81,8 +81,8 @@ void UARTPS_0_Test() {
 	UARTPS_0_SendAsync();
 
 	while (1) {
-			if ((TotalSentCount >= TEST_BUFFER_SIZE)
-		&& (TotalReceivedCount >= TEST_BUFFER_SIZE)) {
+			if ((TotalSentCount >= BUFFER_SIZE)
+		&& (TotalReceivedCount >= BUFFER_SIZE)) {
 			break;
 		}
 	}
@@ -95,7 +95,7 @@ int UARTPS_0_SendAsync() {
 	XUartPs *UartPsPtr = &UartPs;
 
 	/*
-	 * El buffer y su tamaño se configuran en esta función no bloqueante
+	 * El buffer de recepción y su tamaño se configuran en esta función no bloqueante
 	 *
 	 * A partir de ahora se registrará si una interrupción RX se da y
 	 * se leen TODOS los bytes disponibles en el RX_FIFO y se guardan en buffer
@@ -104,15 +104,15 @@ int UARTPS_0_SendAsync() {
 	 * función (o modificando los datos del RXBuffer pero creo que esto es más
 	 * seguro)
 	 */
-	XUartPs_Recv(UartPsPtr, RecvBuffer, TEST_BUFFER_SIZE);
+	XUartPs_Recv(UartPsPtr, RecvBuffer, BUFFER_SIZE);
 
 	xil_printf("\r\nSeteando  DMA PARA ENVIAR POR UART\r\n");
 
 	// Para que en Handler se reciba la cantidad de enviados a través de EventData
-	UartPs.SendBuffer.RequestedBytes = TEST_BUFFER_SIZE;
+	UartPs.SendBuffer.RequestedBytes = BUFFER_SIZE;
 
 	DMAPS_ConfigSend((u32)SendBuffer, (u32)UART_TX_RX_FIFO_ADDR,
-			TEST_BUFFER_SIZE*sizeof(u8), 1, 4);
+			 1, 4, BUFFER_SIZE*sizeof(u8));
 
 	// Espero a que se haya mandado todo lo disponible en el TX_FIFO
 	while(!XUartPs_IsTransmitEmpty(UartPsPtr));
@@ -136,11 +136,6 @@ void XUartPs_InterruptHandler_Wrapper(XUartPs *InstancePtr){
 				   XUARTPS_ISR_OFFSET);
 
 	if((IsrStatus & ((u32)XUARTPS_IXR_TXEMPTY)) != (u32)0) {
-		//todo manejar interrupicón por TX_EMPTY
-		//todo iniciar una nueva transacción DMA por 16 elementos
-//		DMA_UART_Send();
-//		uartTxDone = 1;
-
 		// Sé que puedo enviar este mensaje por acá porque TXEMPTY
 		if(DMAPS_Done()){
 			xil_printf("\r\nSuccessfully ran DMA Interrupt Example Test\r\n");
@@ -164,7 +159,6 @@ void UART_O_Handler(void *CallBackRef, u32 Event, unsigned int EventData)
 	u32 bytesLeidos = 0;
 	u32 IntrMask;
 
-	/* All of the data has been sent */
 	if (Event == XUARTPS_EVENT_SENT_DATA) {
 		TotalSentCount += EventData;
 
@@ -176,7 +170,6 @@ void UART_O_Handler(void *CallBackRef, u32 Event, unsigned int EventData)
 		XUartPs_SetInterruptMask(UartPsPtr, IntrMask);
 	}
 
-	/* All of the data has been received */
 	if (Event == XUARTPS_EVENT_RECV_DATA ||
 		Event == XUARTPS_EVENT_RECV_TOUT) {
 
