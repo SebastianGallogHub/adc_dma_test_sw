@@ -7,6 +7,8 @@
 
 /***************************** Include Files *******************************/
 
+#include "sleep.h"
+
 #include "zmodadc1410.h"
 #include "zmod.h"
 #include "log.h"
@@ -47,8 +49,7 @@ void ZMODADC1410_Init()
 	ZMODADC1410_SetCoupling(SC2, DC_COUPLING);
 
 	// Retardo para que las configuraciones surtan efecto
-	int TimeOut = 10000;
-	while (TimeOut--){}
+	usleep(900000U);
 
 	return;
 }
