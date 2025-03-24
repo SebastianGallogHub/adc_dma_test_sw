@@ -33,6 +33,7 @@ static u8 SendBuffer[BUFFER_SIZE];	/* Buffer for Transmitting Data */
 static u8 RecvBuffer[BUFFER_SIZE];	/* Buffer for Receiving Data */
 
 volatile int receivedCommand = 0;
+volatile int sendOnRepeat = 0;
 
 volatile int TotalReceivedCount;
 volatile int TotalSentCount;
@@ -91,8 +92,15 @@ void UARTPS_0_Test() {
 //		}
 		if(receivedCommand)
 		{
+			if(receivedCommand == 1)
+			{
+				sendOnRepeat = 1;
+				UARTPS_0_SendAsync();
+			}else{
+				sendOnRepeat = 0;
+			}
+
 			receivedCommand = 0;
-			UARTPS_0_SendAsync();
 		}
 	}
 
@@ -145,8 +153,8 @@ void XUartPs_InterruptHandler_Wrapper(XUartPs *InstancePtr){
 
 	if((IsrStatus & ((u32)XUARTPS_IXR_TXEMPTY)) != (u32)0) {
 		// Sé que puedo enviar este mensaje por acá porque TXEMPTY
-		if(DMAPS_Done()){
-//			xil_printf("\r\nSuccessfully ran DMA Interrupt Example Test\r\n");
+		if(DMAPS_Done() && sendOnRepeat){
+			DMAPS_Send();
 		}
 	}
 
@@ -163,7 +171,6 @@ void XUartPs_InterruptHandler_Wrapper(XUartPs *InstancePtr){
 void UART_O_Handler(void *CallBackRef, u32 Event, unsigned int EventData)
 {
 	XUartPs *UartPsPtr = (XUartPs*)CallBackRef;
-//	XUartPsBuffer *ReceiveBufferPtr = &UartPsPtr->ReceiveBuffer;
 	u32 IntrMask;
 
 	if (Event == XUARTPS_EVENT_SENT_DATA) {
@@ -179,8 +186,12 @@ void UART_O_Handler(void *CallBackRef, u32 Event, unsigned int EventData)
 		Event == XUARTPS_EVENT_RECV_TOUT) {
 
 		for (unsigned int i = 0; i < EventData; i++) {
-			if(RecvBuffer[i] == '%'){
+			if(RecvBuffer[i] == 'a'){
 				receivedCommand = 1;
+				break;
+			}
+			if(RecvBuffer[i] == 'f'){
+				receivedCommand = 2;
 				break;
 			}
 		}
