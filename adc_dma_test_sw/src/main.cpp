@@ -10,12 +10,11 @@
 #include "xtime_l.h"
 
 #include "zmodadc1410.h"
-#include "interrupt_config.h"
-#include "uart_config.h"
-#include "tar_config.h"
 #include "tar_hal.h"
 #include "assert.h"
-#include "axi_dma_config.h"
+#include "axitar.h"
+#include "axitar_axidma.h"
+#include "interruptSystem.h"
 #include "log.h"
 
 

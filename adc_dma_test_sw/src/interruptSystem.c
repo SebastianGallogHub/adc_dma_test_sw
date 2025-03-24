@@ -5,7 +5,8 @@
  *      Author: sebas
  */
 
-#include "interrupt_config.h"
+#include "interruptSystem.h"
+
 #include "xil_exception.h"
 #include "xscugic.h"
 #include "assert.h"

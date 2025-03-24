@@ -5,8 +5,8 @@
  *      Author: sebas
  */
 
-#ifndef SRC_AXI_DMA_CONFIG_H_
-#define SRC_AXI_DMA_CONFIG_H_
+#ifndef SRC_AXITAR_AXIDMA_H_
+#define SRC_AXITAR_AXIDMA_H_
 
 #include "xparameters.h"
 #include "xaxidma.h"
@@ -35,4 +35,4 @@ int AXI_DMA_Init();
 void AXI_DMA_Reset();
 int AXI_DMA_RxInit(u32 cnt, u32 len);
 
-#endif /* SRC_AXI_DMA_CONFIG_H_ */
+#endif /* SRC_AXITAR_AXIDMA_H_ */

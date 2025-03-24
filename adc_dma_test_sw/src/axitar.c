@@ -5,10 +5,12 @@
  *      Author: sebas
  */
 
-#include "tar_config.h"
-#include "interrupt_config.h"
+#include "axitar.h"
+
 #include "xil_io.h"
 #include "AXI_TAR.h"
+
+#include "interruptSystem.h"
 #include "log.h"
 
 void TAR_IntrHandler(void * Callback);

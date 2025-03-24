@@ -5,8 +5,8 @@
  *      Author: sebas
  */
 
-#ifndef SRC_INTERRUPT_CONFIG_H_
-#define SRC_INTERRUPT_CONFIG_H_
+#ifndef SRC_INTERRUPTSYSTEM_H_
+#define SRC_INTERRUPTSYSTEM_H_
 
 #include "xparameters_ps.h"
 #include "xscugic.h"
@@ -30,4 +30,4 @@ int SetupIntrSystem();
 void DisableIntr(u16 intrId);
 void DisableIntrSystem();
 
-#endif /* SRC_INTERRUPT_CONFIG_H_ */
+#endif /* SRC_INTERRUPTSYSTEM_H_ */

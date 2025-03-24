@@ -5,9 +5,10 @@
  *      Author: sebas
  */
 
-#include "interrupt_config.h"
 #include "assert.h"
-#include "axi_dma_config.h"
+#include "axitar_axidma.h"
+
+#include "interruptSystem.h"
 #include "log.h"
 
 void AXI_DMA_RxIntrHandler(void *Callback);
