@@ -29,6 +29,7 @@ XTime tStart, tFinish, tElapsed; //todo ??
 
 //-----------------------------------------------------------------------------
 
+//#define MAIN
 #ifdef MAIN
 int main()
 {
@@ -41,9 +42,8 @@ int main()
 	LOG(0, "--------------------- INICIO MAIN -----------------------");
 	LOG(1, "PRUEBA SOLO DE LAS INTERRUPCIONES DE MASTER_TEST");
 
-//	UART_Init();
 
-	DMA_Init();
+	AXI_DMA_Init();
 
 	ZMODADC1410_Init();
 
@@ -58,7 +58,7 @@ int main()
 				"Fallo al inicializar el sistema de interrupciones");
 
 		ASSERT_SUCCESS(
-				AXI_DMA_RxInit(DMA_NUMBER_OF_TRANSFERS, TAR_DMA_TRANSFER_LEN),
+				AXI_DMA_RxInit(AXI_DMA_NUMBER_OF_TRANSFERS, TAR_DMA_TRANSFER_LEN),
 				"Fallo al inicializar el DMA.");
 
 		LOG(1, "----- Inicio interrupciones");
@@ -72,7 +72,7 @@ int main()
 		}
 
 		// Espero hasta que se den las transacciones
-		while(dmaTransferCount < DMA_NUMBER_OF_TRANSFERS){}
+		while(axiDmaTransferCount < AXI_DMA_NUMBER_OF_TRANSFERS){}
 
 		DisableIntrSystem();
 
@@ -80,12 +80,12 @@ int main()
 
 		TAR_StopAll();
 
-		DMA_Reset();
+		AXI_DMA_Reset();
 
 		//Imprimir todos los valores recibidos junto a su dirección
 		PrintRxData();
-		dmaIntCount = 0;
-		dmaTransferCount = 0;
+		axiDmaIntCount = 0;
+		axiDmaTransferCount = 0;
 		axiTarTransferCount = 0;
 		xil_printf("¿Continuar?");
 		scanf(" %c", &respuesta);
@@ -96,7 +96,7 @@ int main()
 
 goOut:
 	TAR_StopAll();
-	DMA_Reset();
+	AXI_DMA_Reset();
 	LOG(0, "--------------------- FIN MAIN -----------------------");
 	return XST_FAILURE;
 }

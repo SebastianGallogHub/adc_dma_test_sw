@@ -20,7 +20,7 @@ void UARTPS_0_Init();
 
 void UARTPS_0_Test();
 
-int UARTPS_0_ConfigSendAsync();
+int UARTPS_0_ConfigSendAsync(u32 sendBufferAddr, int buffSizeBytes);
 
 void UARTPS_0_SendAsync();
 

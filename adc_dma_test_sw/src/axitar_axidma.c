@@ -19,8 +19,7 @@ u32 axiDmaIntCount = 0;
 u32 axiDmaTransferCount = 0;
 u32 Error = 0;
 
-void AXI_DMA_Reset()
-{
+void AXI_DMA_Reset() {
 	int TimeOut = 10000;
 
 	XAxiDma_Reset(&AxiDma);
@@ -31,8 +30,8 @@ void AXI_DMA_Reset()
 			break;
 	}
 }
-int AXI_DMA_Init()
-{
+
+int AXI_DMA_Init() {
 	XAxiDma_Config *Config;
 	XAxiDma_BdRing *RxRingPtr;
 
@@ -56,8 +55,8 @@ int AXI_DMA_Init()
 
 	return 0;
 }
-int AXI_DMA_RxInit(u32 cntTransferencias, u32 dataLen)
-{
+
+int AXI_DMA_RxInit(u32 cntTransferencias, u32 dataLen) {
     LOG(1, "AXI_DMA_Init");
 
     XAxiDma_BdRing *RxRingPtr;
@@ -155,8 +154,8 @@ int AXI_DMA_RxInit(u32 cntTransferencias, u32 dataLen)
 
     return XST_SUCCESS;
 }
-void AXI_DMA_RxCallBack(XAxiDma_BdRing *RxRingPtr)
-{
+
+void AXI_DMA_RxCallBack(XAxiDma_BdRing *RxRingPtr) {
 	// Cuento las transferencias hechas para finalizar el bucle principal
 	// Debería hacerse una interrupción cada transferencia
 
@@ -174,8 +173,8 @@ void AXI_DMA_RxCallBack(XAxiDma_BdRing *RxRingPtr)
 
 	return;
 }
-void AXI_DMA_RxIntrHandler(void *Callback)
-{
+
+void AXI_DMA_RxIntrHandler(void *Callback) {
 	XAxiDma_BdRing *RxRingPtr = (XAxiDma_BdRing *) Callback;
 	u32 IrqStatus;
 	int TimeOut;

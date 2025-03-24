@@ -52,7 +52,6 @@ void UARTPS_0_Init() {
 	XUartPs *UartPsPtr = &UartPs;
 	XUartPs_Config *Config;
 	u32 IntrMask;
-	int i;
 
 	Config = XUartPs_LookupConfig(UART_DEVICE_ID);
 
@@ -71,25 +70,20 @@ void UARTPS_0_Init() {
 
 	AddIntrHandler(&uartIntrConfig);
 
+	DMAPS_Init();
+}
+
+void UARTPS_0_Test() {
+	int i;
 	for (i = 0; i < BUFFER_SIZE-1; i++) {
 		SendBuffer[i] = (i % 26) + 'A';
 	}
 
 	SendBuffer[i] = '\n'; // Agrego un enter para formato
 
-	DMAPS_Init();
-}
-
-void UARTPS_0_Test() {
-	UARTPS_0_ConfigSendAsync();
-
-//	UARTPS_0_SendAsync();
+	UARTPS_0_ConfigSendAsync((u32)SendBuffer, BUFFER_SIZE * sizeof(u8));
 
 	while (1) {
-//			if ((TotalSentCount >= BUFFER_SIZE)
-//		&& (TotalReceivedCount >= BUFFER_SIZE)) {
-//			break;
-//		}
 		if(receivedCommand)
 		{
 			if(receivedCommand == 1)
@@ -103,21 +97,11 @@ void UARTPS_0_Test() {
 			receivedCommand = 0;
 		}
 	}
-
-//	xil_printf("Recibido: (%d chr)\n%s \n", TotalReceivedCount, RecvBuffer);
-//	xil_printf("\nSuccessfully ran UART Interrupt Example Test\r\n");
 }
 
-int UARTPS_0_ConfigSendAsync() {
+int UARTPS_0_ConfigSendAsync(u32 sendBufferAddr, int buffSizeBytes) {
 	/*
 	 * El buffer de recepción y su tamaño se configuran en esta función no bloqueante
-	 *
-	 * A partir de ahora se registrará si una interrupción RX se da y
-	 * se leen TODOS los bytes disponibles en el RX_FIFO y se guardan en buffer
-	 *
-	 * Una vez recibidos todos los datos se debería reiniciar la recepción con esta
-	 * función (o modificando los datos del RXBuffer pero creo que esto es más
-	 * seguro)
 	 */
 	XUartPs_Recv(&UartPs, RecvBuffer, BUFFER_SIZE);
 
@@ -126,8 +110,8 @@ int UARTPS_0_ConfigSendAsync() {
 	// Para que en Handler se reciba la cantidad de enviados a través de EventData
 	UartPs.SendBuffer.RequestedBytes = BUFFER_SIZE;
 
-	DMAPS_ConfigSend((u32)SendBuffer, (u32)UART_TX_RX_FIFO_ADDR,
-			 1, 4, BUFFER_SIZE*sizeof(u8));
+	DMAPS_ConfigSend(sendBufferAddr, (u32)UART_TX_RX_FIFO_ADDR,
+			 1, 4, buffSizeBytes);
 
 	return 0;
 }

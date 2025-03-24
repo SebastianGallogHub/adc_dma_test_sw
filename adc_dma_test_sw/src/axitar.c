@@ -40,7 +40,8 @@ void TAR_Init(u32 cuenta)
 	LOG(1, "TAR_Init");
 
 	TAR_StopAll();
-	do{/*Espero a que se registre el valor de stop*/}
+
+	//Espero que se registre el valor de stop
 	while(AXI_TAR_mReadReg(TAR_BASE,TAR_CONFIG_OFF));
 
 	AXI_TAR_mWriteReg(TAR_BASE, master_COUNT_CFG_OFF, cuenta);
