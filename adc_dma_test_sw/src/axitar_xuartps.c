@@ -41,7 +41,7 @@ int main(){
 
 	ZMODADC1410_Init();
 
-	TAR_Init(TAR_TRANSFER_COUNT);
+	TAR_Init(TAR_TRANSFER_PERIOD);
 
 	SetupIntrSystem();
 
@@ -57,15 +57,6 @@ int main(){
 
 	AXI_DMA_Reset();
 
-	//Imprimir todos los valores recibidos junto a su dirección
-//	PrintRxData();
-//	axiDmaIntCount = 0;
-//	axiDmaTransferCount = 0;
-//	axiTarTransferCount = 0;
-
-	// Para que coexistan ejemplos ---------------------------------------------------------
-
-//	xil_printf("\nComandos:\n\t-'a' : Enviar datos en contínuo\n\t-'f' : Detener envío de datos\n");
 
 	LOG(0, "Interrupciones recibidas por DMA: %d", axiDmaIntCount);
 	LOG(0, "Transferencias recibidas por DMA: %d", axiDmaTransferCount);

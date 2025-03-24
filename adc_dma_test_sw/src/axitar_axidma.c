@@ -5,19 +5,33 @@
  *      Author: sebas
  */
 
-#include "assert.h"
-#include "axitar_axidma.h"
+/***************************** Include Files *******************************/
 
+#include "axitar_axidma.h"
 #include "interruptSystem.h"
+
+#include "assert.h"
 #include "log.h"
+
+/************************** Constant Definitions **************************/
+
+/**************************** Type Definitions ******************************/
+
+/************************** Function Prototypes *****************************/
 
 void AXI_DMA_RxIntrHandler(void *Callback);
 
-XAxiDma AxiDma;
-Intr_Config axiDmaIntrConfig;
+/************************** Variable Definitions ***************************/
+
+static XAxiDma AxiDma;
+
 u32 axiDmaIntCount = 0;
 u32 axiDmaTransferCount = 0;
 u32 Error = 0;
+
+Intr_Config axiDmaIntrConfig;
+
+/****************************************************************************/
 
 void AXI_DMA_Reset() {
 	int TimeOut = 10000;
@@ -50,6 +64,7 @@ int AXI_DMA_Init() {
 	axiDmaIntrConfig.IntrId = AXI_DMA_RX_INTR_ID;
 	axiDmaIntrConfig.Handler = (Xil_ExceptionHandler)AXI_DMA_RxIntrHandler;
 	axiDmaIntrConfig.CallBackRef = RxRingPtr;
+	axiDmaIntrConfig.Priority = 0xA0;
 
 	AddIntrHandler(&axiDmaIntrConfig);
 
@@ -170,6 +185,8 @@ void AXI_DMA_RxCallBack(XAxiDma_BdRing *RxRingPtr) {
 	axiDmaIntCount ++;
 
 	XAxiDma_BdRingFree(RxRingPtr, BdCount, BdPtr);
+
+
 
 	return;
 }
