@@ -12,13 +12,13 @@
 #include "xil_printf.h"
 
 #include "axitar.h"
-#include "axitar_axidma.h"
 #include "xuartps_0.h"
 #include "zmodadc1410.h"
 #include "interruptSystem.h"
 
 #include "log.h"
 #include "assert.h"
+#include "axitar_axidma.h"
 
 /************************** Constant Definitions **************************/
 
