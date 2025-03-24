@@ -17,6 +17,7 @@
 
 /****************************************************************************/
 
+#ifdef MAIN_xuartps_intr_example
 int main (void){
 
 	UARTPS_0_Init();
@@ -27,3 +28,4 @@ int main (void){
 
 	return 0;
 }
+#endif // MAIN_xuartps_intr_example

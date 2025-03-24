@@ -28,6 +28,7 @@ XTime tStart, tFinish, tElapsed; //todo ??
 #define GetElapsed_ms  GetElapsed_ns/1000000
 
 //-----------------------------------------------------------------------------
+
 #ifdef MAIN
 int main()
 {
@@ -57,7 +58,7 @@ int main()
 				"Fallo al inicializar el sistema de interrupciones");
 
 		ASSERT_SUCCESS(
-				DMA_RxInit(DMA_NUMBER_OF_TRANSFERS, TAR_DMA_TRANSFER_LEN),
+				AXI_DMA_RxInit(DMA_NUMBER_OF_TRANSFERS, TAR_DMA_TRANSFER_LEN),
 				"Fallo al inicializar el DMA.");
 
 		LOG(1, "----- Inicio interrupciones");
@@ -85,7 +86,7 @@ int main()
 		PrintRxData();
 		dmaIntCount = 0;
 		dmaTransferCount = 0;
-		tarTransferCount = 0;
+		axiTarTransferCount = 0;
 		xil_printf("¿Continuar?");
 		scanf(" %c", &respuesta);
 	}while(respuesta=='s' || respuesta=='S');
@@ -99,7 +100,7 @@ goOut:
 	LOG(0, "--------------------- FIN MAIN -----------------------");
 	return XST_FAILURE;
 }
-#endif // MAIN
+
 
 void PrintRxData()
 {
@@ -108,18 +109,18 @@ void PrintRxData()
 	LOG(1, "Datos recibidos (%d ms)", GetElapsed_ms);
 
 	LOG(2, "--------------------------------------");
-	LOG(2, "\t\t\tCH1 \t|\tCH2", tarTransferCount);
+	LOG(2, "\t\t\tCH1 \t|\tCH2", axiTarTransferCount);
 	for (u32 i = 0; i<= axiDmaTransferCount; i+=1){
 		LOG(2, "%d)\t%d  \t|\t%d\t\t[0x%08x]", i,  (u16)((buffer[i] >> 16) & 0xffff), (u16)(buffer[i] & 0xffFF), &buffer[i]);
 	}
 	LOG(2, "--------------------------------------");
 	LOG(2, "Interrupciones recibidas por DMA: %d", axiDmaIntCount);
 	LOG(2, "Transferencias recibidas por DMA: %d", axiDmaTransferCount);
-	LOG(2, "Transferencias lanzadas por TAR: %d", tarTransferCount);
+	LOG(2, "Transferencias lanzadas por TAR: %d", axiTarTransferCount);
 
 	return;
 }
-
+#endif // MAIN
 
 
 

@@ -54,7 +54,7 @@
 
 #define TAR_DR_INTR_ID		XPAR_FABRIC_AXI_TAR_0_INTROUT_INTR
 
-extern u32 tarTransferCount;
+extern u32 axiTarTransferCount;
 
 void TAR_Init(u32);
 

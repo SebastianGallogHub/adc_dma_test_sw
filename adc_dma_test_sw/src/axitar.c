@@ -5,6 +5,8 @@
  *      Author: sebas
  */
 
+/***************************** Include Files *******************************/
+
 #include "axitar.h"
 
 #include "xil_io.h"
@@ -13,11 +15,25 @@
 #include "interruptSystem.h"
 #include "log.h"
 
+/************************** Constant Definitions **************************/
+
+/**************************** Type Definitions ******************************/
+
+/************************** Function Prototypes *****************************/
+
 void TAR_IntrHandler(void * Callback);
 
-u32 tarTransferCount = 0;
-Intr_Config tarIntrConfig =
-	{TAR_DR_INTR_ID, (Xil_ExceptionHandler)TAR_IntrHandler, (void *)TAR_BASE};
+/************************** Variable Definitions ***************************/
+
+u32 axiTarTransferCount = 0;
+Intr_Config tarIntrConfig =	{
+		TAR_DR_INTR_ID,
+		(Xil_ExceptionHandler)TAR_IntrHandler,
+		(void *)TAR_BASE,
+		0xA0
+};
+
+/****************************************************************************/
 
 void TAR_Init(u32 cuenta)
 {
@@ -40,9 +56,9 @@ void TAR_Init(u32 cuenta)
 }
 void TAR_IntrHandler(void * Callback)
 {
-	if(tarTransferCount <= UINT32_MAX)
+	if(axiTarTransferCount <= UINT32_MAX)
 	{
-		tarTransferCount ++;
+		axiTarTransferCount ++;
 //		XTime_GetTime(&tFinish);
 //		LOG(2, "%d) %d ms ", tarTransferCount, GetElapsed_ms);
 	}
