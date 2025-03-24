@@ -8,7 +8,6 @@
 
 #include "xuartps_0_xdmaps.h"
 #include "xdmaps.h"
-#include "xuartps.h"
 
 #include "xil_exception.h"
 #include "xil_printf.h"
@@ -63,7 +62,7 @@ void DMAPS_Init(){
 	AddIntrHandler(&dmaCh0IntrConfig);
 }
 
-void DMAPS_ConfigSend(u32 src, u32 dst, unsigned int transferLen, int burstSize, int burstLen){
+void DMAPS_ConfigSend(u32 src, u32 dst, int burstSize, int burstLen, unsigned int transferLen){
 	XDmaPs *DmaPsPtr = &DmaPs;
 
 	// Confiuro el control de DMA para enviar datos desde el buffer Src al TX_FIFO de UART

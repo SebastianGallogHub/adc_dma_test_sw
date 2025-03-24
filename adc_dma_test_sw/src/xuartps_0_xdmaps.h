@@ -17,14 +17,12 @@
 #define DMA_LENGTH			1024	/* Length of the Dma Transfers */
 #define TIMEOUT_LIMIT 		0x2000	/* Loop count for timeout */
 
-#define TEST_BUFFER_SIZE	40
-
 void DMAPS_Init();
 
 int DMAPS_Done();
 
 void DMAPS_ConfigSend(u32 src, u32 dst,
-		unsigned int transferLen, int burstSize, int burstLen);
+		int burstSize, int burstLen, unsigned int transferLen);
 
 void DMAPS_Send();
 
