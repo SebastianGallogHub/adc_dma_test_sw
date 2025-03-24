@@ -5,8 +5,8 @@
  *      Author: sebas
  */
 
-#ifndef SRC_TAR_CONFIG_H_
-#define SRC_TAR_CONFIG_H_
+#ifndef SRC_AXITAR_H_
+#define SRC_AXITAR_H_
 
 #include "xparameters.h"
 #include "xil_types.h"
@@ -58,4 +58,4 @@ extern u32 tarTransferCount;
 
 void TAR_Init(u32);
 
-#endif /* SRC_TAR_CONFIG_H_ */
+#endif /* SRC_AXITAR_H_ */

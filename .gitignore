@@ -83,3 +83,11 @@ local.properties
 .sts4-cache/
 
 # End of https://www.toptal.com/developers/gitignore/api/eclipse
+
+adc_dma_test_sw/.gitignore
+adc_dma_test_sw/Debug
+adc_dma_test_sw/Release
+adc_dma_test_sw_system/Debug
+adc_dma_test_sw_system/Release
+adc_dma_test_sw_system/.gitignore
+.analytics

@@ -5,17 +5,19 @@
  *      Author: sebas
  */
 
-#include "tar_config.h"
-#include "interrupt_config.h"
+#include "axitar.h"
+
 #include "xil_io.h"
 #include "AXI_TAR.h"
+
+#include "interruptSystem.h"
 #include "log.h"
 
 void TAR_IntrHandler(void * Callback);
 
 u32 tarTransferCount = 0;
 Intr_Config tarIntrConfig =
-	{TAR_DR_INTR_ID, (void*)TAR_IntrHandler, (void *)TAR_BASE};
+	{TAR_DR_INTR_ID, (Xil_ExceptionHandler)TAR_IntrHandler, (void *)TAR_BASE};
 
 void TAR_Init(u32 cuenta)
 {
