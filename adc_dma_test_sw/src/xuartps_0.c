@@ -80,6 +80,8 @@ void UARTPS_0_Init() {
 	DMAPS_Init();
 }
 
+int ijk = 0;
+int uartdone = 1;
 void UARTPS_0_Test() {
 	UARTPS_0_ConfigSendAsync();
 
@@ -101,6 +103,26 @@ void UARTPS_0_Test() {
 			}
 
 			receivedCommand = 0;
+		}
+
+		if(uartdone)
+		{
+			uartdone = 0;
+			if(DMAPS_Done() && sendOnRepeat){
+				if(ijk == 0)
+				{
+					ijk =1;
+					DMAPS_ConfigSend((u32)SendBuffer+20, (u32)UART_TX_RX_FIFO_ADDR,
+							 1, 4, 20*sizeof(u8));
+				}
+				else
+				{
+					ijk = 0;
+					DMAPS_ConfigSend((u32)SendBuffer, (u32)UART_TX_RX_FIFO_ADDR,
+											 1, 4, 20*sizeof(u8));
+					}
+				DMAPS_Send();
+			}
 		}
 	}
 
@@ -127,7 +149,7 @@ int UARTPS_0_ConfigSendAsync() {
 	UartPs.SendBuffer.RequestedBytes = BUFFER_SIZE;
 
 	DMAPS_ConfigSend((u32)SendBuffer, (u32)UART_TX_RX_FIFO_ADDR,
-			 1, 4, BUFFER_SIZE*sizeof(u8));
+			 1, 4, 20*sizeof(u8));
 
 	return 0;
 }
@@ -137,7 +159,6 @@ void UARTPS_0_SendAsync() {
 	while(!XUartPs_IsTransmitEmpty(&UartPs));
 	DMAPS_Send();
 }
-
 void XUartPs_InterruptHandler_Wrapper(XUartPs *InstancePtr){
 	u32 IsrStatus;
 	int i=0;
@@ -153,9 +174,7 @@ void XUartPs_InterruptHandler_Wrapper(XUartPs *InstancePtr){
 
 	if((IsrStatus & ((u32)XUARTPS_IXR_TXEMPTY)) != (u32)0) {
 		// Sé que puedo enviar este mensaje por acá porque TXEMPTY
-		if(DMAPS_Done() && sendOnRepeat){
-			DMAPS_Send();
-		}
+		uartdone = 1;
 	}
 
 	if((IsrStatus & ((u32)XUARTPS_IXR_TXFULL)) != (u32)0) {
