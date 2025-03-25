@@ -34,6 +34,7 @@ static u8 RecvBuffer[BUFFER_SIZE];	/* Buffer for Receiving Data */
 
 volatile int receivedCommand = 0;
 volatile int sendOnRepeat = 0;
+volatile int uart0DoneTx = 0;
 
 volatile int TotalReceivedCount;
 volatile int TotalSentCount;
@@ -100,15 +101,15 @@ void UARTPS_0_Test() {
 }
 
 int UARTPS_0_ConfigSendAsync(u32 sendBufferAddr, int buffSizeBytes) {
+//	xil_printf("Seteando  DMA PARA ENVIAR POR UART\r\n");
+
+	// Para que en Handler se reciba la cantidad de enviados a través de EventData
+//	UartPs.SendBuffer.RequestedBytes = BUFFER_SIZE;
+
 	/*
 	 * El buffer de recepción y su tamaño se configuran en esta función no bloqueante
 	 */
 	XUartPs_Recv(&UartPs, RecvBuffer, BUFFER_SIZE);
-
-//	xil_printf("Seteando  DMA PARA ENVIAR POR UART\r\n");
-
-	// Para que en Handler se reciba la cantidad de enviados a través de EventData
-	UartPs.SendBuffer.RequestedBytes = BUFFER_SIZE;
 
 	DMAPS_ConfigSend(sendBufferAddr, (u32)UART_TX_RX_FIFO_ADDR,
 			 1, 4, buffSizeBytes);
@@ -120,6 +121,17 @@ void UARTPS_0_SendAsync() {
 	// Espero a que se haya mandado todo lo disponible en el TX_FIFO
 	while(!XUartPs_IsTransmitEmpty(&UartPs));
 	DMAPS_Send();
+}
+
+int UARTPS_0_DoneTx()
+{
+	if (uart0DoneTx){
+		uart0DoneTx = 0;
+		return 1;
+	}
+	else
+		return 0;
+//	return XUartPs_IsTransmitEmpty(&UartPs);
 }
 
 void XUartPs_InterruptHandler_Wrapper(XUartPs *InstancePtr){
@@ -140,6 +152,8 @@ void XUartPs_InterruptHandler_Wrapper(XUartPs *InstancePtr){
 		if(DMAPS_Done() && sendOnRepeat){
 			DMAPS_Send();
 		}
+
+		uart0DoneTx = 1;
 	}
 
 	if((IsrStatus & ((u32)XUARTPS_IXR_TXFULL)) != (u32)0) {

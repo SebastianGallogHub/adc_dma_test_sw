@@ -6,19 +6,18 @@
  */
 
 /***************************** Include Files *******************************/
-
 #include "xuartps.h"
 
 #include "xil_printf.h"
 
 #include "axitar.h"
+#include "axitar_axidma.h"
 #include "xuartps_0.h"
 #include "zmodadc1410.h"
 #include "interruptSystem.h"
 
 #include "log.h"
 #include "assert.h"
-#include "axitar_axidma.h"
 
 /************************** Constant Definitions **************************/
 
@@ -57,19 +56,59 @@ int main(){
 
 	AXI_DMA_Reset();
 
-
 	LOG(0, "Interrupciones recibidas por DMA: %d", axiDmaIntCount);
 	LOG(0, "Transferencias recibidas por DMA: %d", axiDmaTransferCount);
 	LOG(0, "Transferencias lanzadas por TAR: %d", axiTarTransferCount);
 
 //	UARTPS_0_ConfigSendAsync((u32)AXI_DMA_RX_BUFFER_BASE, axiDmaTransferCount * TAR_DMA_TRANSFER_LEN);
-	UARTPS_0_ConfigSendAsync((u32)AXI_DMA_RX_BUFFER_BASE, 64);
 
-	UARTPS_0_SendAsync();
+	// Cargar un buffer con los datos de AXI_DMA_RX_BUFFER formateados para ver en pantalla
+	u32 sendCnt = 40;
+	u32 i, j = 0;
+	u32 sended = 0;
+//	u32 *axiDmaRxBuffer = (u32*)AXI_DMA_RX_BUFFER_BASE;
+//	u32 dmaPsTxBufferLen = AXI_DMA_NUMBER_OF_TRANSFERS*sizeof(u16)*2;
+//	u16 dmaPsTxBuffer[dmaPsTxBufferLen];
+	u32 *nextBuffer = (u32*)AXI_DMA_RX_BUFFER_BASE;
+	// dmaPsTxBuffer tiene 2 valores de 16b por cada dato
 
-	while(1);
+//	for (i = 0; i < axiDmaTransferCount; i++) {
+//		dmaPsTxBuffer[j++] = (u16)((axiDmaRxBuffer[i] >> 16) & 0xffff); //ch1
+//		dmaPsTxBuffer[j++] = (u16)((axiDmaRxBuffer[i] >> 00) & 0xffff); //ch2
+//	}
 
-	LOG(0,"\nSe ejecuto correctamente el ejemplo");
+	// Enviar todos los datos de a 64 bytes (máximo de uart tx)
+	xil_printf("%%");
+	i = AXI_DMA_NUMBER_OF_TRANSFERS*sizeof(u32); // Cuantos me queda por enviar
+	j = 0; // Desde donde respecto de la base
+	do {
+		sended =  i > sendCnt? sendCnt: i;
+		nextBuffer += j;
+		// Configuro el envío
+		UARTPS_0_ConfigSendAsync((u32)nextBuffer, sended);
+
+		// Envío async
+		UARTPS_0_SendAsync();
+
+		// Sincronizo con la UART0 para enviar la siguiente tanda por polling
+		while(!UARTPS_0_DoneTx());
+
+		j += sended;
+		i -= sended;
+
+	} while (i);
+
+//	UARTPS_0_ConfigSendAsync(dmaPsTxBuffer, 64);
+//
+//	UARTPS_0_SendAsync();
+//
+//	while(1);
+	int timeout = 10000;
+	while(timeout --);
+
+	xil_printf("%%");
+	LOG(0,"\nSe ejecutó correctamente el ejemplo");
+	PrintRxData();
 }
 
 void PrintRxData()

@@ -27,7 +27,7 @@ void DMAPS_DoneHandler(unsigned int Channel, XDmaPs_Cmd *DmaCmd, void *CallbackR
 static XDmaPs 	DmaPs;
 
 XDmaPs_Cmd DmaCmd;
-volatile int Checked;
+volatile int dmapsDone;
 unsigned int Channel = 0;
 
 Intr_Config dmaFaultIntrConfig = {
@@ -54,7 +54,7 @@ void DMAPS_Init(){
 
 	XDmaPs_CfgInitialize(DmaPsPtr, DmaCfg, DmaCfg->BaseAddress);
 
-	XDmaPs_SetDoneHandler(DmaPsPtr, DMA_CHANNEL, DMAPS_DoneHandler, (void *)&Checked);
+	XDmaPs_SetDoneHandler(DmaPsPtr, DMA_CHANNEL, DMAPS_DoneHandler, (void *)&dmapsDone);
 
 	AddIntrHandler(&dmaFaultIntrConfig);
 	AddIntrHandler(&dmaCh0IntrConfig);
@@ -80,13 +80,13 @@ void DMAPS_Send(){
 }
 
 void DMAPS_DoneHandler(unsigned int Channel, XDmaPs_Cmd *DmaCmd, void *CallbackRef){
-	volatile int *Checked = (volatile int *)CallbackRef;
+	volatile int *dmapsDone = (volatile int *)CallbackRef;
 
-	*Checked = 1;
+	*dmapsDone = 1;
 }
 
 int DMAPS_Done(){
-	int c = Checked;
-	Checked = 0;
+	int c = dmapsDone;
+	dmapsDone = 0;
 	return c;
 }

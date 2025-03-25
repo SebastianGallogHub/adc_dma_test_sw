@@ -24,4 +24,6 @@ int UARTPS_0_ConfigSendAsync(u32 sendBufferAddr, int buffSizeBytes);
 
 void UARTPS_0_SendAsync();
 
+int UARTPS_0_DoneTx();
+
 #endif /* SRC_XUARTPS_0_H_ */
