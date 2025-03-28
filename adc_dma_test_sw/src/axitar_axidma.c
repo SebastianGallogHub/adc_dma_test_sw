@@ -72,7 +72,7 @@ int AXI_DMA_Init() {
 	return 0;
 }
 
-int AXI_DMA_RxInit(u32 cntTransferencias, u32 dataLen) {
+int AXI_DMA_SetupRx(u32 cntTransferencias, u32 dataLen) {
     LOG(1, "AXI_DMA_Init");
 
     XAxiDma_BdRing *RxRingPtr;

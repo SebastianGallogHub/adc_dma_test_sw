@@ -13,6 +13,7 @@
 #include "axitar.h"
 #include "axitar_axidma.h"
 #include "xuartps_0.h"
+#include "xuartps_0_xdmaps.h"
 #include "zmodadc1410.h"
 #include "interruptSystem.h"
 
@@ -44,13 +45,19 @@ int main(){
 
 	SetupIntrSystem();
 
-	AXI_DMA_RxInit(AXI_DMA_NUMBER_OF_TRANSFERS, TAR_DMA_TRANSFER_LEN);
+	TAR_Start_master_test();
+
+	while(1);
+
+	UARTPS_0_StartRx();
+
+	AXI_DMA_SetupRx(AXI_DMA_NUMBER_OF_TRANSFERS, TAR_DMA_TRANSFER_LEN);
 
 	LOG(0, "----- Inicio interrupciones -----");
 	TAR_Start_master_test();
 
 	// Espero hasta que se den las transacciones
-	while(axiDmaTransferCount < AXI_DMA_NUMBER_OF_TRANSFERS){}
+	while(axiDmaTransferCount < AXI_DMA_NUMBER_OF_TRANSFERS);
 
 	TAR_StopAll();
 
@@ -60,55 +67,70 @@ int main(){
 	LOG(0, "Transferencias recibidas por DMA: %d", axiDmaTransferCount);
 	LOG(0, "Transferencias lanzadas por TAR: %d", axiTarTransferCount);
 
-//	UARTPS_0_ConfigSendAsync((u32)AXI_DMA_RX_BUFFER_BASE, axiDmaTransferCount * TAR_DMA_TRANSFER_LEN);
-
 	// Cargar un buffer con los datos de AXI_DMA_RX_BUFFER formateados para ver en pantalla
-	u32 sendCnt = 40;
+	u32 sendCnt = 20; // Mando datos de a 40 Bytes, son 10 valores dobles de 16b
 	u32 i, j = 0;
 	u32 sended = 0;
-//	u32 *axiDmaRxBuffer = (u32*)AXI_DMA_RX_BUFFER_BASE;
-//	u32 dmaPsTxBufferLen = AXI_DMA_NUMBER_OF_TRANSFERS*sizeof(u16)*2;
-//	u16 dmaPsTxBuffer[dmaPsTxBufferLen];
 	u32 *nextBuffer = (u32*)AXI_DMA_RX_BUFFER_BASE;
-	// dmaPsTxBuffer tiene 2 valores de 16b por cada dato
-
-//	for (i = 0; i < axiDmaTransferCount; i++) {
-//		dmaPsTxBuffer[j++] = (u16)((axiDmaRxBuffer[i] >> 16) & 0xffff); //ch1
-//		dmaPsTxBuffer[j++] = (u16)((axiDmaRxBuffer[i] >> 00) & 0xffff); //ch2
-//	}
 
 	// Enviar todos los datos de a 64 bytes (máximo de uart tx)
-	xil_printf("%%");
 	i = AXI_DMA_NUMBER_OF_TRANSFERS*sizeof(u32); // Cuantos me queda por enviar
 	j = 0; // Desde donde respecto de la base
+	xil_printf("&");
+
+//	memset(&DmaCmd, 0, sizeof(XDmaPs_Cmd));
+//
+//	DmaCmd.ChanCtrl.SrcBurstSize = sizeof(u8);
+//	DmaCmd.ChanCtrl.SrcBurstLen = 4;
+//	DmaCmd.ChanCtrl.SrcInc = 1;
+//
+//	DmaCmd.ChanCtrl.DstBurstSize = sizeof(u8);
+//	DmaCmd.ChanCtrl.DstBurstLen = 4;
+//	DmaCmd.ChanCtrl.DstInc = 0;
+//
+//	DmaCmd.BD.DstAddr = (u32)UART_TX_RX_FIFO_ADDR;
+
 	do {
-		sended =  i > sendCnt? sendCnt: i;
-		nextBuffer += j;
+
+
+//		while(!DMAPS_Done());
 		// Configuro el envío
-		UARTPS_0_ConfigSendAsync((u32)nextBuffer, sended);
+		//UARTPS_0_ConfigSendAsync((u32)nextBuffer, sended);
+
+//		DmaCmd.BD.SrcAddr = (u32)nextBuffer;
+//		DmaCmd.BD.Length = sended * sizeof(u8);
 
 		// Envío async
-		UARTPS_0_SendAsync();
+//		UARTPS_0_SendAsync();
+//		uart0DoneTx = 0;
+//		DMAPS_Send();
 
 		// Sincronizo con la UART0 para enviar la siguiente tanda por polling
-		while(!UARTPS_0_DoneTx());
+//		while(!uart0DoneTx);
 
-		j += sended;
-		i -= sended;
-
+		if(uart0DoneTx)
+		{
+			if(DMAPS_Done())
+			{
+				uart0DoneTx = 0;
+				j += sended;
+				i -= sended;
+				sended =  i > sendCnt? sendCnt: i;
+				nextBuffer += j;
+				DMAPS_ConfigSend((u32)nextBuffer, (u32)UART_TX_RX_FIFO_ADDR, 1, 4, sended*sizeof(u8));
+				DMAPS_Send();
+			}
+		}
 	} while (i);
 
-//	UARTPS_0_ConfigSendAsync(dmaPsTxBuffer, 64);
-//
-//	UARTPS_0_SendAsync();
-//
-//	while(1);
 	int timeout = 10000;
 	while(timeout --);
 
-	xil_printf("%%");
+	xil_printf("&");
 	LOG(0,"\nSe ejecutó correctamente el ejemplo");
 	PrintRxData();
+
+	TAR_Start_master_test();
 }
 
 void PrintRxData()

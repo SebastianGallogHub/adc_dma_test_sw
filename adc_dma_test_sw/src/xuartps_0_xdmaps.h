@@ -9,6 +9,7 @@
 #define SRC_XUARTPS_0_XDMAPS_H_
 
 #include "xil_types.h"
+#include "xdmaps.h"
 
 #define DMA_DEVICE_ID 		XPAR_XDMAPS_1_DEVICE_ID
 #define DMA_DONE_INTR_0		XPAR_XDMAPS_0_DONE_INTR_0
@@ -16,6 +17,8 @@
 #define DMA_CHANNEL			0
 #define DMA_LENGTH			1024	/* Length of the Dma Transfers */
 #define TIMEOUT_LIMIT 		0x2000	/* Loop count for timeout */
+
+static XDmaPs_Cmd DmaCmd;
 
 void DMAPS_Init();
 

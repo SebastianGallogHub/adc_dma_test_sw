@@ -16,7 +16,10 @@
 
 #define BUFFER_SIZE	40
 
+extern int uart0DoneTx;
+
 void UARTPS_0_Init();
+void UARTPS_0_StartRx();
 
 void UARTPS_0_Test();
 

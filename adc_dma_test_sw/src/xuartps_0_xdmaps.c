@@ -26,8 +26,8 @@ void DMAPS_DoneHandler(unsigned int Channel, XDmaPs_Cmd *DmaCmd, void *CallbackR
 
 static XDmaPs 	DmaPs;
 
-XDmaPs_Cmd DmaCmd;
-volatile int dmapsDone;
+
+volatile int dmapsDone = 1;
 unsigned int Channel = 0;
 
 Intr_Config dmaFaultIntrConfig = {
@@ -76,6 +76,9 @@ void DMAPS_ConfigSend(u32 src, u32 dst, int burstSize, int burstLen, unsigned in
 }
 
 void DMAPS_Send(){
+//	int c = 0;
+//	while(!dmapsDone);
+//	dmapsDone = 0;
 	XDmaPs_Start(&DmaPs, DMA_CHANNEL, &DmaCmd, 0);
 }
 
@@ -86,7 +89,5 @@ void DMAPS_DoneHandler(unsigned int Channel, XDmaPs_Cmd *DmaCmd, void *CallbackR
 }
 
 int DMAPS_Done(){
-	int c = dmapsDone;
-	dmapsDone = 0;
-	return c;
+	return dmapsDone;
 }

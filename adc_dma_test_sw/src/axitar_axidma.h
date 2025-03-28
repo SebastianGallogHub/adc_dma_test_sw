@@ -33,6 +33,6 @@ extern u32 Error;
 
 int AXI_DMA_Init();
 void AXI_DMA_Reset();
-int AXI_DMA_RxInit(u32 cnt, u32 len);
+int AXI_DMA_SetupRx(u32 cnt, u32 len);
 
 #endif /* SRC_AXITAR_AXIDMA_H_ */
