@@ -32,7 +32,7 @@ void PrintRxData();
 
 /****************************************************************************/
 
-#define MAIN_axitar
+//#define MAIN_axitar
 #ifdef MAIN_axitar
 int main(){
 	UARTPS_0_Init();

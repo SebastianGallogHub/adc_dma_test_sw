@@ -21,22 +21,41 @@
 
 /************************** Function Prototypes *****************************/
 
-void TAR_IntrHandler(void * Callback);
+void TAR_master_IntrHandler(void * Callback);
 
 /************************** Variable Definitions ***************************/
 
 u32 axiTarTransferCount = 0;
 Intr_Config tarIntrConfig =	{
 		TAR_DR_INTR_ID,
-		(Xil_ExceptionHandler)TAR_IntrHandler,
+		(Xil_ExceptionHandler)TAR_master_IntrHandler,
 		(void *)TAR_BASE,
 		0xA0
 };
+/****************************************************************************/
+
+void AXI_TAR_SetHysteresis(int channel, u16 low, u16 high) {
+	u32 histeresis = 0;
+	histeresis = (high << 16) & low;
+	if (channel == 0){
+		AXI_TAR_mWriteReg(TAR_BASE, TAR_CH1_HIST_OFF, histeresis);
+	}else{
+		AXI_TAR_mWriteReg(TAR_BASE, TAR_CH2_HIST_OFF, histeresis);
+	}
+}
+
+void AXI_TAR_Init() {
+	LOG(1, "TAR_Init");
+
+	TAR_StopAll();
+
+	//Espero que se registre el valor de stop
+	while(AXI_TAR_mReadReg(TAR_BASE,TAR_CONFIG_OFF));
+}
 
 /****************************************************************************/
 
-void TAR_Init(u32 cuenta)
-{
+void AXI_TAR_master_Init(u32 cuenta) {
 	LOG(1, "TAR_Init");
 
 	TAR_StopAll();
@@ -55,8 +74,8 @@ void TAR_Init(u32 cuenta)
 	AddIntrHandler(&tarIntrConfig);
 	return;
 }
-void TAR_IntrHandler(void * Callback)
-{
+
+void TAR_master_IntrHandler(void * Callback) {
 	if(axiTarTransferCount <= UINT32_MAX)
 	{
 		axiTarTransferCount ++;

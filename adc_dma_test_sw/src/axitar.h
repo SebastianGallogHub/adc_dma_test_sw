@@ -21,13 +21,13 @@
 // TAR
 #define TAR_CH1_HIST_OFF	AXI_TAR_S00_AXI_SLV_REG1_OFFSET
 #define TAR_CH2_HIST_OFF	AXI_TAR_S00_AXI_SLV_REG2_OFFSET
-//#define TAR_Start()			AXI_TAR_mWriteReg(TAR_BASE,TAR_CONFIG_OFF, 0x01);
+#define TAR_Start()			AXI_TAR_mWriteReg(TAR_BASE, TAR_CONFIG_OFF, 0x01);
 
 // master_test
 #define master_COUNT_CFG_OFF	AXI_TAR_S00_AXI_SLV_REG1_OFFSET
 #define master_COUNT_OFF		AXI_TAR_S00_AXI_SLV_REG3_OFFSET
 #define master_INTR_COUNT_OFF	AXI_TAR_S00_AXI_SLV_REG2_OFFSET
-#define TAR_Start_master_test()	AXI_TAR_mWriteReg(TAR_BASE,TAR_CONFIG_OFF, 0x10);
+#define TAR_Start_master()	AXI_TAR_mWriteReg(TAR_BASE, TAR_CONFIG_OFF, 0x10);
 
 #define TAR_MASTER_TRANSFER_PERIOD_ms 	1
 //#define TAR_MASTER_TRANSFER_PERIOD_us 	100
@@ -52,12 +52,16 @@
 #endif
 #endif
 
-#define TAR_DMA_TRANSFER_LEN	sizeof(u32)
+#define TAR_DMA_TRANSFER_LEN	sizeof(u64)//sizeof(u32)
 
 #define TAR_DR_INTR_ID		XPAR_FABRIC_AXI_TAR_0_INTROUT_INTR
 
 extern u32 axiTarTransferCount;
 
-void TAR_Init(u32);
+void AXI_TAR_master_Init(u32);
+
+void AXI_TAR_Init();
+
+void AXI_TAR_SetHysteresis(int channel, u16 low, u16 high);
 
 #endif /* SRC_AXITAR_H_ */

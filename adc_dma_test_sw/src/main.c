@@ -22,32 +22,43 @@
 //Funciones
 void PrintRxData();
 
-XTime tStart, tFinish, tElapsed; //todo ??
-#define GetElapsed_ns  ((tFinish-tStart)*3)
-#define GetElapsed_us  GetElapsed_ns/1000
-#define GetElapsed_ms  GetElapsed_ns/1000000
+//XTime tStart, tFinish, tElapsed; //todo ??
+//#define GetElapsed_ns  ((tFinish-tStart)*3)
+//#define GetElapsed_us  GetElapsed_ns/1000
+//#define GetElapsed_ms  GetElapsed_ns/1000000
 
 //-----------------------------------------------------------------------------
 
-//#define MAIN
+#define MAIN
 #ifdef MAIN
 int main()
 {
 	int Status;
 	char respuesta = 0;
 	int i = 0;
+	u16 h1_low, h1_high, h2_low, h2_high;
 
 //	LOG_CLEAR_SCREEN;
 
 	LOG(0, "--------------------- INICIO MAIN -----------------------");
-	LOG(1, "PRUEBA SOLO DE LAS INTERRUPCIONES DE MASTER_TEST");
-
+	LOG(1, "PRUEBA LÓGICA DETECCIÓN DE PULSO");
 
 	AXI_DMA_Init();
 
 	ZMODADC1410_Init();
 
-	TAR_Init(TAR_TRANSFER_COUNT);
+	h1_low = 0xffff;
+	h1_high = 0xffff;
+	h2_low = 0xffff;
+	h2_high = 0xffff;
+
+	AXI_TAR_Init();
+
+	LOG(2, "Canal 1, histéresis (%d ; %d)", h1_low, h1_high);
+	AXI_TAR_SetHysteresis(0, h1_low, h1_high);
+
+	LOG(2, "Canal 2, histéresis (%d ; %d)", h2_low, h2_high);
+	AXI_TAR_SetHysteresis(1, h2_low, h2_high);
 
 	do
 	{
@@ -58,12 +69,13 @@ int main()
 				"Fallo al inicializar el sistema de interrupciones");
 
 		ASSERT_SUCCESS(
-				AXI_DMA_RxInit(AXI_DMA_NUMBER_OF_TRANSFERS, TAR_DMA_TRANSFER_LEN),
+				AXI_DMA_SetupRx(AXI_DMA_NUMBER_OF_TRANSFERS, TAR_DMA_TRANSFER_LEN),
 				"Fallo al inicializar el DMA.");
 
-		LOG(1, "----- Inicio interrupciones");
-		TAR_Start_master_test();
-		XTime_GetTime(&tStart);
+		LOG(1, "----- Inicio adquisición");
+
+		TAR_Start();
+//		XTime_GetTime(&tStart);
 
 		Status = Xil_WaitForEventSet(1000000U, 1, &Error);
 		if (Status == XST_SUCCESS) {
@@ -76,19 +88,16 @@ int main()
 
 		DisableIntrSystem();
 
-		XTime_GetTime(&tFinish);
-
+//		XTime_GetTime(&tFinish);
 		TAR_StopAll();
 
 		AXI_DMA_Reset();
 
-		//Imprimir todos los valores recibidos junto a su dirección
+		// Imprimir todos los valores recibidos junto a su dirección
 		PrintRxData();
-		axiDmaIntCount = 0;
-		axiDmaTransferCount = 0;
-		axiTarTransferCount = 0;
-		xil_printf("¿Continuar?");
-		scanf(" %c", &respuesta);
+
+		xil_printf("¿Continuar?"); scanf(" %c", &respuesta);
+
 	}while(respuesta=='s' || respuesta=='S');
 
 	LOG(0, "--------------------- FIN MAIN -----------------------");
@@ -104,21 +113,22 @@ goOut:
 
 void PrintRxData()
 {
-	u32* buffer  = (u32*)AXI_DMA_RX_BUFFER_BASE;
+	u32 *buffer  = (u32*)AXI_DMA_RX_BUFFER_BASE;
 	LOG_LINE;LOG_LINE;
-	LOG(1, "Datos recibidos (%d ms)", GetElapsed_ms);
-
-	LOG(2, "--------------------------------------");
-	LOG(2, "\t\t\tCH1 \t|\tCH2", axiTarTransferCount);
-	for (u32 i = 0; i<= axiDmaTransferCount; i+=1){
-		LOG(2, "%d)\t%d  \t|\t%d\t\t[0x%08x]", i,  (u16)((buffer[i] >> 16) & 0xffff), (u16)(buffer[i] & 0xffFF), &buffer[i]);
+//	LOG(1, "Datos recibidos (%d ms)", GetElapsed_ms);
+//	LOG(2, "--------------------------------------");
+	LOG(4, "PULSOS");
+	for (u32 i = 0; i<= axiDmaTransferCount; i++){
+		LOG(2, "%3d)\t0x%x\t\t[0x%x]", i, buffer[i], &buffer[i]);
 	}
 	LOG(2, "--------------------------------------");
 	LOG(2, "Interrupciones recibidas por DMA: %d", axiDmaIntCount);
 	LOG(2, "Transferencias recibidas por DMA: %d", axiDmaTransferCount);
-	LOG(2, "Transferencias lanzadas por TAR: %d", axiTarTransferCount);
+//	LOG(2, "Transferencias lanzadas por TAR: %d", axiTarTransferCount);
 
-	return;
+	axiDmaIntCount = 0;
+	axiDmaTransferCount = 0;
+//	axiTarTransferCount = 0;
 }
 #endif // MAIN
 
