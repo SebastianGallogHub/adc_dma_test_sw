@@ -91,3 +91,8 @@ adc_dma_test_sw_system/Debug
 adc_dma_test_sw_system/Release
 adc_dma_test_sw_system/.gitignore
 .analytics
+scripts/*
+!scripts/*.c
+scripts/csv/*
+!scripts/csv
+!scripts/csv/*.c

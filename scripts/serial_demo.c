@@ -7,9 +7,10 @@
 #include <stdint.h>
 
 #define SERIAL_PORT "/dev/ttyUSB1"
+// #define SERIAL_PORT "/dev/ttyUSB"
 #define INPUT_FILE "salida_raw"
 #define OUTPUT_FILE "salida.csv"
-#define CHR_SIGN '%'
+#define CHR_SIGN '&'
 
 int serial_fd;
 char buffer;
@@ -22,12 +23,27 @@ int main()
     struct termios options;
     int bytes_read;
     // Abrir el puerto serie
+    // for (int i; i < 5; i++)
+    // {
+    //     serial_fd = open(SERIAL_PORT, O_RDONLY | O_NOCTTY);
+    //     if (serial_fd == -1)
+    //     {
+    //         perror("Error abriendo el puerto serie");
+    //         // return 1;
+    //     }
+    // }
+
     serial_fd = open(SERIAL_PORT, O_RDONLY | O_NOCTTY);
     if (serial_fd == -1)
     {
         perror("Error abriendo el puerto serie");
         return 1;
     }
+
+    // if (serial_fd < 0)
+    // {
+    //     return 1;
+    // }
 
     // Configurar el puerto serie
     tcgetattr(serial_fd, &options);
