@@ -145,7 +145,7 @@ void bin_to_csv()
     uint16_t data;
     size_t bytes_read;
     int channel = 0;    // Alternador de canal (0 = CH1, 1 = CH2)
-    int row_number = 1; // Contador de filas
+    int row_number = 0; // Contador de filas
 
     // Abrir el archivo binario de entrada
     input = fopen(INPUT_FILE, "rb");

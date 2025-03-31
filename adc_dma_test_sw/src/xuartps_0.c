@@ -36,7 +36,7 @@ static u8 RecvBuffer[BUFFER_SIZE];	/* Buffer for Receiving Data */
 
 volatile int receivedCommand = 0;
 volatile int sendOnRepeat = 0;
-int uart0DoneTx = 1;
+int uart0DoneTx = 0;
 
 volatile int TotalReceivedCount;
 volatile int TotalSentCount;

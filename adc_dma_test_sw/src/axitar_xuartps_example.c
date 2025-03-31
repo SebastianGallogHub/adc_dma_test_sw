@@ -47,7 +47,7 @@ int main(){
 
 	TAR_Start_master_test();
 
-	while(1);
+//	while(1);
 
 	UARTPS_0_StartRx();
 
@@ -63,72 +63,54 @@ int main(){
 
 	AXI_DMA_Reset();
 
-	LOG(0, "Interrupciones recibidas por DMA: %d", axiDmaIntCount);
-	LOG(0, "Transferencias recibidas por DMA: %d", axiDmaTransferCount);
-	LOG(0, "Transferencias lanzadas por TAR: %d", axiTarTransferCount);
+//	LOG(0, "Interrupciones recibidas por DMA: %d", axiDmaIntCount);
+//	LOG(0, "Transferencias recibidas por DMA: %d", axiDmaTransferCount);
+//	LOG(0, "Transferencias lanzadas por TAR: %d", axiTarTransferCount);
+
+	PrintRxData();
 
 	// Cargar un buffer con los datos de AXI_DMA_RX_BUFFER formateados para ver en pantalla
-	u32 sendCnt = 20; // Mando datos de a 40 Bytes, son 10 valores dobles de 16b
-	u32 i, j = 0;
-	u32 sended = 0;
+	u32 maxCntAEnviarPorTrans = 8; // Mando datos de a 40 Bytes, son 10 valores dobles de 16b
+	u32 cntRestaEnviar = 0;
+	u32 cntEnviados = 0;
+	u32 cntEnviarAhora = 0;
 	u32 *nextBuffer = (u32*)AXI_DMA_RX_BUFFER_BASE;
 
 	// Enviar todos los datos de a 64 bytes (máximo de uart tx)
-	i = AXI_DMA_NUMBER_OF_TRANSFERS*sizeof(u32); // Cuantos me queda por enviar
-	j = 0; // Desde donde respecto de la base
+	cntRestaEnviar = AXI_DMA_NUMBER_OF_TRANSFERS*sizeof(u32); // Cuantos me queda por enviar
+	cntEnviarAhora = 0; // Desde donde respecto de la base
 	xil_printf("&");
 
-//	memset(&DmaCmd, 0, sizeof(XDmaPs_Cmd));
-//
-//	DmaCmd.ChanCtrl.SrcBurstSize = sizeof(u8);
-//	DmaCmd.ChanCtrl.SrcBurstLen = 4;
-//	DmaCmd.ChanCtrl.SrcInc = 1;
-//
-//	DmaCmd.ChanCtrl.DstBurstSize = sizeof(u8);
-//	DmaCmd.ChanCtrl.DstBurstLen = 4;
-//	DmaCmd.ChanCtrl.DstInc = 0;
-//
-//	DmaCmd.BD.DstAddr = (u32)UART_TX_RX_FIFO_ADDR;
-
-	do {
-
-
-//		while(!DMAPS_Done());
-		// Configuro el envío
-		//UARTPS_0_ConfigSendAsync((u32)nextBuffer, sended);
-
-//		DmaCmd.BD.SrcAddr = (u32)nextBuffer;
-//		DmaCmd.BD.Length = sended * sizeof(u8);
-
-		// Envío async
-//		UARTPS_0_SendAsync();
-//		uart0DoneTx = 0;
-//		DMAPS_Send();
-
-		// Sincronizo con la UART0 para enviar la siguiente tanda por polling
-//		while(!uart0DoneTx);
+	while (cntRestaEnviar) { //Continúo siempre que haya datos para enviar
 
 		if(uart0DoneTx)
 		{
 			if(DMAPS_Done())
 			{
 				uart0DoneTx = 0;
-				j += sended;
-				i -= sended;
-				sended =  i > sendCnt? sendCnt: i;
-				nextBuffer += j;
-				DMAPS_ConfigSend((u32)nextBuffer, (u32)UART_TX_RX_FIFO_ADDR, 1, 4, sended*sizeof(u8));
+
+				// Calculo la cantidad a enviar en este lote según maxCntAEnviarPorTrans
+				cntEnviarAhora =  cntRestaEnviar > maxCntAEnviarPorTrans? maxCntAEnviarPorTrans: cntRestaEnviar;
+
+				// Configuro el envio
+				DMAPS_ConfigSend((u32)nextBuffer, (u32)UART_TX_RX_FIFO_ADDR, 1, 4, cntEnviarAhora*sizeof(u8));
+
+				// Envío
 				DMAPS_Send();
+
+				// Registro lo enviado
+				nextBuffer += cntEnviarAhora;
+				cntEnviados += cntEnviarAhora;
+				cntRestaEnviar -= cntEnviarAhora;
 			}
 		}
-	} while (i);
+	}
 
 	int timeout = 10000;
 	while(timeout --);
 
 	xil_printf("&");
 	LOG(0,"\nSe ejecutó correctamente el ejemplo");
-	PrintRxData();
 
 	TAR_Start_master_test();
 }
