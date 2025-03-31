@@ -122,3 +122,18 @@ platform config -updatehw {/home/sebas/Escritorio/proyecto/workspace/adc_dma_tes
 platform clean
 platform clean
 platform generate
+platform active {adc_dma_bd_wrapper}
+platform config -updatehw {/home/sebas/Escritorio/proyecto/workspace/adc_dma_test/adc_dma_bd_wrapper.xsa}
+platform clean
+platform clean
+platform clean
+platform generate
+platform config -updatehw {/home/sebas/Escritorio/proyecto/workspace/adc_dma_test/adc_dma_bd_wrapper.xsa}
+platform generate -domains 
+platform config -updatehw {/home/sebas/Escritorio/proyecto/workspace/compilados por uli/adc_dma_test_270325/adc_dma_bd_wrapper.xsa}
+platform generate
+platform config -updatehw {/home/sebas/Escritorio/proyecto/workspace/adc_dma_test/adc_dma_bd_wrapper.xsa}
+platform generate -domains 
+platform active {adc_dma_bd_wrapper}
+platform config -updatehw {/home/sebas/Escritorio/proyecto/workspace/adc_dma_test/adc_dma_bd_wrapper.xsa}
+platform generate -domains standalone_ps7_cortexa9_0,zynq_fsbl 

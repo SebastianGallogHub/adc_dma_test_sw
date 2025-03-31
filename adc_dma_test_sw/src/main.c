@@ -41,7 +41,7 @@ int main()
 //	LOG_CLEAR_SCREEN;
 
 	LOG(0, "--------------------- INICIO MAIN -----------------------");
-	LOG(1, "PRUEBA LÓGICA DETECCIÓN DE PULSO");
+	LOG(1, "PRUEBA LÓGICA DE DETECCIÓN DE PULSO");
 
 	AXI_DMA_Init();
 
