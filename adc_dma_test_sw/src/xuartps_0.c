@@ -11,6 +11,7 @@
 
 #include "xil_exception.h"
 #include "xil_printf.h"
+#include "sleep.h"
 
 #include "xuartps_0.h"
 #include "xuartps_0_xdmaps.h"
@@ -57,6 +58,10 @@ void UARTPS_0_Init() {
 	XUartPs_Config *Config;
 
 	Config = XUartPs_LookupConfig(UART_DEVICE_ID);
+
+	XUartPs_ResetHw(Config->BaseAddress);
+
+	usleep(1000000);
 
 	XUartPs_CfgInitialize(UartPsPtr, Config, Config->BaseAddress);
 

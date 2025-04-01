@@ -73,7 +73,8 @@ int main(){
 	PrintRxData();
 
 	// Cargar un buffer con los datos de AXI_DMA_RX_BUFFER formateados para ver en pantalla
-	u32 maxCntBYTES_EnviarPorTrans = sizeof(u32) * 2; // Mando datos de a 40 Bytes, son 10 valores dobles de 16b
+	int maxCntDATOS_EnviarPorTrans = 2;
+	u32 maxCntBYTES_EnviarPorTrans = sizeof(u32)*maxCntDATOS_EnviarPorTrans;//UART_TX_FIFO_DEPTH-16; //
 	u32 cntBYTES_RestaEnviar = 0;
 	u32 cntBYTES_EnviarAhora = 0;
 	u32 cntBYTES_Enviados = 0;
@@ -100,7 +101,7 @@ int main(){
 				cntBYTES_EnviarAhora =  cntBYTES_RestaEnviar > maxCntBYTES_EnviarPorTrans? maxCntBYTES_EnviarPorTrans: cntBYTES_RestaEnviar;
 
 				// Configuro el envio
-				DMAPS_ConfigSend((u32)nextBuffer, (u32)UART_TX_RX_FIFO_ADDR, 1, 4, cntBYTES_EnviarAhora*sizeof(u8));
+				DMAPS_ConfigSend((u32)nextBuffer, (u32)UART_TX_RX_FIFO_ADDR, 1, 16, cntBYTES_EnviarAhora*sizeof(u8));
 
 				// Envío
 				DMAPS_Send();
