@@ -6,10 +6,13 @@
  */
 
 /***************************** Include Files *******************************/
+#include <stdio.h>
+
 #include "xuartps.h"
 
 #include "xil_printf.h"
 
+#include "sleep.h"
 #include "axitar.h"
 #include "axitar_axidma.h"
 #include "xuartps_0.h"
@@ -70,46 +73,56 @@ int main(){
 	PrintRxData();
 
 	// Cargar un buffer con los datos de AXI_DMA_RX_BUFFER formateados para ver en pantalla
-	u32 maxCntAEnviarPorTrans = 8; // Mando datos de a 40 Bytes, son 10 valores dobles de 16b
-	u32 cntRestaEnviar = 0;
-	u32 cntEnviados = 0;
-	u32 cntEnviarAhora = 0;
+	u32 maxCntBYTES_EnviarPorTrans = sizeof(u32) * 2; // Mando datos de a 40 Bytes, son 10 valores dobles de 16b
+	u32 cntBYTES_RestaEnviar = 0;
+	u32 cntBYTES_EnviarAhora = 0;
+	u32 cntBYTES_Enviados = 0;
 	u32 *nextBuffer = (u32*)AXI_DMA_RX_BUFFER_BASE;
 
+
 	// Enviar todos los datos de a 64 bytes (máximo de uart tx)
-	cntRestaEnviar = AXI_DMA_NUMBER_OF_TRANSFERS*sizeof(u32); // Cuantos me queda por enviar
-	cntEnviarAhora = 0; // Desde donde respecto de la base
+	cntBYTES_RestaEnviar = AXI_DMA_NUMBER_OF_TRANSFERS*sizeof(u32); // Cuantos BYTES me quedan por enviar
+	cntBYTES_EnviarAhora = 0; // Desde donde respecto de la base
+	cntBYTES_Enviados = 0;
+	nextBuffer = (u32*)AXI_DMA_RX_BUFFER_BASE;
+
+	LOG(1,"Enviando %d bytes de a %d bytes (%d pares) desde [0x%08x]",
+			cntBYTES_RestaEnviar, maxCntBYTES_EnviarPorTrans, maxCntBYTES_EnviarPorTrans/sizeof(u32) , nextBuffer);
+
 	xil_printf("&");
-
-	while (cntRestaEnviar) { //Continúo siempre que haya datos para enviar
-
-		if(uart0DoneTx)
-		{
-			if(DMAPS_Done())
-			{
+	while (cntBYTES_RestaEnviar) { //Continúo siempre que haya datos para enviar
+		if(uart0DoneTx)	{
+			if(DMAPS_Done()){
 				uart0DoneTx = 0;
+				usleep(800);
 
-				// Calculo la cantidad a enviar en este lote según maxCntAEnviarPorTrans
-				cntEnviarAhora =  cntRestaEnviar > maxCntAEnviarPorTrans? maxCntAEnviarPorTrans: cntRestaEnviar;
+				// Calculo la cantidad a enviar en este lote según maxCntBYTES_EnviarPorTrans
+				cntBYTES_EnviarAhora =  cntBYTES_RestaEnviar > maxCntBYTES_EnviarPorTrans? maxCntBYTES_EnviarPorTrans: cntBYTES_RestaEnviar;
 
 				// Configuro el envio
-				DMAPS_ConfigSend((u32)nextBuffer, (u32)UART_TX_RX_FIFO_ADDR, 1, 4, cntEnviarAhora*sizeof(u8));
+				DMAPS_ConfigSend((u32)nextBuffer, (u32)UART_TX_RX_FIFO_ADDR, 1, 4, cntBYTES_EnviarAhora*sizeof(u8));
 
 				// Envío
 				DMAPS_Send();
 
 				// Registro lo enviado
-				nextBuffer += cntEnviarAhora;
-				cntEnviados += cntEnviarAhora;
-				cntRestaEnviar -= cntEnviarAhora;
+				nextBuffer += cntBYTES_EnviarAhora/sizeof(u32); // CANTIDAD EN DATOS NO EN BYTES!!!!
+				cntBYTES_Enviados += cntBYTES_EnviarAhora;
+				cntBYTES_RestaEnviar -= cntBYTES_EnviarAhora;
 			}
 		}
 	}
 
-	int timeout = 10000;
-	while(timeout --);
+	while(1){
+		if(uart0DoneTx)	{
+			if(DMAPS_Done()){
+				xil_printf("&");
+				break;
+			}
+		}
+	}
 
-	xil_printf("&");
+	usleep(1000);
 	LOG(0,"\nSe ejecutó correctamente el ejemplo");
 
 	TAR_Start_master_test();
@@ -118,19 +131,18 @@ int main(){
 void PrintRxData()
 {
 	u32* buffer  = (u32*)AXI_DMA_RX_BUFFER_BASE;
-	LOG_LINE;LOG_LINE;
-//	LOG(1, "Datos recibidos (%d ms)", GetElapsed_ms);
-	LOG(1, "Datos recibidos\n");
 
-	LOG(2, "--------------------------------------");
-	LOG(2, "\t\t\tCH1 \t|\tCH2", axiTarTransferCount);
+	LOG(0, "------------------------------------------------------------------------------------------------------------------");
+	LOG(1, "Datos recibidos");
+	LOG(3, "CH1 \t|\tCH2", axiTarTransferCount);
 	for (u32 i = 0; i<= axiDmaTransferCount; i+=1){
-		LOG(2, "%d)\t%d  \t|\t%d\t\t[0x%08x]", i,  (u16)((buffer[i] >> 16) & 0xffff), (u16)(buffer[i] & 0xffFF), &buffer[i]);
+		LOG(2, "%d)\t;%d  \t;\t%d;\t\t[0x%08x]", i,  (u16)((buffer[i] >> 16) & 0xffff), (u16)(buffer[i] & 0xffFF), &buffer[i]);
 	}
-	LOG(2, "--------------------------------------");
+	LOG(0, "------------------------------------------------------------------------------------------------------------------");
 	LOG(2, "Interrupciones recibidas por DMA: %d", axiDmaIntCount);
 	LOG(2, "Transferencias recibidas por DMA: %d", axiDmaTransferCount);
 	LOG(2, "Transferencias lanzadas por TAR: %d", axiTarTransferCount);
+	LOG(0, "------------------------------------------------------------------------------------------------------------------");
 
 	return;
 }

@@ -188,6 +188,53 @@ void bin_to_csv()
         }
     }
 
+    /*
+    uint16_t ch1 = 0, ch2 = 0;
+    int dir = 1, lsb = 1;
+
+    // Leer datos de 16 bits y escribir en CSV alternando entre CH1 y CH2
+    while (fread(buffer, 1, 1, input) == 1)
+    {
+        if (buffer[0] == '(')
+        {
+            dir = 1;
+        }
+        if (buffer[0] == ')')
+        {
+            dir = 0;
+            fprintf(output, "%c", buffer[0]);
+        }
+
+        if (dir)
+        {
+            fprintf(output, "%c", buffer[0]);
+        }
+        else if (lsb)
+        {
+            // Convertir bytes a un valor de 16 bits (little-endian)
+            lsb = 0;
+            data = (buffer[0] << 8);
+        }
+        else
+        {
+            // Convertir bytes a un valor de 16 bits (little-endian)
+            lsb = 1;
+            data |= buffer[0];
+
+            if (channel == 0)
+            {
+                ch2 = data;  // Guardar en CH2
+                channel = 1; // Cambiar a CH1
+            }
+            else
+            {
+                ch1 = data; // Guardar en CH1
+                fprintf(output, "\n%d,%u,%u,", row_number++, ch1, ch2);
+                channel = 0; // Volver a CH2
+            }
+        }
+    }*/
+
     // Si el número de datos es impar, escribir el último valor en CH1 sin CH2
     if (channel == 1)
     {

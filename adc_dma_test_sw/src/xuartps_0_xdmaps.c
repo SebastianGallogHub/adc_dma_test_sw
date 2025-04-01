@@ -78,7 +78,7 @@ void DMAPS_ConfigSend(u32 src, u32 dst, int burstSize, int burstLen, unsigned in
 void DMAPS_Send(){
 //	int c = 0;
 //	while(!dmapsDone);
-//	dmapsDone = 0;
+	dmapsDone = 0;
 	XDmaPs_Start(&DmaPs, DMA_CHANNEL, &DmaCmd, 0);
 }
 
