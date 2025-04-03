@@ -33,10 +33,10 @@ void PrintRxData();
 #ifdef MAIN
 int main()
 {
-	int Status;
-	char respuesta = 0;
+	int Status;	char respuesta = 0;
 	int i = 0;
 	u16 h1_low, h1_high, h2_low, h2_high;
+	float resolution = 3.21;
 
 //	LOG_CLEAR_SCREEN;
 
@@ -47,10 +47,11 @@ int main()
 
 	ZMODADC1410_Init();
 
-	h1_low = 0xffff;
-	h1_high = 0xffff;
-	h2_low = 0xffff;
-	h2_high = 0xffff;
+
+	h1_low = 1000/resolution;//0x3fff;
+	h1_high = 3000/resolution;
+	h2_low = 0x3fff;
+	h2_high = 0x3fff;
 
 	AXI_TAR_Init();
 
@@ -113,7 +114,7 @@ goOut:
 
 void PrintRxData()
 {
-	u32 *buffer  = (u32*)AXI_DMA_RX_BUFFER_BASE;
+	u64 *buffer  = (u64*)AXI_DMA_RX_BUFFER_BASE;
 	LOG_LINE;LOG_LINE;
 //	LOG(1, "Datos recibidos (%d ms)", GetElapsed_ms);
 //	LOG(2, "--------------------------------------");

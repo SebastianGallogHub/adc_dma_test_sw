@@ -146,3 +146,11 @@ platform generate -domains
 platform active {adc_dma_bd_wrapper}
 platform config -updatehw {/home/sebas/Escritorio/proyecto/workspace/adc_dma_test/adc_dma_bd_wrapper.xsa}
 platform generate -domains standalone_ps7_cortexa9_0,zynq_fsbl 
+platform active {adc_dma_bd_wrapper}
+platform config -updatehw {/home/sebas/Escritorio/proyecto/workspace/adc_dma_test/adc_dma_bd_wrapper.xsa}
+platform generate -domains 
+platform config -updatehw {/home/sebas/Escritorio/proyecto/workspace/adc_dma_test/adc_dma_bd_wrapper.xsa}
+platform generate -domains 
+platform active {adc_dma_bd_wrapper}
+platform config -updatehw {/home/sebas/Escritorio/proyecto/workspace/adc_dma_test/adc_dma_bd_wrapper.xsa}
+platform generate -domains 

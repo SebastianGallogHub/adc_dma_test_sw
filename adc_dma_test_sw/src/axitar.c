@@ -36,12 +36,13 @@ Intr_Config tarIntrConfig =	{
 
 void AXI_TAR_SetHysteresis(int channel, u16 low, u16 high) {
 	u32 histeresis = 0;
-	histeresis = (high << 16) & low;
+	histeresis = ((u32)high << 16) | (u32)low;
 	if (channel == 0){
 		AXI_TAR_mWriteReg(TAR_BASE, TAR_CH1_HIST_OFF, histeresis);
 	}else{
 		AXI_TAR_mWriteReg(TAR_BASE, TAR_CH2_HIST_OFF, histeresis);
 	}
+	return;
 }
 
 void AXI_TAR_Init() {
