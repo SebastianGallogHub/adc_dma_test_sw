@@ -89,51 +89,38 @@ void UARTPS_0_StartRx(){
 }
 
 void UARTPS_0_Test() {
-	int i;
-	for (i = 0; i < BUFFER_SIZE-1; i++) {
-		SendBuffer[i] = (i % 26) + 'A';
-	}
-
-	SendBuffer[i] = '\n'; // Agrego un enter para formato
-
-	UARTPS_0_ConfigSendAsync((u32)SendBuffer, BUFFER_SIZE * sizeof(u8));
-
-	while (1) {
-		if(receivedCommand)
-		{
-			if(receivedCommand == 1)
-			{
-				sendOnRepeat = 1;
-				UARTPS_0_SendAsync();
-			}else{
-				sendOnRepeat = 0;
-			}
-
-			receivedCommand = 0;
-		}
-	}
+//	int i;
+//	for (i = 0; i < BUFFER_SIZE-1; i++) {
+//		SendBuffer[i] = (i % 26) + 'A';
+//	}
+//
+//	SendBuffer[i] = '\n'; // Agrego un enter para formato
+//
+//	UARTPS_0_ConfigSendAsync((u32)SendBuffer, BUFFER_SIZE * sizeof(u8));
+//
+//	while (1) {
+//		if(receivedCommand)
+//		{
+//			if(receivedCommand == 1)
+//			{
+//				sendOnRepeat = 1;
+//				UARTPS_0_SendAsync();
+//			}else{
+//				sendOnRepeat = 0;
+//			}
+//
+//			receivedCommand = 0;
+//		}
+//	}
 }
 
-int UARTPS_0_ConfigSendAsync(u32 sendBufferAddr, int buffSizeBytes) {
-//	xil_printf("Seteando  DMA PARA ENVIAR POR UART\r\n");
+void UARTPS_0_SendAsync(u32 sendBufferAddr, int buffSizeBytes) {
+	// Delay necesario entre envíos sucesivos
+	usleep(UART_MIN_DELAY_PER_BYTE_SEND * buffSizeBytes);
 
-	// Para que en Handler se reciba la cantidad de enviados a través de EventData
-//	UartPs.SendBuffer.RequestedBytes = BUFFER_SIZE;
-	DMAPS_ConfigSend(sendBufferAddr, (u32)UART_TX_RX_FIFO_ADDR,
-			 1, 4, buffSizeBytes);
+	DMAPS_ConfigSend(sendBufferAddr, (u32)UART_TX_RX_FIFO_ADDR, buffSizeBytes);
 
-	return 0;
-}
-
-void UARTPS_0_SendAsync() {
-	// Espero a que se haya mandado todo lo disponible en el TX_FIFO
-//	int c = 0;
-//	while(!c) {c = DMAPS_Done();}
-	while(!UARTPS_0_DoneTx());
 	uart0DoneTx = 0;
-//	clearIntrTXEMPTY();
-//	setIntrTXEMPTY_On();
-	XUartPs_SetInterruptMask(&UartPs, IntrMask);
 	DMAPS_Send();
 }
 
@@ -141,8 +128,6 @@ int UARTPS_0_DoneTx()
 {
 	int c = XUartPs_IsTransmitEmpty(&UartPs);
 	return uart0DoneTx && c;
-//	return c;
-//	return XUartPs_IsTransmitEmpty(&UartPs);
 }
 
 void XUartPs_InterruptHandler_Wrapper(XUartPs *InstancePtr){
@@ -159,45 +144,12 @@ void XUartPs_InterruptHandler_Wrapper(XUartPs *InstancePtr){
 				   XUARTPS_ISR_OFFSET);
 
 	if((IsrStatus & ((u32)XUARTPS_IXR_TXEMPTY | (u32)XUARTPS_IXR_TXFULL)) != (u32)0) {
-		// Sé que puedo enviar este mensaje por acá porque TXEMPTY
-//		if(DMAPS_Done() && sendOnRepeat){
-//			DMAPS_Send();
-//		}
-
-		//u32 IntrMask = XUartPs_GetInterruptMask(InstancePtr);
 		uart0DoneTx = 1;
-//		clearIntrTXEMPTY();
-//		XUartPs_SetInterruptMask(InstancePtr, IntrMask);
-//		return;
 	}
-
-//	if((IsrStatus & ((u32)XUARTPS_IXR_TXFULL)) != (u32)0) {
-//		//todo manejar interrupicón por TX_FULL
-//		i++;
-//	}
 
 	// Por último llamo a la función original que debía estar conectada al evento
 	// para no romper con la cadena que ejecuta UART_Handler para la recepción
 	XUartPs_InterruptHandler(InstancePtr);
-}
-
-void setIntrTXEMPTY_On(){
-	u32 IntrMask = XUartPs_GetInterruptMask(&UartPs);
-
-	IntrMask |= XUARTPS_IXR_TXEMPTY;
-
-	XUartPs_SetInterruptMask(&UartPs, IntrMask);
-}
-
-void clearIntrTXEMPTY(){
-	u32 IsrStatus = XUartPs_ReadReg(UartPs.Config.BaseAddress,
-					   XUARTPS_IMR_OFFSET);
-
-	IsrStatus &= XUartPs_ReadReg(UartPs.Config.BaseAddress,
-				   XUARTPS_ISR_OFFSET);
-
-	XUartPs_WriteReg(UartPs.Config.BaseAddress, XUARTPS_ISR_OFFSET,
-			IsrStatus);
 }
 
 void UART_O_Handler(void *CallBackRef, u32 Event, unsigned int EventData)
@@ -207,7 +159,6 @@ void UART_O_Handler(void *CallBackRef, u32 Event, unsigned int EventData)
 
 	if (Event == XUARTPS_EVENT_SENT_DATA) {
 		// Reactivo la interrupción. Al parecer se desactiva en XUartPs_InterruptHandler
-//		setIntrTXEMPTY_On();
 		IntrMask = XUartPs_GetInterruptMask(UartPsPtr);
 
 		IntrMask |= XUARTPS_IXR_TXEMPTY;
