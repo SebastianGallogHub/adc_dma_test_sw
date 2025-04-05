@@ -40,30 +40,30 @@ void PrintRxData();
 int main(){
 	UARTPS_0_Init();
 
-	AXI_DMA_Init(TAR_DMA_TRANSFER_LEN, (AXI_DMA_ProcessBufferDelegate)UARTPS_0_SendBufferAsync);
+	AXI_DMA_Init(AXI_TAR_DMA_TRANSFER_LEN, (AXI_DMA_ProcessBufferDelegate)UARTPS_0_SendBufferAsync);
 
 	ZMODADC1410_Init();
 
-	TAR_Init(TAR_TRANSFER_PERIOD);
+	AXI_TAR_master_test_Init(AXI_TAR_TRANSFER_PERIOD);
 
 	SetupIntrSystem();
 
 	UARTPS_0_StartRx();
 
-	AXI_DMA_SetupRx(AXI_DMA_NUMBER_OF_TRANSFERS, TAR_DMA_TRANSFER_LEN);
+	AXI_DMA_SetupRx(AXI_DMA_NUMBER_OF_TRANSFERS, AXI_TAR_DMA_TRANSFER_LEN);
 
-	LOG(1, "Enviando %d bytes", AXI_DMA_NUMBER_OF_TRANSFERS * TAR_DMA_TRANSFER_LEN);
+	LOG(1, "Enviando %d bytes", AXI_DMA_NUMBER_OF_TRANSFERS * AXI_TAR_DMA_TRANSFER_LEN);
 
 	LOG(0, "----- Inicio interrupciones -----");
 
 	xil_printf("&");
 
-	TAR_Start_master_test();
+	AXI_TAR_Start_master_test();
 
 	// Espero hasta que se den las transacciones
 	while(axiDmaTransferCount < AXI_DMA_NUMBER_OF_TRANSFERS-3);
 
-	TAR_StopAll();
+	AXI_TAR_StopAll();
 
 	AXI_DMA_Reset();
 
@@ -76,23 +76,8 @@ int main(){
 
 	PrintRxData();
 
-//	xil_printf("&");
-
-//	UARTPS_0_SendBufferAsync((u32)AXI_DMA_RX_BUFFER_BASE, AXI_DMA_NUMBER_OF_TRANSFERS * TAR_DMA_TRANSFER_LEN, TAR_DMA_TRANSFER_LEN);
-
-//	while(1){
-//		if(UARTPS_0_DoneTx()){
-//			if(DMAPS_Done()){
-//				xil_printf("&");
-//				break;
-//			}
-//		}
-//	}
-
 	usleep(1000);
 	LOG(0,"\nSe ejecutó correctamente el ejemplo");
-
-	TAR_Start_master_test();
 }
 
 void PrintRxData()
