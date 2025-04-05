@@ -32,7 +32,7 @@ void clearIntrTXEMPTY();
 
 static XUartPs UartPs;
 
-static u8 SendBuffer[BUFFER_SIZE];	/* Buffer for Transmitting Data */
+//static u8 SendBuffer[BUFFER_SIZE];	/* Buffer for Transmitting Data */
 static u8 RecvBuffer[BUFFER_SIZE];	/* Buffer for Receiving Data */
 
 volatile int receivedCommand = 0;
@@ -124,6 +124,38 @@ void UARTPS_0_SendAsync(u32 sendBufferAddr, int buffSizeBytes) {
 	DMAPS_Send();
 }
 
+int maxBytes = 0;
+int pendingBytes = 0;
+int sendBytes = 0;
+u8 *nextBuffer;
+
+void UARTPS_0_SendBufferAsync(u32 sendBufferAddr, int buffSizeBytes, int dataLen){
+	if (buffSizeBytes == 0) return;
+	if (sendBufferAddr == 0) return;
+
+	// Configuro dinámicamente el límite la primera vez que llamo
+	if(dataLen != 0)
+		maxBytes = UART_TX_FIFO_DEPTH - dataLen;
+
+	// Determino cuántos bytes me quedan por enviar
+	pendingBytes = buffSizeBytes;
+	sendBytes = pendingBytes > maxBytes? maxBytes: pendingBytes;
+
+	// Delay mandatorio
+	usleep(UART_MIN_DELAY_PER_BYTE_SEND * sendBytes);
+
+	DMAPS_ConfigSend(sendBufferAddr, (u32)UART_TX_RX_FIFO_ADDR, sendBytes);
+
+	// Envío
+	uart0DoneTx = 0;
+	DMAPS_Send();
+
+	// Recalculo el siguiente buffer
+	pendingBytes -= sendBytes;
+	if(pendingBytes != 0)
+		nextBuffer = (u8*)(sendBufferAddr + sendBytes);
+}
+
 int UARTPS_0_DoneTx()
 {
 	int c = XUartPs_IsTransmitEmpty(&UartPs);
@@ -132,7 +164,7 @@ int UARTPS_0_DoneTx()
 
 void XUartPs_InterruptHandler_Wrapper(XUartPs *InstancePtr){
 	u32 IsrStatus;
-	int i=0;
+//	int i=0;
 
 	Xil_AssertVoid(InstancePtr != NULL);
 	Xil_AssertVoid(InstancePtr->IsReady == XIL_COMPONENT_IS_READY);
@@ -145,6 +177,10 @@ void XUartPs_InterruptHandler_Wrapper(XUartPs *InstancePtr){
 
 	if((IsrStatus & ((u32)XUARTPS_IXR_TXEMPTY | (u32)XUARTPS_IXR_TXFULL)) != (u32)0) {
 		uart0DoneTx = 1;
+		// Disparo una transacción por lo que quede, registrado en estas variables
+		// 0 en data len para que se use el máximo dinámico de bytes a enviar en función
+		// de la primera llamada
+		UARTPS_0_SendBufferAsync((u32)nextBuffer, pendingBytes, 0);
 	}
 
 	// Por último llamo a la función original que debía estar conectada al evento
