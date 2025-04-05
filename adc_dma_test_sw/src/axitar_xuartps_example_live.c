@@ -38,21 +38,25 @@ void PrintRxData();
 #define MAIN_axitar_live
 #ifdef MAIN_axitar_live
 int main(){
+
 	UARTPS_0_Init();
-
-	AXI_DMA_Init(AXI_TAR_DMA_TRANSFER_LEN, (AXI_DMA_ProcessBufferDelegate)UARTPS_0_SendBufferAsync);
-
+	AXI_DMA_Init();
 	ZMODADC1410_Init();
-
 	AXI_TAR_master_test_Init(AXI_TAR_TRANSFER_PERIOD);
 
 	SetupIntrSystem();
 
 	UARTPS_0_StartRx();
 
-	AXI_DMA_SetupRx(AXI_DMA_NUMBER_OF_TRANSFERS, AXI_TAR_DMA_TRANSFER_LEN);
+	AXI_DMA_SetupRx(
+			AXI_DMA_NUMBER_OF_TRANSFERS,
+			AXI_TAR_DMA_TRANSFER_LEN,
+			(UART_TX_FIFO_DEPTH - AXI_TAR_DMA_TRANSFER_LEN)/AXI_TAR_DMA_TRANSFER_LEN, // máxima cantidad de DATOS que soporta la UART
+			(AXI_DMA_ProcessBufferDelegate)UARTPS_0_SendAsync);
 
-	LOG(1, "Enviando %d bytes", AXI_DMA_NUMBER_OF_TRANSFERS * AXI_TAR_DMA_TRANSFER_LEN);
+//	LOG(1, "Enviando %d bytes (%d datos)",
+//			AXI_DMA_NUMBER_OF_TRANSFERS * AXI_TAR_DMA_TRANSFER_LEN,
+//			(UART_TX_FIFO_DEPTH - AXI_TAR_DMA_TRANSFER_LEN)/AXI_TAR_DMA_TRANSFER_LEN);
 
 	LOG(0, "----- Inicio interrupciones -----");
 
@@ -61,20 +65,20 @@ int main(){
 	AXI_TAR_Start_master_test();
 
 	// Espero hasta que se den las transacciones
-	while(axiDmaTransferCount < AXI_DMA_NUMBER_OF_TRANSFERS-3);
+	while(axiDmaTransferCount < AXI_DMA_NUMBER_OF_TRANSFERS);
 
 	AXI_TAR_StopAll();
 
 	AXI_DMA_Reset();
 
 	while(1){
-		if(UARTPS_0_DoneSendBuffer()){
+		if(UARTPS_0_DoneTx()){
 			xil_printf("&");
 			break;
 		}
 	}
 
-	PrintRxData();
+//	PrintRxData();
 
 	usleep(1000);
 	LOG(0,"\nSe ejecutó correctamente el ejemplo");
@@ -86,8 +90,8 @@ void PrintRxData()
 
 	LOG(0, "-----------------------------------------------------------------------------------------------------------------");
 	LOG(1, "Datos recibidos");
-	LOG(3, "CH1 \t|\tCH2", axiTarTransferCount);
-	for (u32 i = 0; i<= axiDmaTransferCount; i+=1){
+	LOG(3, "CH1 \t|\tCH2");
+	for (u32 i = 0; i<= AXI_DMA_NUMBER_OF_TRANSFERS; i+=1){
 		LOG(2, "%d)\t;%d  \t;\t%d;\t\t[0x%08x]", i,  (u16)((buffer[i] >> 16) & 0xffff), (u16)(buffer[i] & 0xffFF), &buffer[i]);
 	}
 	LOG(0, "------------------------------------------------------------------------------------------------------------------");

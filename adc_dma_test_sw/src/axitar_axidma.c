@@ -32,7 +32,9 @@ u32 Error = 0;
 
 Intr_Config axiDmaIntrConfig;
 
-int bufferLen;
+int bufferDataSize;
+int rbSize;
+int dataCoalesce;
 AXI_DMA_ProcessBufferDelegate ProcessBuffer;
 
 
@@ -40,6 +42,10 @@ AXI_DMA_ProcessBufferDelegate ProcessBuffer;
 
 void AXI_DMA_Reset() {
 	int TimeOut = 10000;
+
+	axiDmaIntCount = 0;
+	axiDmaTransferCount = 0;
+	Error = 0;
 
 	XAxiDma_Reset(&AxiDma);
 
@@ -50,7 +56,7 @@ void AXI_DMA_Reset() {
 	}
 }
 
-int AXI_DMA_Init(int buffLen, AXI_DMA_ProcessBufferDelegate processBuffer) {
+int AXI_DMA_Init() {
 	XAxiDma_Config *Config;
 	XAxiDma_BdRing *RxRingPtr;
 
@@ -73,13 +79,10 @@ int AXI_DMA_Init(int buffLen, AXI_DMA_ProcessBufferDelegate processBuffer) {
 
 	AddIntrHandler(&axiDmaIntrConfig);
 
-	bufferLen = buffLen;
-	ProcessBuffer = processBuffer;
-
 	return 0;
 }
 
-int AXI_DMA_SetupRx(u32 cntTransferencias, u32 dataLen) {
+int AXI_DMA_SetupRx(u32 ringBufferSize, u32 dataSize, int maxCntDataSend, AXI_DMA_ProcessBufferDelegate processBuffer) {
     LOG(1, "AXI_DMA_Init");
 
     XAxiDma_BdRing *RxRingPtr;
@@ -102,11 +105,11 @@ int AXI_DMA_SetupRx(u32 cntTransferencias, u32 dataLen) {
 
     // Calculo la cantidad de BDs disponibles en el espacio asignado para la recepción
     BdCount = XAxiDma_BdRingCntCalc(XAXIDMA_BD_MINIMUM_ALIGNMENT, AXI_DMA_RX_BD_SPACE);
-    ASSERT(BdCount >= cntTransferencias, "No hay suficientes BDs para las transferencias");
+    ASSERT(BdCount >= ringBufferSize, "No hay suficientes BDs para las transferencias");
 
     // Creo el ringbuffer de BDs para la recepción, asignando el espacio de memoria definido
     status = XAxiDma_BdRingCreate(RxRingPtr, AXI_DMA_RX_BD_SPACE_BASE, AXI_DMA_RX_BD_SPACE_BASE,
-                                  XAXIDMA_BD_MINIMUM_ALIGNMENT, cntTransferencias);
+                                  XAXIDMA_BD_MINIMUM_ALIGNMENT, ringBufferSize);
     ASSERT_SUCCESS(status, "Rx bd create failed");
 
     // Inicializo el ringbuffer de BDs con un template vacío
@@ -115,9 +118,9 @@ int AXI_DMA_SetupRx(u32 cntTransferencias, u32 dataLen) {
     		XAxiDma_BdRingClone(RxRingPtr, &BdTemplate), "Rx bd clone failed");
 
     // Reservo la cantidad de BDs necesarios para las transferencias y obtiene el primer BD
-    LOG(2, "DMA configurado para recibir %d transferencias. Longitud %d bytes", cntTransferencias, dataLen);
+    LOG(2, "DMA configurado para recibir %d transferencias. Longitud %d bytes", ringBufferSize, dataSize);
     ASSERT_SUCCESS(
-    		XAxiDma_BdRingAlloc(RxRingPtr, cntTransferencias, &BdPtr), "Rx bd alloc failed");
+    		XAxiDma_BdRingAlloc(RxRingPtr, ringBufferSize, &BdPtr), "Rx bd alloc failed");
 
     BdCurPtr = BdPtr;
     RxBufferPtr = AXI_DMA_RX_BUFFER_BASE;
@@ -126,23 +129,23 @@ int AXI_DMA_SetupRx(u32 cntTransferencias, u32 dataLen) {
     RxBufferPtr = (RxBufferPtr + 63) & ~0x3F;
 
     // Configuro cada BD para las transferencias de recepción:
-    for (u32 i = 0; i < cntTransferencias; i++) {
+    for (u32 i = 0; i < ringBufferSize; i++) {
     	// Asigno la dirección del buffer para el BD actual
         status = XAxiDma_BdSetBufAddr(BdCurPtr, RxBufferPtr);
     	ASSERT_SUCCESS(
     			status, "Rx set buffer addr %x on BD %x failed %d\r\n",(unsigned int)RxBufferPtr,(UINTPTR)BdCurPtr);
 
     	// Configuro la longitud de datos a transferir, respetando el máximo permitido
-    	status = XAxiDma_BdSetLength(BdCurPtr, dataLen, RxRingPtr->MaxTransferLen);
+    	status = XAxiDma_BdSetLength(BdCurPtr, dataSize, RxRingPtr->MaxTransferLen);
     	ASSERT_SUCCESS(
-    			status, "Rx set length %d on BD %x failed %d\r\n", dataLen, (UINTPTR)BdCurPtr);
+    			status, "Rx set length %d on BD %x failed %d\r\n", dataSize, (UINTPTR)BdCurPtr);
 
     	// Asigno un identificador al BD basado en la dirección del buffer, para su seguimiento posterior
         XAxiDma_BdSetCtrl(BdCurPtr, 0);
         XAxiDma_BdSetId(BdCurPtr, RxBufferPtr);
 
         // Actualizo el puntero del buffer para la siguiente transferencia y avanzo al siguiente BD del ringbuffer
-        RxBufferPtr += dataLen;
+        RxBufferPtr += dataSize;
         BdCurPtr = (XAxiDma_Bd *)XAxiDma_BdRingNext(RxRingPtr, BdCurPtr);
     }
 
@@ -151,8 +154,8 @@ int AXI_DMA_SetupRx(u32 cntTransferencias, u32 dataLen) {
 
     // Me aseguro que las actualizaciones en la memoria se reflejen correctamente
     // realizando un flush de la cache para los BDs y el buffer de recepción
-    Xil_DCacheFlushRange((UINTPTR)BdPtr, cntTransferencias * sizeof(XAxiDma_Bd));
-    Xil_DCacheFlushRange((UINTPTR)AXI_DMA_RX_BUFFER_BASE, cntTransferencias * dataLen);
+    Xil_DCacheFlushRange((UINTPTR)BdPtr, ringBufferSize * sizeof(XAxiDma_Bd));
+    Xil_DCacheFlushRange((UINTPTR)AXI_DMA_RX_BUFFER_BASE, ringBufferSize * dataSize);
 
     LOG(2, "Interrupciones cada %d transacciones", AXI_DMA_COALESCE);
     ASSERT_SUCCESS(
@@ -160,7 +163,7 @@ int AXI_DMA_SetupRx(u32 cntTransferencias, u32 dataLen) {
 
     // Paso el anillo de BDs configurado al hardware para que comience a usarse
     ASSERT_SUCCESS(
-    		XAxiDma_BdRingToHw(RxRingPtr, cntTransferencias, BdPtr), "Rx ToHw failed");
+    		XAxiDma_BdRingToHw(RxRingPtr, ringBufferSize, BdPtr), "Rx ToHw failed");
 
     XAxiDma_BdRingIntEnable(RxRingPtr, XAXIDMA_IRQ_ALL_MASK);	// Habilito interrupciones
 
@@ -173,38 +176,62 @@ int AXI_DMA_SetupRx(u32 cntTransferencias, u32 dataLen) {
     ASSERT_SUCCESS(
     		status, "Error starting XAxiDma_BdRingStart");
 
-    LOG(2, "Primer buffer de datos: direccion 0x%08x",  (unsigned int)XAxiDma_BdGetId(BdPtr));
+    LOG(2, "Primer buffer de datos: direccion 0x%08x",  (unsigned int)XAxiDma_BdGetBufAddr(BdPtr));
+
+    rbSize = ringBufferSize;
+    bufferDataSize = dataSize;
+    dataCoalesce = maxCntDataSend;
+    ProcessBuffer = processBuffer;
 
     return XST_SUCCESS;
 }
 
-u8 *buf = 0;
-int coalesce = 0;
+u8 *sendBufferAddr = 0;
+int coalesceCounter = 0;
+
+#define bufferOverflow(sendBufferAddr, coalesceCounter) \
+	((u32)sendBufferAddr + coalesceCounter * bufferDataSize) - (AXI_DMA_RX_BUFFER_BASE + rbSize * bufferDataSize)
 
 void AXI_DMA_RxCallBack(XAxiDma_BdRing *RxRingPtr) {
 	// Cuento las transferencias hechas para finalizar el bucle principal
 	// Debería hacerse una interrupción cada transferencia
 
-	if (axiDmaTransferCount >= AXI_DMA_NUMBER_OF_TRANSFERS-3)
-		return;
+//	if (axiDmaTransferCount >= AXI_DMA_NUMBER_OF_TRANSFERS)
+//		return;
 
 	int BdCount;
+	int overflow;
 	XAxiDma_Bd *BdPtr;
 
 	BdCount = XAxiDma_BdRingFromHw(RxRingPtr, XAXIDMA_ALL_BDS, &BdPtr);
 	axiDmaTransferCount += BdCount;
-	coalesce += BdCount;
-	if(!buf) buf = (u8*)XAxiDma_BdGetBufAddr(BdPtr);
 	axiDmaIntCount ++;
+
+	coalesceCounter += BdCount;
+	if(!sendBufferAddr)
+		sendBufferAddr = (u8*)XAxiDma_BdGetBufAddr(BdPtr);
 
 	XAxiDma_BdRingFree(RxRingPtr, BdCount, BdPtr);
 
 	// Coalescencia manual porque no la está haciendo bien
-	if(ProcessBuffer != NULL && (coalesce >= 10)){
-		ProcessBuffer((u32)buf, coalesce * bufferLen, bufferLen);
+	if((ProcessBuffer != NULL) && (coalesceCounter >= dataCoalesce)){
 
-		coalesce = 0;
-		buf = 0;
+		overflow = bufferOverflow(sendBufferAddr, coalesceCounter);
+
+		if(overflow > 0){
+			// Enviar datos hasta el final del buffer
+			ProcessBuffer((u32)sendBufferAddr, ((coalesceCounter * bufferDataSize) - overflow), bufferDataSize);
+
+			// Enviar datos restantes desde el principio
+			sendBufferAddr = (u8*)AXI_DMA_RX_BUFFER_BASE;
+			ProcessBuffer((u32)sendBufferAddr, overflow, bufferDataSize);
+
+		}else{
+			ProcessBuffer((u32)sendBufferAddr, coalesceCounter * bufferDataSize, bufferDataSize);
+		}
+
+		coalesceCounter = 0;
+		sendBufferAddr = 0;
 	}
 
 	return;

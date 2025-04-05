@@ -15,8 +15,6 @@
 #define DMA_DONE_INTR_0		XPAR_XDMAPS_0_DONE_INTR_0
 #define DMA_FAULT_INTR		XPAR_XDMAPS_0_FAULT_INTR
 #define DMA_CHANNEL			0
-#define DMA_LENGTH			1024	/* Length of the Dma Transfers */
-#define TIMEOUT_LIMIT 		0x2000	/* Loop count for timeout */
 
 void DMAPS_Init();
 
