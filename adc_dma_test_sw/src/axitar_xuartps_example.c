@@ -73,41 +73,44 @@ int main(){
 	PrintRxData();
 
 	// Cargar un buffer con los datos de AXI_DMA_RX_BUFFER formateados para ver en pantalla
-	int maxCntDATOS_EnviarPorTrans = 2;
-	u32 maxCntBYTES_EnviarPorTrans = sizeof(u32)*maxCntDATOS_EnviarPorTrans;//UART_TX_FIFO_DEPTH-16; //
+	int maxCntDATOS_EnviarPorTrans = 15;
+	u32 maxCntBYTES_EnviarPorTrans = TAR_DMA_TRANSFER_LEN*maxCntDATOS_EnviarPorTrans;
+	//UART_TX_FIFO_DEPTH-UART_TX_FIFO_DEPTH-1;//TAR_DMA_TRANSFER_LEN*maxCntDATOS_EnviarPorTrans;//UART_TX_FIFO_DEPTH-16; //
 	u32 cntBYTES_RestaEnviar = 0;
 	u32 cntBYTES_EnviarAhora = 0;
 	u32 cntBYTES_Enviados = 0;
 	u32 *nextBuffer = (u32*)AXI_DMA_RX_BUFFER_BASE;
+	useconds_t delay = 400;
+
 
 
 	// Enviar todos los datos de a 64 bytes (máximo de uart tx)
-	cntBYTES_RestaEnviar = AXI_DMA_NUMBER_OF_TRANSFERS*sizeof(u32); // Cuantos BYTES me quedan por enviar
+	cntBYTES_RestaEnviar = AXI_DMA_NUMBER_OF_TRANSFERS*TAR_DMA_TRANSFER_LEN; // Cuantos BYTES me quedan por enviar
 	cntBYTES_EnviarAhora = 0; // Desde donde respecto de la base
 	cntBYTES_Enviados = 0;
 	nextBuffer = (u32*)AXI_DMA_RX_BUFFER_BASE;
 
-	LOG(1,"Enviando %d bytes de a %d bytes (%d pares) desde [0x%08x]",
-			cntBYTES_RestaEnviar, maxCntBYTES_EnviarPorTrans, maxCntBYTES_EnviarPorTrans/sizeof(u32) , nextBuffer);
+	LOG(1,"Enviando %d bytes de a %d bytes (%d pares) desde [0x%08x] con delays de %dus",
+			cntBYTES_RestaEnviar, maxCntBYTES_EnviarPorTrans, maxCntBYTES_EnviarPorTrans/TAR_DMA_TRANSFER_LEN, nextBuffer, delay*maxCntDATOS_EnviarPorTrans);
 
 	xil_printf("&");
 	while (cntBYTES_RestaEnviar) { //Continúo siempre que haya datos para enviar
 		if(uart0DoneTx)	{
 			if(DMAPS_Done()){
 				uart0DoneTx = 0;
-				usleep(800);
+				usleep(delay*maxCntDATOS_EnviarPorTrans);
 
 				// Calculo la cantidad a enviar en este lote según maxCntBYTES_EnviarPorTrans
 				cntBYTES_EnviarAhora =  cntBYTES_RestaEnviar > maxCntBYTES_EnviarPorTrans? maxCntBYTES_EnviarPorTrans: cntBYTES_RestaEnviar;
 
 				// Configuro el envio
-				DMAPS_ConfigSend((u32)nextBuffer, (u32)UART_TX_RX_FIFO_ADDR, 1, 16, cntBYTES_EnviarAhora*sizeof(u8));
+				DMAPS_ConfigSend((u32)nextBuffer, (u32)UART_TX_RX_FIFO_ADDR, 1, 16, cntBYTES_EnviarAhora);
 
 				// Envío
 				DMAPS_Send();
 
 				// Registro lo enviado
-				nextBuffer += cntBYTES_EnviarAhora/sizeof(u32); // CANTIDAD EN DATOS NO EN BYTES!!!!
+				nextBuffer += cntBYTES_EnviarAhora/TAR_DMA_TRANSFER_LEN; // CANTIDAD EN DATOS NO EN BYTES!!!!
 				cntBYTES_Enviados += cntBYTES_EnviarAhora;
 				cntBYTES_RestaEnviar -= cntBYTES_EnviarAhora;
 			}
@@ -133,7 +136,7 @@ void PrintRxData()
 {
 	u32* buffer  = (u32*)AXI_DMA_RX_BUFFER_BASE;
 
-	LOG(0, "------------------------------------------------------------------------------------------------------------------");
+	LOG(0, "-----------------------------------------------------------------------------------------------------------------");
 	LOG(1, "Datos recibidos");
 	LOG(3, "CH1 \t|\tCH2", axiTarTransferCount);
 	for (u32 i = 0; i<= axiDmaTransferCount; i+=1){
