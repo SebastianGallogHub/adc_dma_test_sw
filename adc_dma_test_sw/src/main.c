@@ -29,6 +29,8 @@ void PrintRxData();
 
 //-----------------------------------------------------------------------------
 
+#define ZMODADC1410_RESOLUTION 3.21;
+
 #define MAIN
 #ifdef MAIN
 int main()
@@ -36,7 +38,6 @@ int main()
 	int Status;	char respuesta = 0;
 	int i = 0;
 	u16 h1_low, h1_high, h2_low, h2_high;
-	float resolution = 3.21;
 
 //	LOG_CLEAR_SCREEN;
 
@@ -48,8 +49,8 @@ int main()
 	ZMODADC1410_Init();
 
 
-	h1_low = 1000/resolution;//0x3fff;
-	h1_high = 3000/resolution;
+	h1_low = 1000/ZMODADC1410_RESOLUTION;//0x3fff;
+	h1_high = 3000/ZMODADC1410_RESOLUTION;
 	h2_low = 0x3fff;
 	h2_high = 0x3fff;
 
@@ -111,25 +112,44 @@ goOut:
 	return XST_FAILURE;
 }
 
+#define MSK_HEADER  0xFF00000000000000
+#define MSK_TS		0x00FFFFFFFF000000
+#define MSK_CH		0x0000000000C00000
+#define MSK_VP		0x00000000003FFF00
+#define MSK_FOOTER	0x00000000000000FF
+#define MSK_ALL 	MSK_HEADER | MSK_TS | MSK_CH | MSK_VP | MSK_FOOTER
+#define MSK_TS_OFF	24
+#define MSK_CH_OFF	22
+#define MSK_VP_OFF	8
+#define GetFieldFromPulse(pulse, mask, offset) (pulse & mask) >> offset
 
 void PrintRxData()
 {
 	u64 *buffer  = (u64*)AXI_DMA_RX_BUFFER_BASE;
+	u32 ts = 0;
+	u16 vp = 0;
+	u8 ch = 0;
+
 	LOG_LINE;LOG_LINE;
-//	LOG(1, "Datos recibidos (%d ms)", GetElapsed_ms);
-//	LOG(2, "--------------------------------------");
-	LOG(4, "PULSOS");
+
+	LOG(3, ";\t\tch;\tts;\tvp(CAD);\tvp(mV);\tdir");
 	for (u32 i = 0; i<= axiDmaTransferCount; i++){
-		LOG(2, "%3d)\t0x%x\t\t[0x%x]", i, buffer[i], &buffer[i]);
+
+		ts = GetFieldFromPulse(buffer[i], MSK_TS, MSK_TS_OFF);
+		ch = GetFieldFromPulse(buffer[i], MSK_CH, MSK_CH_OFF);
+		vp = GetFieldFromPulse(buffer[i], MSK_VP, MSK_VP_OFF);
+
+		if(ch == 3)
+			LOG(2, "%d;\t\t%d;\t0x%08x;\t%d;\t[0x%x];\t**", i, ch, ts, vp, &buffer[i]);
+		else
+			LOG(2, "%d;\t\t%d;\t0x%08x;\t%d;\t[0x%x]", i, ch, ts, vp, &buffer[i]);
 	}
 	LOG(2, "--------------------------------------");
 	LOG(2, "Interrupciones recibidas por DMA: %d", axiDmaIntCount);
 	LOG(2, "Transferencias recibidas por DMA: %d", axiDmaTransferCount);
-//	LOG(2, "Transferencias lanzadas por TAR: %d", axiTarTransferCount);
 
 	axiDmaIntCount = 0;
 	axiDmaTransferCount = 0;
-//	axiTarTransferCount = 0;
 }
 #endif // MAIN
 
