@@ -32,6 +32,10 @@ u32 Error = 0;
 
 Intr_Config axiDmaIntrConfig;
 
+int bufferLen;
+AXI_DMA_ProcessBufferDelegate ProcessBuffer;
+
+
 /****************************************************************************/
 
 void AXI_DMA_Reset() {
@@ -46,7 +50,7 @@ void AXI_DMA_Reset() {
 	}
 }
 
-int AXI_DMA_Init() {
+int AXI_DMA_Init(int buffLen, AXI_DMA_ProcessBufferDelegate processBuffer) {
 	XAxiDma_Config *Config;
 	XAxiDma_BdRing *RxRingPtr;
 
@@ -68,6 +72,9 @@ int AXI_DMA_Init() {
 	axiDmaIntrConfig.Priority = 0xA0;
 
 	AddIntrHandler(&axiDmaIntrConfig);
+
+	bufferLen = buffLen;
+	ProcessBuffer = processBuffer;
 
 	return 0;
 }
@@ -171,11 +178,14 @@ int AXI_DMA_SetupRx(u32 cntTransferencias, u32 dataLen) {
     return XST_SUCCESS;
 }
 
+u8 *buf = 0;
+int coalesce = 0;
+
 void AXI_DMA_RxCallBack(XAxiDma_BdRing *RxRingPtr) {
 	// Cuento las transferencias hechas para finalizar el bucle principal
 	// Debería hacerse una interrupción cada transferencia
 
-	if (axiDmaTransferCount >= AXI_DMA_NUMBER_OF_TRANSFERS)
+	if (axiDmaTransferCount >= AXI_DMA_NUMBER_OF_TRANSFERS-3)
 		return;
 
 	int BdCount;
@@ -183,11 +193,19 @@ void AXI_DMA_RxCallBack(XAxiDma_BdRing *RxRingPtr) {
 
 	BdCount = XAxiDma_BdRingFromHw(RxRingPtr, XAXIDMA_ALL_BDS, &BdPtr);
 	axiDmaTransferCount += BdCount;
+	coalesce += BdCount;
+	if(!buf) buf = (u8*)XAxiDma_BdGetBufAddr(BdPtr);
 	axiDmaIntCount ++;
 
 	XAxiDma_BdRingFree(RxRingPtr, BdCount, BdPtr);
 
+	// Coalescencia manual porque no la está haciendo bien
+	if(ProcessBuffer != NULL && (coalesce >= 10)){
+		ProcessBuffer((u32)buf, coalesce * bufferLen, bufferLen);
 
+		coalesce = 0;
+		buf = 0;
+	}
 
 	return;
 }

@@ -124,25 +124,29 @@ void UARTPS_0_SendAsync(u32 sendBufferAddr, int buffSizeBytes) {
 	DMAPS_Send();
 }
 
+int maxData = 0;
 int maxBytes = 0;
 int pendingBytes = 0;
 int sendBytes = 0;
 u8 *nextBuffer;
+int doneSendBuffer = 0;
 
 void UARTPS_0_SendBufferAsync(u32 sendBufferAddr, int buffSizeBytes, int dataLen){
 	if (buffSizeBytes == 0) return;
 	if (sendBufferAddr == 0) return;
 
 	// Configuro dinámicamente el límite la primera vez que llamo
-	if(dataLen != 0)
+	if(dataLen != 0){
 		maxBytes = UART_TX_FIFO_DEPTH - dataLen;
+		maxData = maxBytes / dataLen;
+	}
 
 	// Determino cuántos bytes me quedan por enviar
 	pendingBytes = buffSizeBytes;
 	sendBytes = pendingBytes > maxBytes? maxBytes: pendingBytes;
 
 	// Delay mandatorio
-	usleep(UART_MIN_DELAY_PER_BYTE_SEND * sendBytes);
+	usleep(UART_MIN_DELAY_PER_BYTE_SEND * maxData);
 
 	DMAPS_ConfigSend(sendBufferAddr, (u32)UART_TX_RX_FIFO_ADDR, sendBytes);
 
@@ -152,14 +156,23 @@ void UARTPS_0_SendBufferAsync(u32 sendBufferAddr, int buffSizeBytes, int dataLen
 
 	// Recalculo el siguiente buffer
 	pendingBytes -= sendBytes;
-	if(pendingBytes != 0)
+	if(pendingBytes != 0){
+		doneSendBuffer = 0;
 		nextBuffer = (u8*)(sendBufferAddr + sendBytes);
+	}else{
+		doneSendBuffer = 1;
+	}
 }
 
 int UARTPS_0_DoneTx()
 {
 	int c = XUartPs_IsTransmitEmpty(&UartPs);
-	return uart0DoneTx && c;
+	return uart0DoneTx && c && DMAPS_Done();
+}
+
+int UARTPS_0_DoneSendBuffer()
+{
+	return doneSendBuffer && DMAPS_Done();
 }
 
 void XUartPs_InterruptHandler_Wrapper(XUartPs *InstancePtr){
