@@ -111,15 +111,19 @@ int pendingBytes = 0;
 int sendBytes = 0;
 u8 *nextBuffer;
 int doneSendBuffer = 0;
+u32 ogSendBufferAddr = 0;
 
 void UARTPS_0_SendBufferAsync(u32 sendBufferAddr, int buffSizeBytes, int dataLen){
-	if (buffSizeBytes == 0) return;
-	if (sendBufferAddr == 0) return;
+	if (buffSizeBytes == 0) {ogSendBufferAddr = 0; return;}
+	if (sendBufferAddr == 0) {ogSendBufferAddr = 0; return;}
+	if (sendBufferAddr == ogSendBufferAddr) return;
 
-	// Configuro dinámicamente el límite la primera vez que llamo
+	// Configuro dinámicamente el límite la primera vez que llamo y hago la copia
 	if(dataLen != 0){
+		ogSendBufferAddr = sendBufferAddr;
 		maxBytes = UART_TX_FIFO_DEPTH - dataLen;
 		maxData = maxBytes / dataLen;
+		memcpy((void*)UART_0_TX_BUFFER_BASE, (const void*)sendBufferAddr, UART_0_TX_BUFFER_SPACE);
 	}
 
 	// Determino cuántos bytes me quedan por enviar

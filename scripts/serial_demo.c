@@ -6,7 +6,7 @@
 #include <errno.h>
 #include <stdint.h>
 
-#define SERIAL_PORT "/dev/ttyUSB0"
+#define SERIAL_PORT "/dev/ttyUSB1"
 // #define SERIAL_PORT "/dev/ttyUSB"
 #define INPUT_FILE "salida_raw"
 #define OUTPUT_FILE "salida.csv"

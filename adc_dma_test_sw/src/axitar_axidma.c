@@ -90,6 +90,9 @@ int AXI_DMA_SetupRx(u32 ringBufferSize, u32 dataSize, int maxCntDataSend, AXI_DM
     UINTPTR RxBufferPtr;
     u32 BdCount;
     int status;
+//    u32 ringBufferSize;
+//    u32 dataSize;
+//    int maxCntDataSend;
 
     // Verifico que el dispositivo esté configurado en modo Scatter-Gather (SG)
     // y no en modo simple.
@@ -159,7 +162,7 @@ int AXI_DMA_SetupRx(u32 ringBufferSize, u32 dataSize, int maxCntDataSend, AXI_DM
 
     LOG(2, "Interrupciones cada %d transacciones", AXI_DMA_COALESCE);
     ASSERT_SUCCESS(
-    		XAxiDma_BdRingSetCoalesce(RxRingPtr, AXI_DMA_COALESCE, 100), "Rx set coalesce failed");
+    		XAxiDma_BdRingSetCoalesce(RxRingPtr, AXI_DMA_COALESCE, 255), "Rx set coalesce failed");
 
     // Paso el anillo de BDs configurado al hardware para que comience a usarse
     ASSERT_SUCCESS(
@@ -186,7 +189,7 @@ int AXI_DMA_SetupRx(u32 ringBufferSize, u32 dataSize, int maxCntDataSend, AXI_DM
     return XST_SUCCESS;
 }
 
-u8 *sendBufferAddr = 0;
+//u8 *sendBufferAddr = 0;
 int coalesceCounter = 0;
 
 #define bufferOverflow(sendBufferAddr, coalesceCounter) \
@@ -200,7 +203,7 @@ void AXI_DMA_RxCallBack(XAxiDma_BdRing *RxRingPtr) {
 //		return;
 
 	int BdCount;
-	int overflow;
+//	int overflow;
 	XAxiDma_Bd *BdPtr;
 
 	BdCount = XAxiDma_BdRingFromHw(RxRingPtr, XAXIDMA_ALL_BDS, &BdPtr);
@@ -208,30 +211,37 @@ void AXI_DMA_RxCallBack(XAxiDma_BdRing *RxRingPtr) {
 	axiDmaIntCount ++;
 
 	coalesceCounter += BdCount;
-	if(!sendBufferAddr)
-		sendBufferAddr = (u8*)XAxiDma_BdGetBufAddr(BdPtr);
+//	if(!sendBufferAddr)
+//		sendBufferAddr = (u8*)XAxiDma_BdGetBufAddr(BdPtr);
 
 	XAxiDma_BdRingFree(RxRingPtr, BdCount, BdPtr);
 
 	// Coalescencia manual porque no la está haciendo bien
-	if((ProcessBuffer != NULL) && (coalesceCounter >= dataCoalesce)){
+	if((ProcessBuffer != NULL) && (coalesceCounter >= AXI_DMA_NUMBER_OF_TRANSFERS)){
 
-		overflow = bufferOverflow(sendBufferAddr, coalesceCounter);
+		// Se recibió todo el buffer y ahora lo copio para enviar
+		// Envío la copia
+		ProcessBuffer((u32)AXI_DMA_RX_BUFFER_BASE, AXI_DMA_NUMBER_OF_TRANSFERS * bufferDataSize, bufferDataSize);
 
-		if(overflow > 0){
-			// Enviar datos hasta el final del buffer
-			ProcessBuffer((u32)sendBufferAddr, ((coalesceCounter * bufferDataSize) - overflow), bufferDataSize);
-
-			// Enviar datos restantes desde el principio
-			sendBufferAddr = (u8*)AXI_DMA_RX_BUFFER_BASE;
-			ProcessBuffer((u32)sendBufferAddr, overflow, bufferDataSize);
-
-		}else{
-			ProcessBuffer((u32)sendBufferAddr, coalesceCounter * bufferDataSize, bufferDataSize);
-		}
-
+		// Reseteo el contador de coalescencia para recaptar el suceso
 		coalesceCounter = 0;
-		sendBufferAddr = 0;
+
+//		overflow = bufferOverflow(sendBufferAddr, coalesceCounter);
+//
+//		if(overflow > 0){
+//			// Enviar datos hasta el final del buffer
+//			ProcessBuffer((u32)sendBufferAddr, ((coalesceCounter * bufferDataSize) - overflow), bufferDataSize);
+//
+//			// Enviar datos restantes desde el principio
+//			sendBufferAddr = (u8*)AXI_DMA_RX_BUFFER_BASE;
+//			ProcessBuffer((u32)sendBufferAddr, overflow, bufferDataSize);
+//
+//		}else{
+//			ProcessBuffer((u32)sendBufferAddr, coalesceCounter * bufferDataSize, bufferDataSize);
+//		}
+//
+//		coalesceCounter = 0;
+//		sendBufferAddr = 0;
 	}
 
 	return;

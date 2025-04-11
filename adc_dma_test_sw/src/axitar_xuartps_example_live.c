@@ -51,8 +51,8 @@ int main(){
 	AXI_DMA_SetupRx(
 			AXI_DMA_NUMBER_OF_TRANSFERS,
 			AXI_TAR_DMA_TRANSFER_LEN,
-			(UART_TX_FIFO_DEPTH - AXI_TAR_DMA_TRANSFER_LEN)/AXI_TAR_DMA_TRANSFER_LEN, // máxima cantidad de DATOS que soporta la UART
-			(AXI_DMA_ProcessBufferDelegate)UARTPS_0_SendAsync);
+			AXI_DMA_NUMBER_OF_TRANSFERS,//(UART_TX_FIFO_DEPTH - AXI_TAR_DMA_TRANSFER_LEN)/AXI_TAR_DMA_TRANSFER_LEN, // máxima cantidad de DATOS que soporta la UART
+			(AXI_DMA_ProcessBufferDelegate)UARTPS_0_SendBufferAsync);
 
 //	LOG(1, "Enviando %d bytes (%d datos)",
 //			AXI_DMA_NUMBER_OF_TRANSFERS * AXI_TAR_DMA_TRANSFER_LEN,
@@ -65,14 +65,14 @@ int main(){
 	AXI_TAR_Start_master_test();
 
 	// Espero hasta que se den las transacciones
-	while(axiDmaTransferCount < AXI_DMA_NUMBER_OF_TRANSFERS);
+	while(axiDmaTransferCount < AXI_DMA_NUMBER_OF_TRANSFERS * 2);
 
 	AXI_TAR_StopAll();
 
 	AXI_DMA_Reset();
 
 	while(1){
-		if(UARTPS_0_DoneTx()){
+		if(UARTPS_0_DoneSendBuffer()){
 			xil_printf("&");
 			break;
 		}
