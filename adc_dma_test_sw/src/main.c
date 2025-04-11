@@ -51,8 +51,11 @@ int main()
 
 	h1_low = 1000/ZMODADC1410_RESOLUTION;//0x3fff;
 	h1_high = 3000/ZMODADC1410_RESOLUTION;
-	h2_low = 0x3fff;
-	h2_high = 0x3fff;
+//	h2_low = 0x3fff;
+//	h2_high = 0x3fff;
+
+	h2_low = 1000/ZMODADC1410_RESOLUTION;//0x3fff;
+	h2_high = 3000/ZMODADC1410_RESOLUTION;
 
 	AXI_TAR_Init();
 
