@@ -5,6 +5,8 @@
  *      Author: sebas
  */
 
+//#define MAIN_SD_CARD
+#ifdef MAIN_SD_CARD
 /***************************** Include Files *******************************/
 #include "xparameters.h"
 #include "xil_printf.h"
@@ -23,8 +25,6 @@ FRESULT rc;
 
 /****************************************************************************/
 
-#define MAIN_SD_CARD
-#ifdef MAIN_SD_CARD
 
 int main() {
     const char *filename = "test.txt";
