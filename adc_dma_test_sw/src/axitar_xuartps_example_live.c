@@ -35,7 +35,7 @@ void PrintRxData();
 
 /****************************************************************************/
 
-#define MAIN_axitar_live
+//#define MAIN_axitar_live
 #ifdef MAIN_axitar_live
 int main(){
 

@@ -125,3 +125,17 @@ platform generate -domains standalone_ps7_cortexa9_0,zynq_fsbl
 platform generate -domains standalone_ps7_cortexa9_0,zynq_fsbl 
 platform generate -domains 
 platform generate -domains standalone_ps7_cortexa9_0,zynq_fsbl 
+platform generate
+platform active {adc_dma_bd_wrapper}
+bsp reload
+bsp setlib -name xilffs -ver 5.0
+bsp reload
+bsp setlib -name xilffs -ver 5.0
+bsp write
+bsp reload
+catch {bsp regenerate}
+platform generate -domains standalone_ps7_cortexa9_0 
+platform clean
+platform generate
+platform clean
+platform generate
