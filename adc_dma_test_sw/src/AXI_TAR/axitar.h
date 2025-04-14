@@ -5,8 +5,8 @@
  *      Author: sebas
  */
 
-#ifndef SRC_AXITAR_H_
-#define SRC_AXITAR_H_
+#ifndef SRC_AXI_TAR_AXITAR_H_
+#define SRC_AXI_TAR_AXITAR_H_
 
 #include "xparameters.h"
 #include "xil_types.h"
@@ -64,4 +64,4 @@ extern u32 axiTarTransferCount;
 
 void AXI_TAR_master_test_Init(u32);
 
-#endif /* SRC_AXITAR_H_ */
+#endif /* SRC_AXI_TAR_AXITAR_H_ */

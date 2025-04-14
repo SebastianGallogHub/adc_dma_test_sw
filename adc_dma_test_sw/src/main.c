@@ -9,13 +9,13 @@
 #include "xdebug.h"
 #include "xtime_l.h"
 
-#include "zmodadc1410.h"
-#include "tar_hal.h"
-#include "assert.h"
-#include "axitar.h"
-#include "axitar_axidma.h"
-#include "interruptSystem.h"
-#include "log.h"
+#include "AXI_TAR/axitar.h"
+#include "AXI_TAR/axitar_axidma.h"
+#include "AXI_TAR/tar_hal.h"
+#include "includes/assert.h"
+#include "includes/log.h"
+#include "InterruptSystem/interruptSystem.h"
+#include "ZMOD_ADC1410/zmodadc1410.h"
 
 
 //-----------------------------------------------------------------------------

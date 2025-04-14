@@ -5,8 +5,8 @@
  *      Author: sebas
  */
 
-#ifndef SRC_ASSERT_H_
-#define SRC_ASSERT_H_
+#ifndef SRC_INCLUDES_ASSERT_H_
+#define SRC_INCLUDES_ASSERT_H_
 
 #include "xstatus.h"
 
@@ -54,4 +54,4 @@ static long st;
     } \
 } while (0)
 
-#endif /* SRC_ASSERT_H_ */
+#endif /* SRC_INCLUDES_ASSERT_H_ */

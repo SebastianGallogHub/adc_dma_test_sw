@@ -7,13 +7,14 @@
 
 /***************************** Include Files *******************************/
 
-#include "axitar.h"
-
 #include "xil_io.h"
 #include "AXI_TAR.h"
 
-#include "interruptSystem.h"
-#include "log.h"
+#include "axitar.h"
+
+#include "../includes/log.h"
+
+#include "../InterruptSystem/interruptSystem.h"
 
 /************************** Constant Definitions **************************/
 

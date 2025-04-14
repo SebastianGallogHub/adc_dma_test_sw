@@ -13,15 +13,14 @@
 #include "xil_printf.h"
 
 #include "sleep.h"
-#include "axitar.h"
-#include "axitar_axidma.h"
-#include "xuartps_0.h"
-#include "xuartps_0_xdmaps.h"
-#include "zmodadc1410.h"
-#include "interruptSystem.h"
-
-#include "log.h"
-#include "assert.h"
+#include "AXI_TAR/axitar.h"
+#include "AXI_TAR/axitar_axidma.h"
+#include "includes/assert.h"
+#include "includes/log.h"
+#include "InterruptSystem/interruptSystem.h"
+#include "UART_DMA/xuartps_0.h"
+#include "UART_DMA/xuartps_0_xdmaps.h"
+#include "ZMOD_ADC1410/zmodadc1410.h"
 
 /************************** Constant Definitions **************************/
 
@@ -35,7 +34,7 @@ void PrintRxData();
 
 /****************************************************************************/
 
-//#define MAIN_axitar_live
+#define MAIN_axitar_live
 #ifdef MAIN_axitar_live
 int main(){
 

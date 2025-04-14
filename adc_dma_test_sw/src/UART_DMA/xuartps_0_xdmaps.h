@@ -5,8 +5,8 @@
  *      Author: sebas
  */
 
-#ifndef SRC_XUARTPS_0_XDMAPS_H_
-#define SRC_XUARTPS_0_XDMAPS_H_
+#ifndef SRC_UART_DMA_XUARTPS_0_XDMAPS_H_
+#define SRC_UART_DMA_XUARTPS_0_XDMAPS_H_
 
 #include "xil_types.h"
 #include "xdmaps.h"
@@ -24,4 +24,4 @@ void DMAPS_ConfigSend(u32 src, u32 dst, unsigned int transferLen);
 
 void DMAPS_Send();
 
-#endif /* SRC_XUARTPS_0_XDMAPS_H_ */
+#endif /* SRC_UART_DMA_XUARTPS_0_XDMAPS_H_ */

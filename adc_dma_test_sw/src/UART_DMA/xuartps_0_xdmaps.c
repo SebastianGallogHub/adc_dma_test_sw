@@ -6,13 +6,13 @@
  */
 /***************************** Include Files *******************************/
 
-#include "xuartps_0_xdmaps.h"
 #include "xdmaps.h"
-
 #include "xil_exception.h"
 #include "xil_printf.h"
 
-#include "interruptSystem.h"
+#include "xuartps_0_xdmaps.h"
+
+#include "../InterruptSystem/interruptSystem.h"
 
 /************************** Constant Definitions **************************/
 

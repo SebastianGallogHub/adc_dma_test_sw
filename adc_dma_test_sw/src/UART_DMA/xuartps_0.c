@@ -8,14 +8,14 @@
 /***************************** Include Files *******************************/
 
 #include "xuartps.h"
-
 #include "xil_exception.h"
 #include "xil_printf.h"
 #include "sleep.h"
 
 #include "xuartps_0.h"
 #include "xuartps_0_xdmaps.h"
-#include "interruptSystem.h"
+
+#include "../InterruptSystem/interruptSystem.h"
 
 /************************** Constant Definitions **************************/
 

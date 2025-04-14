@@ -4,8 +4,8 @@
 
 #include "xil_printf.h"
 
-#include "xuartps_0.h"
-#include "interruptSystem.h"
+#include "InterruptSystem/interruptSystem.h"
+#include "UART_DMA/xuartps_0.h"
 
 /************************** Constant Definitions **************************/
 

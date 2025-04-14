@@ -5,8 +5,8 @@
  *      Author: sebas
  */
 
-#ifndef SRC_XUARTPS_0_H_
-#define SRC_XUARTPS_0_H_
+#ifndef SRC_UART_DMA_XUARTPS_0_H_
+#define SRC_UART_DMA_XUARTPS_0_H_
 
 #include "xparameters.h"
 
@@ -44,4 +44,4 @@ int UARTPS_0_DoneTx();
 
 //void UARTPS_0_Test();
 
-#endif /* SRC_XUARTPS_0_H_ */
+#endif /* SRC_UART_DMA_XUARTPS_0_H_ */

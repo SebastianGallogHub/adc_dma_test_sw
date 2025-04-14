@@ -5,12 +5,13 @@
  *      Author: sebas
  */
 
-#include "interruptSystem.h"
-
 #include "xil_exception.h"
 #include "xscugic.h"
-#include "assert.h"
-#include "log.h"
+
+#include "interruptSystem.h"
+
+#include "../includes/assert.h"
+#include "../includes/log.h"
 
 static INTC Intc;
 

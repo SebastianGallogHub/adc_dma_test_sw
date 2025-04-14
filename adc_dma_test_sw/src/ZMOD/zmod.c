@@ -5,9 +5,10 @@
  *      Author: sebas
  */
 
+#include "xil_io.h"
 
 #include "zmod.h"
-#include "xil_io.h"
+
 
 void ZMOD_WriteRegFld(uint8_t regAddr, uint8_t lsbBit, uint8_t noBits, uint32_t value)
 {

@@ -5,8 +5,8 @@
  *      Author: sebas
  */
 
-#ifndef SRC_TAR_HAL_H_
-#define SRC_TAR_HAL_H_
+#ifndef SRC_AXI_TAR_TAR_HAL_H_
+#define SRC_AXI_TAR_TAR_HAL_H_
 
 #include "xil_types.h"
 
@@ -44,4 +44,4 @@ int TAR_Start(u32 period_ms); // Max 1000 horas
 int TAR_Stop();
 int TAR_State(); // 0 parado; 1 funcionando; 2 error
 
-#endif /* SRC_TAR_HAL_H_ */
+#endif /* SRC_AXI_TAR_TAR_HAL_H_ */

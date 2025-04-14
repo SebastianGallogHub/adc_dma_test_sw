@@ -9,10 +9,10 @@
 
 #include "axitar_axidma.h"
 
-#include "interruptSystem.h"
+#include "../includes/assert.h"
+#include "../includes/log.h"
 
-#include "assert.h"
-#include "log.h"
+#include "../InterruptSystem/interruptSystem.h"
 
 /************************** Constant Definitions **************************/
 

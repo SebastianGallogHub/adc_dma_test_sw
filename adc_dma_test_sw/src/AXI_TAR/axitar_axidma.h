@@ -5,8 +5,8 @@
  *      Author: sebas
  */
 
-#ifndef SRC_AXITAR_AXIDMA_H_
-#define SRC_AXITAR_AXIDMA_H_
+#ifndef SRC_AXI_TAR_AXITAR_AXIDMA_H_
+#define SRC_AXI_TAR_AXITAR_AXIDMA_H_
 
 #include "xparameters.h"
 #include "xaxidma.h"
@@ -43,4 +43,4 @@ void AXI_DMA_Reset();
 
 int AXI_DMA_SetupRx(u32 ringBufferSize, u32 dataSize, int maxCntDataSend, AXI_DMA_ProcessBufferDelegate processBuffer);
 
-#endif /* SRC_AXITAR_AXIDMA_H_ */
+#endif /* SRC_AXI_TAR_AXITAR_AXIDMA_H_ */
