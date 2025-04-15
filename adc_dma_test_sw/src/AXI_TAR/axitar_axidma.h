@@ -13,10 +13,10 @@
 
 #define AXI_DMA_DEV_ID				XPAR_AXI_DMA_0_DEVICE_ID
 #define AXI_DMA_BASE_ADDR  			XPAR_AXI_DMA_0_BASEADDR
-#define AXI_DMA_COALESCE			100
-#define AXI_DMA_NUMBER_OF_TRANSFERS 1000
+//#define AXI_DMA_NUMBER_OF_TRANSFERS 128
+//#define AXI_DMA_COALESCE			AXI_DMA_NUMBER_OF_TRANSFERS/8
 
-#define MEM_BASE_ADDR			(XPAR_PS7_DDR_0_S_AXI_BASEADDR + 0x1000000)
+#define MEM_BASE_ADDR				(XPAR_PS7_DDR_0_S_AXI_BASEADDR + 0x1000000)
 
 // Buffer descriptor
 #define AXI_DMA_RX_BD_SPACE_BASE	(MEM_BASE_ADDR)
@@ -34,13 +34,13 @@ extern u32 axiDmaIntCount;
 extern u32 axiDmaTransferCount;
 extern u32 Error;
 
-typedef void (*AXI_DMA_ProcessBufferDelegate) (u32 sendBufferAddr, int buffSizeBytes, int dataLen);
+typedef void (*AXI_DMA_ProcessBufferDelegate) (unsigned char *sendBuffer);
 
 
 int AXI_DMA_Init();
 
 void AXI_DMA_Reset();
 
-int AXI_DMA_SetupRx(u32 ringBufferSize, u32 dataSize, int maxCntDataSend, AXI_DMA_ProcessBufferDelegate processBuffer);
+int AXI_DMA_SetupRx(u32 ringBufferSize, u32 dataSize, int bufferProcessCoalesce, AXI_DMA_ProcessBufferDelegate processBuffer);
 
 #endif /* SRC_AXI_TAR_AXITAR_AXIDMA_H_ */

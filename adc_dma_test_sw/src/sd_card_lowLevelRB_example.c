@@ -4,7 +4,7 @@
  *  Created on: Apr 14, 2025
  *      Author: sebas
  */
-#define MAIN_SD_CARD_LL_RB
+//#define MAIN_SD_CARD_LL_RB
 #ifdef MAIN_SD_CARD_LL_RB
 /***************************** Include Files *******************************/
 #include "xil_printf.h"

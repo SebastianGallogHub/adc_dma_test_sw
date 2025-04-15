@@ -9,7 +9,6 @@
 #include "sd_card.h"
 
 #include "xil_printf.h"
-#include "xparameters.h"
 #include "diskio.h"
 #include "sleep.h"
 
@@ -23,10 +22,7 @@
 DWORD total_sectors;
 
 u32 sector_wr_idx = 0;
-//u32 sector_wr_buffer[WORDS_PER_SECTOR] __attribute__ ((aligned (32)));
-
 u32 sector_rd_idx = 0;
-//u32 sector_rd_buffer[WORDS_PER_SECTOR] __attribute__ ((aligned (32)));
 
 /****************************************************************************/
 
