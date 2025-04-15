@@ -6,6 +6,8 @@
  */
 
 /***************************** Include Files *******************************/
+//#define MAIN_axitar_live
+#ifdef MAIN_axitar_live
 #include <stdio.h>
 
 #include "xuartps.h"
@@ -34,8 +36,7 @@ void PrintRxData();
 
 /****************************************************************************/
 
-#define MAIN_axitar_live
-#ifdef MAIN_axitar_live
+
 int main(){
 
 	UARTPS_0_Init();
