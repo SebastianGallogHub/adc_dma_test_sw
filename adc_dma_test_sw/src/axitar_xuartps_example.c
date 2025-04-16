@@ -6,6 +6,8 @@
  */
 
 /***************************** Include Files *******************************/
+//#define MAIN_axitar
+#ifdef MAIN_axitar
 #include "xuartps.h"
 
 #include "xil_printf.h"
@@ -32,8 +34,7 @@ void PrintRxData();
 
 /****************************************************************************/
 
-//#define MAIN_axitar
-#ifdef MAIN_axitar
+
 int main(){
 	UARTPS_0_Init();
 

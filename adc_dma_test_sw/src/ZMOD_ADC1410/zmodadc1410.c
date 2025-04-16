@@ -10,8 +10,10 @@
 #include "sleep.h"
 
 #include "zmodadc1410.h"
-#include "zmod.h"
-#include "log.h"
+
+#include "../ZMOD/zmod.h"
+
+#include "../includes/log.h"
 
 /************************** Constant Definitions **************************/
 

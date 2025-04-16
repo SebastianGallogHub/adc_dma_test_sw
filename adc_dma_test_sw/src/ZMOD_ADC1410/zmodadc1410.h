@@ -5,8 +5,8 @@
  *      Author: sebas
  */
 
-#ifndef SRC_ZMODADC1410_H_
-#define SRC_ZMODADC1410_H_
+#ifndef SRC_ZMOD_ADC1410_ZMODADC1410_H_
+#define SRC_ZMOD_ADC1410_ZMODADC1410_H_
 
 #include "xparameters.h"
 #include "xil_types.h"
@@ -36,4 +36,4 @@ uint16_t ZMODADC1410_ChannelData(ZmodADC1410_SC channel, uint32_t data);
 int16_t ZMODADC1410_SignedChannelData(uint8_t channel, uint32_t data);
 
 
-#endif /* SRC_ZMODADC1410_H_ */
+#endif /* SRC_ZMOD_ADC1410_ZMODADC1410_H_ */

@@ -1,5 +1,5 @@
 /***************************** Include Files *******************************/
-
+#ifdef MAIN_xuartps_intr_example
 #include "xparameters.h"
 
 #include "xil_printf.h"
@@ -17,7 +17,7 @@
 
 /****************************************************************************/
 
-#ifdef MAIN_xuartps_intr_example
+
 int main (void){
 
 	UARTPS_0_Init();

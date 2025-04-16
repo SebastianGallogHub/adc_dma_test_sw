@@ -1,4 +1,8 @@
 
+/***************************** Include Files *******************************/
+#define MAIN
+#ifdef MAIN
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -9,110 +13,164 @@
 #include "xdebug.h"
 #include "xtime_l.h"
 
-#include "zmodadc1410.h"
-#include "tar_hal.h"
-#include "assert.h"
-#include "axitar.h"
-#include "axitar_axidma.h"
-#include "interruptSystem.h"
-#include "log.h"
+#include "includes/log.h"
+#include "includes/assert.h"
+#include "AXI_TAR/axitar.h"
+#include "AXI_TAR/axitar_axidma.h"
+#include "SD_CARD/sd_card.h"
+#include "UART_DMA/xuartps_0.h"
+#include "ZMOD_ADC1410/zmodadc1410.h"
+#include "InterruptSystem/interruptSystem.h"
 
+/************************** Constant Definitions **************************/
 
-//-----------------------------------------------------------------------------
-//Funciones
+#define ZMODADC1410_RESOLUTION 	3.21
+
+#define WORDS_PER_SECTOR 		SD_WORDS_PER_SECTOR(AXI_TAR_DMA_TRANSFER_LEN)
+
+/**************************** Type Definitions ******************************/
+
+/************************** Function Prototypes *****************************/
 void PrintRxData();
 
-//XTime tStart, tFinish, tElapsed; //todo ??
-//#define GetElapsed_ns  ((tFinish-tStart)*3)
-//#define GetElapsed_us  GetElapsed_ns/1000
-//#define GetElapsed_ms  GetElapsed_ns/1000000
+/************************** Variable Definitions ***************************/
 
-//-----------------------------------------------------------------------------
+u32 sector_rd_buffer[WORDS_PER_SECTOR] __attribute__ ((aligned (64)));
 
-#define ZMODADC1410_RESOLUTION 3.21;
+/****************************************************************************/
 
-#define MAIN
-#ifdef MAIN
+int mefDatos(){
+	static int st = 0;
+	int res = 0;
+
+	switch (st){
+	case 0:
+		if(SD_SectorsToRead() > 1){
+			xil_printf("&");
+			st = 1;
+		}
+
+		break;
+
+	case 1:
+		if(SD_SectorsToRead() > 0) {
+			if(UARTPS_0_DoneSendBuffer()){
+				SD_ReadNextSector((unsigned char*)sector_rd_buffer);
+				UARTPS_0_SendBufferAsync((u32)sector_rd_buffer, SD_SECTOR_SIZE, sizeof(u32));
+			}
+		}
+
+		if(SD_SectorsToRead() <= 0){
+			st = 2;
+		}
+
+		break;
+
+	case 2:
+		if(UARTPS_0_DoneSendBuffer()){
+			xil_printf("&");
+			st = 0;
+			res = 1;
+		}
+
+		break;
+
+	default:
+		st = 0;
+		break;
+	}
+
+	return res;
+}
+
 int main()
 {
-	int Status;	char respuesta = 0;
-	int i = 0;
 	u16 h1_low, h1_high, h2_low, h2_high;
-
-//	LOG_CLEAR_SCREEN;
 
 	LOG(0, "--------------------- INICIO MAIN -----------------------");
 	LOG(1, "PRUEBA LÓGICA DE DETECCIÓN DE PULSO");
 
+	UARTPS_0_Init();
+	SD_Init();
 	AXI_DMA_Init();
-
+	AXI_TAR_Init();
 	ZMODADC1410_Init();
 
+	ASSERT_SUCCESS(
+			SetupIntrSystem(),
+			"Fallo al inicializar el sistema de interrupciones");
+
+	UARTPS_0_StartRx();
 
 	h1_low = 1000/ZMODADC1410_RESOLUTION;//0x3fff;
 	h1_high = 3000/ZMODADC1410_RESOLUTION;
-//	h2_low = 0x3fff;
-//	h2_high = 0x3fff;
-
-	h2_low = 1000/ZMODADC1410_RESOLUTION;//0x3fff;
-	h2_high = 3000/ZMODADC1410_RESOLUTION;
-
-	AXI_TAR_Init();
-
 	LOG(2, "Canal 1, histéresis (%d ; %d)", h1_low, h1_high);
 	AXI_TAR_SetHysteresis(0, h1_low, h1_high);
 
+	h2_low = 1000/ZMODADC1410_RESOLUTION;//0x3fff;
+	h2_high = 3000/ZMODADC1410_RESOLUTION;
 	LOG(2, "Canal 2, histéresis (%d ; %d)", h2_low, h2_high);
 	AXI_TAR_SetHysteresis(1, h2_low, h2_high);
 
-	do
-	{
-		i ++;
-		LOG(0, "--------------------- (%d) -----------------------", i);
-		ASSERT_SUCCESS(
-				SetupIntrSystem(),
-				"Fallo al inicializar el sistema de interrupciones");
+//	do
+//	{
+//		i ++;
+//		LOG(0, "--------------------- (%d) -----------------------", i);
 
-		ASSERT_SUCCESS(
-				AXI_DMA_SetupRx(AXI_DMA_NUMBER_OF_TRANSFERS, TAR_DMA_TRANSFER_LEN),
-				"Fallo al inicializar el DMA.");
 
-		LOG(1, "----- Inicio adquisición");
+//		ASSERT_SUCCESS(
+//				AXI_DMA_SetupRx(AXI_DMA_NUMBER_OF_TRANSFERS, TAR_DMA_TRANSFER_LEN),
+//				"Fallo al inicializar el DMA.");
 
-		TAR_Start();
-//		XTime_GetTime(&tStart);
+		AXI_DMA_SetupRx(
+					WORDS_PER_SECTOR * 2,  									// Cantidad de DATOS a recibir en el buffer
+					AXI_TAR_DMA_TRANSFER_LEN,								// Longitud de 1 dato en bytes
+					WORDS_PER_SECTOR,										// Coalescencia
+					(AXI_DMA_ProcessBufferDelegate)SD_WriteNextSector);		// Handler para procesar el buffer
 
-		Status = Xil_WaitForEventSet(1000000U, 1, &Error);
-		if (Status == XST_SUCCESS) {
-			LOG(0, "--> Receive error %d", Status);
-			goto goOut;
-		}
+		LOG(1, "----- Inicio adquisición -----");
+
+		AXI_TAR_Start();
+
+//		Status = Xil_WaitForEventSet(1000000U, 1, &Error);
+//		if (Status == XST_SUCCESS) {
+//			LOG(0, "--> Receive error %d", Status);
+//			goto goOut;
+//		}
 
 		// Espero hasta que se den las transacciones
-		while(axiDmaTransferCount < AXI_DMA_NUMBER_OF_TRANSFERS){}
+//		while(axiDmaTransferCount < AXI_DMA_NUMBER_OF_TRANSFERS){}
+
+		while(1){
+			// mefMedicion
+			if (axiDmaTransferCount >= SD_WORDS_PER_SECTOR(AXI_TAR_DMA_TRANSFER_LEN) * 2){
+				AXI_TAR_StopAll();
+				AXI_DMA_Reset();
+			}
+
+			if (mefDatos()){
+				break;
+			}
+		}
 
 		DisableIntrSystem();
+//
+//		AXI_TAR_StopAll();
+//
+//		AXI_DMA_Reset();
 
-//		XTime_GetTime(&tFinish);
-		TAR_StopAll();
+//		xil_printf("¿Continuar?"); scanf(" %c", &respuesta);
 
-		AXI_DMA_Reset();
-
-		// Imprimir todos los valores recibidos junto a su dirección
-		PrintRxData();
-
-		xil_printf("¿Continuar?"); scanf(" %c", &respuesta);
-
-	}while(respuesta=='s' || respuesta=='S');
+//	}while(respuesta=='s' || respuesta=='S');
 
 	LOG(0, "--------------------- FIN MAIN -----------------------");
 	return 0;
 
-goOut:
-	TAR_StopAll();
-	AXI_DMA_Reset();
-	LOG(0, "--------------------- FIN MAIN -----------------------");
-	return XST_FAILURE;
+//goOut:
+//	AXI_TAR_StopAll();
+//	AXI_DMA_Reset();
+//	LOG(0, "--------------------- FIN MAIN -----------------------");
+//	return XST_FAILURE;
 }
 
 #define MSK_HEADER  0xFF00000000000000

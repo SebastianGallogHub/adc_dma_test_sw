@@ -8,13 +8,14 @@
 /***************************** Include Files *******************************/
 
 #include "xuartps.h"
-
 #include "xil_exception.h"
 #include "xil_printf.h"
+#include "sleep.h"
 
 #include "xuartps_0.h"
 #include "xuartps_0_xdmaps.h"
-#include "interruptSystem.h"
+
+#include "../InterruptSystem/interruptSystem.h"
 
 /************************** Constant Definitions **************************/
 
@@ -31,12 +32,12 @@ void clearIntrTXEMPTY();
 
 static XUartPs UartPs;
 
-static u8 SendBuffer[BUFFER_SIZE];	/* Buffer for Transmitting Data */
+//static u8 SendBuffer[BUFFER_SIZE];	/* Buffer for Transmitting Data */
 static u8 RecvBuffer[BUFFER_SIZE];	/* Buffer for Receiving Data */
 
 volatile int receivedCommand = 0;
 volatile int sendOnRepeat = 0;
-int uart0DoneTx = 1;
+int uart0DoneTx = 0;
 
 volatile int TotalReceivedCount;
 volatile int TotalSentCount;
@@ -57,6 +58,10 @@ void UARTPS_0_Init() {
 	XUartPs_Config *Config;
 
 	Config = XUartPs_LookupConfig(UART_DEVICE_ID);
+
+	XUartPs_ResetHw(Config->BaseAddress);
+
+	usleep(1000000);
 
 	XUartPs_CfgInitialize(UartPsPtr, Config, Config->BaseAddress);
 
@@ -83,66 +88,80 @@ void UARTPS_0_StartRx(){
 	XUartPs_Recv(&UartPs, RecvBuffer, BUFFER_SIZE);
 }
 
-void UARTPS_0_Test() {
-	int i;
-	for (i = 0; i < BUFFER_SIZE-1; i++) {
-		SendBuffer[i] = (i % 26) + 'A';
+void UARTPS_0_SendAsync(u32 sendBufferAddr, int buffSizeBytes, int dataLen) {
+
+	// Para poder llamarla 2 veces seguidas
+	while(1){
+		if (UARTPS_0_DoneTx())
+			break;
 	}
 
-	SendBuffer[i] = '\n'; // Agrego un enter para formato
+	// Delay necesario entre envíos sucesivos
+	usleep(UART_MIN_DELAY_PER_BYTE_SEND * (buffSizeBytes/dataLen));
 
-	UARTPS_0_ConfigSendAsync((u32)SendBuffer, BUFFER_SIZE * sizeof(u8));
+	DMAPS_ConfigSend(sendBufferAddr, (u32)UART_TX_RX_FIFO_ADDR, buffSizeBytes);
 
-	while (1) {
-		if(receivedCommand)
-		{
-			if(receivedCommand == 1)
-			{
-				sendOnRepeat = 1;
-				UARTPS_0_SendAsync();
-			}else{
-				sendOnRepeat = 0;
-			}
-
-			receivedCommand = 0;
-		}
-	}
-}
-
-int UARTPS_0_ConfigSendAsync(u32 sendBufferAddr, int buffSizeBytes) {
-//	xil_printf("Seteando  DMA PARA ENVIAR POR UART\r\n");
-
-	// Para que en Handler se reciba la cantidad de enviados a través de EventData
-//	UartPs.SendBuffer.RequestedBytes = BUFFER_SIZE;
-	DMAPS_ConfigSend(sendBufferAddr, (u32)UART_TX_RX_FIFO_ADDR,
-			 1, 4, buffSizeBytes);
-
-	return 0;
-}
-
-void UARTPS_0_SendAsync() {
-	// Espero a que se haya mandado todo lo disponible en el TX_FIFO
-//	int c = 0;
-//	while(!c) {c = DMAPS_Done();}
-	while(!UARTPS_0_DoneTx());
 	uart0DoneTx = 0;
-//	clearIntrTXEMPTY();
-//	setIntrTXEMPTY_On();
-	XUartPs_SetInterruptMask(&UartPs, IntrMask);
 	DMAPS_Send();
+}
+
+int maxData = 0;
+int maxBytes = 0;
+int pendingBytes = 0;
+int sendBytes = 0;
+u8 *nextBuffer;
+int doneSendBuffer = 1;
+//u32 ogSendBufferAddr = 0;
+
+void UARTPS_0_SendBufferAsync(u32 sendBufferAddr, int buffSizeBytes, int dataLen){
+	if (buffSizeBytes == 0) return;//{ogSendBufferAddr = 0; return;}
+	if (sendBufferAddr == 0) return;//{ogSendBufferAddr = 0; return;}
+//	if (sendBufferAddr == ogSendBufferAddr) return;
+
+	// Configuro dinámicamente el límite la primera vez que llamo y hago la copia
+	if(dataLen != 0){
+//		ogSendBufferAddr = sendBufferAddr;
+		maxBytes = UART_TX_FIFO_DEPTH - dataLen;
+		maxData = maxBytes / dataLen;
+//		memcpy((void*)UART_0_TX_BUFFER_BASE, (const void*)sendBufferAddr, UART_0_TX_BUFFER_SPACE);
+	}
+
+	// Determino cuántos bytes me quedan por enviar
+	pendingBytes = buffSizeBytes;
+	sendBytes = pendingBytes > maxBytes? maxBytes: pendingBytes;
+
+	// Delay mandatorio
+	usleep(UART_MIN_DELAY_PER_BYTE_SEND * maxData);
+
+	DMAPS_ConfigSend(sendBufferAddr, (u32)UART_TX_RX_FIFO_ADDR, sendBytes);
+
+	// Envío
+	uart0DoneTx = 0;
+	DMAPS_Send();
+
+	// Recalculo el siguiente buffer
+	pendingBytes -= sendBytes;
+	if(pendingBytes != 0){
+		doneSendBuffer = 0;
+		nextBuffer = (u8*)(sendBufferAddr + sendBytes);
+	}else{
+		doneSendBuffer = 1;
+	}
 }
 
 int UARTPS_0_DoneTx()
 {
 	int c = XUartPs_IsTransmitEmpty(&UartPs);
-	return uart0DoneTx && c;
-//	return c;
-//	return XUartPs_IsTransmitEmpty(&UartPs);
+	return uart0DoneTx && c && DMAPS_Done();
+}
+
+int UARTPS_0_DoneSendBuffer()
+{
+	return doneSendBuffer && DMAPS_Done();
 }
 
 void XUartPs_InterruptHandler_Wrapper(XUartPs *InstancePtr){
 	u32 IsrStatus;
-	int i=0;
 
 	Xil_AssertVoid(InstancePtr != NULL);
 	Xil_AssertVoid(InstancePtr->IsReady == XIL_COMPONENT_IS_READY);
@@ -154,45 +173,16 @@ void XUartPs_InterruptHandler_Wrapper(XUartPs *InstancePtr){
 				   XUARTPS_ISR_OFFSET);
 
 	if((IsrStatus & ((u32)XUARTPS_IXR_TXEMPTY | (u32)XUARTPS_IXR_TXFULL)) != (u32)0) {
-		// Sé que puedo enviar este mensaje por acá porque TXEMPTY
-//		if(DMAPS_Done() && sendOnRepeat){
-//			DMAPS_Send();
-//		}
-
-		//u32 IntrMask = XUartPs_GetInterruptMask(InstancePtr);
 		uart0DoneTx = 1;
-//		clearIntrTXEMPTY();
-//		XUartPs_SetInterruptMask(InstancePtr, IntrMask);
-//		return;
+		// Disparo una transacción por lo que quede, registrado en estas variables
+		// 0 en data len para que se use el máximo dinámico de bytes a enviar en función
+		// de la primera llamada
+		UARTPS_0_SendBufferAsync((u32)nextBuffer, pendingBytes, 0);
 	}
-
-//	if((IsrStatus & ((u32)XUARTPS_IXR_TXFULL)) != (u32)0) {
-//		//todo manejar interrupicón por TX_FULL
-//		i++;
-//	}
 
 	// Por último llamo a la función original que debía estar conectada al evento
 	// para no romper con la cadena que ejecuta UART_Handler para la recepción
 	XUartPs_InterruptHandler(InstancePtr);
-}
-
-void setIntrTXEMPTY_On(){
-	u32 IntrMask = XUartPs_GetInterruptMask(&UartPs);
-
-	IntrMask |= XUARTPS_IXR_TXEMPTY;
-
-	XUartPs_SetInterruptMask(&UartPs, IntrMask);
-}
-
-void clearIntrTXEMPTY(){
-	u32 IsrStatus = XUartPs_ReadReg(UartPs.Config.BaseAddress,
-					   XUARTPS_IMR_OFFSET);
-
-	IsrStatus &= XUartPs_ReadReg(UartPs.Config.BaseAddress,
-				   XUARTPS_ISR_OFFSET);
-
-	XUartPs_WriteReg(UartPs.Config.BaseAddress, XUARTPS_ISR_OFFSET,
-			IsrStatus);
 }
 
 void UART_O_Handler(void *CallBackRef, u32 Event, unsigned int EventData)
@@ -202,7 +192,6 @@ void UART_O_Handler(void *CallBackRef, u32 Event, unsigned int EventData)
 
 	if (Event == XUARTPS_EVENT_SENT_DATA) {
 		// Reactivo la interrupción. Al parecer se desactiva en XUartPs_InterruptHandler
-//		setIntrTXEMPTY_On();
 		IntrMask = XUartPs_GetInterruptMask(UartPsPtr);
 
 		IntrMask |= XUARTPS_IXR_TXEMPTY;
@@ -243,3 +232,28 @@ void UART_O_Handler(void *CallBackRef, u32 Event, unsigned int EventData)
 //		XUartPs_Recv((XUartPs*)CallBackRef, RecvBuffer, TEST_BUFFER_SIZE);
 	}
 }
+//void UARTPS_0_Test() {
+//	int i;
+//	for (i = 0; i < BUFFER_SIZE-1; i++) {
+//		SendBuffer[i] = (i % 26) + 'A';
+//	}
+//
+//	SendBuffer[i] = '\n'; // Agrego un enter para formato
+//
+//	UARTPS_0_ConfigSendAsync((u32)SendBuffer, BUFFER_SIZE * sizeof(u8));
+//
+//	while (1) {
+//		if(receivedCommand)
+//		{
+//			if(receivedCommand == 1)
+//			{
+//				sendOnRepeat = 1;
+//				UARTPS_0_SendAsync();
+//			}else{
+//				sendOnRepeat = 0;
+//			}
+//
+//			receivedCommand = 0;
+//		}
+//	}
+//}

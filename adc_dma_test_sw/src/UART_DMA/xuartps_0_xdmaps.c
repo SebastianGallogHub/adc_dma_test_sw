@@ -6,13 +6,13 @@
  */
 /***************************** Include Files *******************************/
 
-#include "xuartps_0_xdmaps.h"
 #include "xdmaps.h"
-
 #include "xil_exception.h"
 #include "xil_printf.h"
 
-#include "interruptSystem.h"
+#include "xuartps_0_xdmaps.h"
+
+#include "../InterruptSystem/interruptSystem.h"
 
 /************************** Constant Definitions **************************/
 
@@ -24,10 +24,10 @@ void DMAPS_DoneHandler(unsigned int Channel, XDmaPs_Cmd *DmaCmd, void *CallbackR
 
 /************************** Variable Definitions ***************************/
 
-static XDmaPs 	DmaPs;
+static XDmaPs 		DmaPs;
+static XDmaPs_Cmd 	DmaCmd;
 
-
-volatile int dmapsDone = 1;
+volatile int dmaPsDone = 1;
 unsigned int Channel = 0;
 
 Intr_Config dmaFaultIntrConfig = {
@@ -54,40 +54,41 @@ void DMAPS_Init(){
 
 	XDmaPs_CfgInitialize(DmaPsPtr, DmaCfg, DmaCfg->BaseAddress);
 
-	XDmaPs_SetDoneHandler(DmaPsPtr, DMA_CHANNEL, DMAPS_DoneHandler, (void *)&dmapsDone);
+	XDmaPs_SetDoneHandler(DmaPsPtr, DMA_CHANNEL, DMAPS_DoneHandler, (void *)&dmaPsDone);
 
 	AddIntrHandler(&dmaFaultIntrConfig);
 	AddIntrHandler(&dmaCh0IntrConfig);
-}
 
-void DMAPS_ConfigSend(u32 src, u32 dst, int burstSize, int burstLen, unsigned int transferLen){
-	// Configuro el control de DMA para enviar datos desde el buffer Src al TX_FIFO de UART
+	// Configurar el formato del envío de datos
 	memset(&DmaCmd, 0, sizeof(XDmaPs_Cmd));
 
-	DmaCmd.ChanCtrl.SrcBurstSize = burstSize;
-	DmaCmd.ChanCtrl.SrcBurstLen = burstLen;
+	DmaCmd.ChanCtrl.SrcBurstSize = 1;
+	DmaCmd.ChanCtrl.SrcBurstLen = 16;
 	DmaCmd.ChanCtrl.SrcInc = 1;
-	DmaCmd.ChanCtrl.DstBurstSize = burstSize;
-	DmaCmd.ChanCtrl.DstBurstLen = burstLen;
+
+	DmaCmd.ChanCtrl.DstBurstSize = 1;
+	DmaCmd.ChanCtrl.DstBurstLen = 16;
 	DmaCmd.ChanCtrl.DstInc = 0;
+}
+
+void DMAPS_ConfigSend(u32 src, u32 dst, unsigned int transferLen){
+	// Configurar la fuente y destino de datos y la cantidad en bytes
 	DmaCmd.BD.SrcAddr = src;
 	DmaCmd.BD.DstAddr = dst;
 	DmaCmd.BD.Length = transferLen;
 }
 
 void DMAPS_Send(){
-//	int c = 0;
-//	while(!dmapsDone);
-//	dmapsDone = 0;
+	dmaPsDone = 0;
 	XDmaPs_Start(&DmaPs, DMA_CHANNEL, &DmaCmd, 0);
 }
 
 void DMAPS_DoneHandler(unsigned int Channel, XDmaPs_Cmd *DmaCmd, void *CallbackRef){
-	volatile int *dmapsDone = (volatile int *)CallbackRef;
+	volatile int *dmaPsDone = (volatile int *)CallbackRef;
 
-	*dmapsDone = 1;
+	*dmaPsDone = 1;
 }
 
 int DMAPS_Done(){
-	return dmapsDone;
+	return dmaPsDone;
 }

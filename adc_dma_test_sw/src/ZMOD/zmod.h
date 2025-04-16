@@ -5,8 +5,8 @@
  *      Author: sebas
  */
 
-#ifndef SRC_ZMOD_H_
-#define SRC_ZMOD_H_
+#ifndef SRC_ZMOD_ZMOD_H_
+#define SRC_ZMOD_ZMOD_H_
 
 #include "xparameters.h"
 #include "xil_types.h"
@@ -18,4 +18,4 @@
 void ZMOD_WriteRegFld(uint8_t regAddr, uint8_t lsbBit, uint8_t noBits, uint32_t value);
 int32_t ZMOD_ToSigned(uint32_t value, uint8_t noBits);
 
-#endif /* SRC_ZMOD_H_ */
+#endif /* SRC_ZMOD_ZMOD_H_ */
