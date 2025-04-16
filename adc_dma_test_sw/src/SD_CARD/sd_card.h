@@ -15,7 +15,7 @@
 
 int SD_Init();
 int SD_SectorsToRead();
-int SD_WriteNextSector(unsigned char *buffer);
+int SD_WriteNextSector(unsigned char *buffer, unsigned int countSectors);
 int SD_ReadNextSector(unsigned char *out_buffer);
 
 

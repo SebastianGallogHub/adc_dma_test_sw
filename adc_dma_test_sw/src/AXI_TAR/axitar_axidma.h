@@ -34,7 +34,7 @@ extern u32 axiDmaIntCount;
 extern u32 axiDmaTransferCount;
 extern u32 Error;
 
-typedef void (*AXI_DMA_ProcessBufferDelegate) (unsigned char *sendBuffer);
+typedef void (*AXI_DMA_ProcessBufferDelegate) (unsigned char *sendBuffer, unsigned int countSectors);
 
 
 int AXI_DMA_Init();

@@ -46,14 +46,14 @@ int SD_Init(){
 	return 0;
 }
 
-int SD_WriteNextSector(BYTE *buffer){
+int SD_WriteNextSector(BYTE *buffer, UINT countSectors){
 	DSTATUS res;
 
-	res = disk_write(0, buffer, sector_wr_idx, 1);
+	res = disk_write(0, buffer, sector_wr_idx, countSectors);
 
 	if (res == RES_OK){
-		sector_wr_idx ++;
-		if(sector_wr_idx > total_sectors-1)
+		sector_wr_idx += countSectors;
+		if(sector_wr_idx > total_sectors-countSectors)
 				sector_wr_idx = 0;
 		return 1;
 	} else{

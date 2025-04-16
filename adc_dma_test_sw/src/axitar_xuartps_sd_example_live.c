@@ -46,6 +46,7 @@ int mefDatos(){
 	switch (st){
 	case 0:
 		if(SD_SectorsToRead() > 1){
+			xil_printf("&");
 			st = 1;
 		}
 
@@ -66,8 +67,12 @@ int mefDatos(){
 		break;
 
 	case 2:
-		st = 0;
-		res = 1;
+		if(UARTPS_0_DoneSendBuffer()){
+			xil_printf("&");
+			st = 0;
+			res = 1;
+		}
+
 		break;
 
 	default:
@@ -91,20 +96,18 @@ int main(){
 	UARTPS_0_StartRx();
 
 	AXI_DMA_SetupRx(
-			SD_WORDS_PER_SECTOR(AXI_TAR_DMA_TRANSFER_LEN),  		// Cantidad de DATOS a recibir en el buffer
+			SD_WORDS_PER_SECTOR(AXI_TAR_DMA_TRANSFER_LEN)*2,  		// Cantidad de DATOS a recibir en el buffer
 			AXI_TAR_DMA_TRANSFER_LEN,								// Longitud de 1 dato en bytes
-			SD_WORDS_PER_SECTOR(AXI_TAR_DMA_TRANSFER_LEN)/8,		// Coalescencia
+			SD_WORDS_PER_SECTOR(AXI_TAR_DMA_TRANSFER_LEN),			// Coalescencia
 			(AXI_DMA_ProcessBufferDelegate)SD_WriteNextSector);		// Handler para procesar el buffer
 
 	LOG(0, "----- Inicio interrupciones -----");
-
-	xil_printf("&");
 
 	AXI_TAR_Start_master_test();
 
 	while(1){
 		// mefMedicion
-		if (axiDmaTransferCount >= SD_WORDS_PER_SECTOR(AXI_TAR_DMA_TRANSFER_LEN) * 2){
+		if (axiDmaTransferCount >= SD_WORDS_PER_SECTOR(AXI_TAR_DMA_TRANSFER_LEN) * 10){
 			AXI_TAR_StopAll();
 			AXI_DMA_Reset();
 		}
@@ -113,15 +116,6 @@ int main(){
 			break;
 		}
 	}
-
-	while(1){
-		if(UARTPS_0_DoneSendBuffer()){
-			xil_printf("&");
-			break;
-		}
-	}
-
-//	PrintRxData();
 
 	usleep(1000);
 	LOG(0,"\nSe ejecutó correctamente el ejemplo");

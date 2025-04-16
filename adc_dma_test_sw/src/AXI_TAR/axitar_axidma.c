@@ -159,7 +159,8 @@ int AXI_DMA_SetupRx(u32 ringBufferSize, u32 dataSize, int coalesceCount, AXI_DMA
 
     LOG(2, "Interrupciones cada %d transacciones", coalesceCount);
     ASSERT_SUCCESS(
-    		XAxiDma_BdRingSetCoalesce(RxRingPtr, coalesceCount, 255), "Rx set coalesce failed");
+    		XAxiDma_BdRingSetCoalesce(RxRingPtr, coalesceCount, 255),
+			"Rx set coalesce failed. Max 255 was %d", coalesceCount);
 
     // Paso el anillo de BDs configurado al hardware para que comience a usarse
     ASSERT_SUCCESS(
@@ -203,7 +204,7 @@ void AXI_DMA_RxCallBack(XAxiDma_BdRing *RxRingPtr) {
 	if((ProcessBufferDelegate != NULL) && (bufferProcessCoalesceCounter >= bufferCoalesce)){
 
 		// Proceso el buffer con el handler
-		ProcessBufferDelegate((unsigned char*)AXI_DMA_RX_BUFFER_BASE);
+		ProcessBufferDelegate((unsigned char*)AXI_DMA_RX_BUFFER_BASE, 2);
 
 		// Reseteo el contador de coalescencia para recaptar el suceso
 		bufferProcessCoalesceCounter = 0;
