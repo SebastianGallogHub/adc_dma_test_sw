@@ -27,7 +27,7 @@ void AXI_TAR_master_test_IntrHandler(void * Callback);
 /************************** Variable Definitions ***************************/
 
 u32 axiTarTransferCount = 0;
-Intr_Config tarMasterTestIntrConfig =	{
+Intr_Config tarMasterTestIntrConfig ={
 		AXI_TAR_DR_INTR_ID,
 		(Xil_ExceptionHandler)AXI_TAR_master_test_IntrHandler,
 		(void *)AXI_TAR_BASE,
@@ -35,6 +35,10 @@ Intr_Config tarMasterTestIntrConfig =	{
 };
 
 /****************************************************************************/
+
+void AXI_TAR_DisableChannel(int channel){
+	AXI_TAR_SetHysteresis(channel, (u16)0x3FFF, (u16)0x3FFF);
+}
 
 void AXI_TAR_SetHysteresis(int channel, u16 low, u16 high) {
 	u32 histeresis = 0;
@@ -58,8 +62,7 @@ void AXI_TAR_Init() {
 
 /****************************************************************************/
 
-void AXI_TAR_master_test_Init(u32 cuenta)
-{
+void AXI_TAR_master_test_Init(u32 cuenta){
 	LOG(1, "TAR_Init");
 
 	AXI_TAR_StopAll();
@@ -78,8 +81,8 @@ void AXI_TAR_master_test_Init(u32 cuenta)
 	AddIntrHandler(&tarMasterTestIntrConfig);
 	return;
 }
-void AXI_TAR_master_test_IntrHandler(void * Callback)
-{
+
+void AXI_TAR_master_test_IntrHandler(void * Callback){
 	if(axiTarTransferCount <= UINT32_MAX)
 		axiTarTransferCount ++;
 	return;

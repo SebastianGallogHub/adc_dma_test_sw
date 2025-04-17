@@ -75,7 +75,7 @@ int AXI_DMA_Init() {
 	axiDmaIntrConfig.IntrId = AXI_DMA_RX_INTR_ID;
 	axiDmaIntrConfig.Handler = (Xil_ExceptionHandler)AXI_DMA_RxIntrHandler;
 	axiDmaIntrConfig.CallBackRef = RxRingPtr;
-	axiDmaIntrConfig.Priority = 0xA0;
+	axiDmaIntrConfig.Priority = 0xC0;
 
 	AddIntrHandler(&axiDmaIntrConfig);
 

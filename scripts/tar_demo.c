@@ -106,7 +106,7 @@ int main()
     command = 0x01; // START
     write(serial_fd, &command, 1);
 
-    usleep(10000 * 1000);
+    usleep(60000 * 1000);
 
     command = 0x25; // HEADER
     write(serial_fd, &command, 1);
@@ -196,8 +196,7 @@ void mefSerialToBin(char buffer, int bytes_read, int keepReceiving)
         break;
 
     case GENERATING_CSV:
-        printf("\nSe capturaron %d bytes (%d pulsos)\n", bytes_captured, bytes_captured / 8);
-
+        printf("\n");
         bin_to_csv();
 
         state = CONSOLE;
@@ -238,7 +237,7 @@ void bin_to_csv()
 
     uint8_t buffer[8];
     uint64_t pulse;
-    size_t index_ch0 = 0, index_ch1 = 0, ii = 0;
+    size_t index_ch0 = 0, index_ch1 = 0, ii = 0, of_count = 0;
     uint8_t ch = 0;
     uint32_t ts = 0;
     uint16_t vp = 0;
@@ -273,6 +272,7 @@ void bin_to_csv()
             break;
 
         case 3:
+            of_count++;
             time += (uint64_t)T_PERIOD;
             break;
 
@@ -285,7 +285,9 @@ void bin_to_csv()
     fclose(output_ch0);
     fclose(output_ch1);
 
-    printf("Conversión completada:\n\t - Canal 0: %s (%lu)\n\t - Canal 1: %s (%lu)\n", OUTPUT_CH0, index_ch0, OUTPUT_CH1, index_ch1);
+    printf("Se capturaron %d bytes (%d pulsos)\n", bytes_captured, bytes_captured / 8);
+    printf("Se capturaron %lu marcas de tiempo\n", of_count);
+    printf("Conversión completa:\n\t - Canal 0: %s (%lu)\n\t - Canal 1: %s (%lu)\n", OUTPUT_CH0, index_ch0, OUTPUT_CH1, index_ch1);
 }
 
 int serial_init(char *port)

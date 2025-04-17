@@ -39,7 +39,7 @@ u64 sector_rd_buffer[WORDS_PER_SECTOR] __attribute__ ((aligned (64)));
 
 /****************************************************************************/
 
-void mefDatos(){
+void mefSendDataAsync(){
 	static int st = 0;
 
 	switch (st){
@@ -66,11 +66,7 @@ void mefDatos(){
 
 	case 2:
 		if(UARTPS_0_DoneSendBuffer()){
-//			usleep(1000);
-//			xil_printf("%%%%");
-//			usleep(1000);
 			st = 0;
-//			res = 1;
 		}
 
 		break;
@@ -81,8 +77,7 @@ void mefDatos(){
 	}
 }
 
-int main()
-{
+int main(){
 	u16 h0_low, h0_high, h1_low, h1_high;
 	UART_COMMAND c;
 	u16 p;
@@ -104,20 +99,17 @@ int main()
 
 	UARTPS_0_StartRx();
 
-	h0_low = 1000/ZMODADC1410_RESOLUTION;//0x3fff;
+	h0_low = 1000/ZMODADC1410_RESOLUTION;
 	h0_high = 3000/ZMODADC1410_RESOLUTION;
 	LOG(2, "Canal 0, histéresis (%d ; %d)", h0_low, h0_high);
 	AXI_TAR_SetHysteresis(0, h0_low, h0_high);
-//	AXI_TAR_SetHysteresis(0, 0, h0_low);
-//	AXI_TAR_SetHysteresis(0, 1, h0_high);
+//	AXI_TAR_DisableChannel(0);
 
-	h1_low = 0x3fff;//1000/ZMODADC1410_RESOLUTION;//0x3fff;
-	h1_high = 0x3fff;//3000/ZMODADC1410_RESOLUTION;
+	h1_low = 1000/ZMODADC1410_RESOLUTION;
+	h1_high = 3000/ZMODADC1410_RESOLUTION;
 	LOG(2, "Canal 1, histéresis (%d ; %d)", h1_low, h1_high);
 	AXI_TAR_SetHysteresis(1, h1_low, h1_high);
-//	AXI_TAR_SetHysteresis(1, 0, h1_low);
-//	AXI_TAR_SetHysteresis(1, 1, h1_high);
-
+//	AXI_TAR_DisableChannel(1);
 
 	AXI_DMA_SetupRx(
 				WORDS_PER_SECTOR * 2,  									// Cantidad de DATOS a recibir en el buffer
@@ -125,25 +117,14 @@ int main()
 				WORDS_PER_SECTOR,										// Coalescencia
 				(AXI_DMA_ProcessBufferDelegate)SD_WriteNextSector);		// Handler para procesar el buffer
 
-
-
-//	AXI_TAR_Start();
-
-
 	while(1){
 		// mefMedicion
 		c = UART_0_GetCommand();
 
-		if(c == CMD_START)
-		{
+		if(c == CMD_START){
 			LOG(1, "----- Inicio adquisición -----");
 			usleep(2000);
 			AXI_TAR_Start();
-		}
-
-		if (axiDmaTransferCount >= SD_WORDS_PER_SECTOR(AXI_TAR_DMA_TRANSFER_LEN) * 2){
-			AXI_TAR_StopAll();
-			AXI_DMA_Reset();
 		}
 
 		if(c == CMD_STOP){
@@ -151,10 +132,10 @@ int main()
 			AXI_DMA_Reset();
 		}
 
-		mefDatos();
+		mefSendDataAsync();
 	}
 
-	DisableIntrSystem();
+//	DisableIntrSystem();
 
 //	LOG(0, "--------------------- FIN MAIN -----------------------");
 	return 0;

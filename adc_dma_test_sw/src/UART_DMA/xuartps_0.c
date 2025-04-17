@@ -48,7 +48,7 @@ Intr_Config uartIntrConfig = {
 		UART_INT_IRQ_ID,
 		(Xil_ExceptionHandler)XUartPs_InterruptHandler_Wrapper,
 		(void *)&UartPs,
-		0x70 // Interrupción con prioridad más alta
+		0x00 // Interrupción con prioridad más alta
 };
 
 /****************************************************************************/
@@ -111,19 +111,15 @@ int pendingBytes = 0;
 int sendBytes = 0;
 u8 *nextBuffer;
 int doneSendBuffer = 1;
-//u32 ogSendBufferAddr = 0;
 
 void UARTPS_0_SendBufferAsync(u32 sendBufferAddr, int buffSizeBytes, int dataLen){
-	if (buffSizeBytes == 0) return;//{ogSendBufferAddr = 0; return;}
-	if (sendBufferAddr == 0) return;//{ogSendBufferAddr = 0; return;}
-//	if (sendBufferAddr == ogSendBufferAddr) return;
+	if (buffSizeBytes == 0) return;
+	if (sendBufferAddr == 0) return;
 
 	// Configuro dinámicamente el límite la primera vez que llamo y hago la copia
 	if(dataLen != 0){
-//		ogSendBufferAddr = sendBufferAddr;
 		maxBytes = UART_TX_FIFO_DEPTH - dataLen;
 		maxData = maxBytes / dataLen;
-//		memcpy((void*)UART_0_TX_BUFFER_BASE, (const void*)sendBufferAddr, UART_0_TX_BUFFER_SPACE);
 	}
 
 	// Determino cuántos bytes me quedan por enviar
@@ -149,14 +145,12 @@ void UARTPS_0_SendBufferAsync(u32 sendBufferAddr, int buffSizeBytes, int dataLen
 	}
 }
 
-int UARTPS_0_DoneTx()
-{
+int UARTPS_0_DoneTx(){
 	int c = XUartPs_IsTransmitEmpty(&UartPs);
 	return uart0DoneTx && c && DMAPS_Done();
 }
 
-int UARTPS_0_DoneSendBuffer()
-{
+int UARTPS_0_DoneSendBuffer(){
 	return doneSendBuffer && DMAPS_Done();
 }
 
@@ -209,7 +203,6 @@ u16 UART_0_GetParameter(){
 
 void mefCommand(u8 chr){
 	static int state = 0;
-	static int cnt = 0;
 
 	switch (state) {
 	case 0:
@@ -245,8 +238,8 @@ void mefCommand(u8 chr){
 	}
 }
 
-void UART_O_Handler(void *CallBackRef, u32 Event, unsigned int EventData)
-{
+void UART_O_Handler(void *CallBackRef, u32 Event, unsigned int EventData){
+	static int state = 0;
 	XUartPs *UartPsPtr = (XUartPs*)CallBackRef;
 	u32 IntrMask;
 
@@ -263,14 +256,6 @@ void UART_O_Handler(void *CallBackRef, u32 Event, unsigned int EventData)
 		Event == XUARTPS_EVENT_RECV_TOUT) {
 
 		for (unsigned int i = 0; i < EventData; i++) {
-//			if(RecvBuffer[i] == 'a'){
-//				receivedCommand = 1;
-//				break;
-//			}
-//			if(RecvBuffer[i] == 'f'){
-//				receivedCommand = 2;
-//				break;
-//			}
 			mefCommand(RecvBuffer[i]);
 		}
 
@@ -283,38 +268,7 @@ void UART_O_Handler(void *CallBackRef, u32 Event, unsigned int EventData)
 		XUartPs_Recv(UartPsPtr, RecvBuffer, BUFFER_SIZE);
 	}
 
-	if (Event == XUARTPS_EVENT_RECV_ERROR ||
-		Event == XUARTPS_EVENT_PARE_FRAME_BRKE ||
-		Event == XUARTPS_EVENT_RECV_ORERR) {
-
-//		TotalReceivedCount += EventData;
-//		TotalErrorCount++;
-
-//		XUartPs_Recv((XUartPs*)CallBackRef, RecvBuffer, TEST_BUFFER_SIZE);
-	}
+//	if (Event == XUARTPS_EVENT_RECV_ERROR ||
+//		Event == XUARTPS_EVENT_PARE_FRAME_BRKE ||
+//		Event == XUARTPS_EVENT_RECV_ORERR) {}
 }
-//void UARTPS_0_Test() {
-//	int i;
-//	for (i = 0; i < BUFFER_SIZE-1; i++) {
-//		SendBuffer[i] = (i % 26) + 'A';
-//	}
-//
-//	SendBuffer[i] = '\n'; // Agrego un enter para formato
-//
-//	UARTPS_0_ConfigSendAsync((u32)SendBuffer, BUFFER_SIZE * sizeof(u8));
-//
-//	while (1) {
-//		if(receivedCommand)
-//		{
-//			if(receivedCommand == 1)
-//			{
-//				sendOnRepeat = 1;
-//				UARTPS_0_SendAsync();
-//			}else{
-//				sendOnRepeat = 0;
-//			}
-//
-//			receivedCommand = 0;
-//		}
-//	}
-//}

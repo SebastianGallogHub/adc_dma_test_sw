@@ -66,6 +66,7 @@ void AXI_TAR_master_test_Init(u32);
 
 void AXI_TAR_Init();
 
+void AXI_TAR_DisableChannel(int channel);
 void AXI_TAR_SetHysteresis(int channel, u16 low, u16 high);
 
 #endif /* SRC_AXI_TAR_AXITAR_H_ */

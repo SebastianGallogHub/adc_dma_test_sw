@@ -20,29 +20,25 @@ static INTC Intc;
 int handlerIdx = 0;
 Intr_Config* handlers[MAX_HANDLERS_CNT];
 
-void AddIntrHandler(Intr_Config* handlerConfigPtr)
-{
+void AddIntrHandler(Intr_Config* handlerConfigPtr){
 	if(handlerConfigPtr->IntrId != 0 && handlerIdx < MAX_HANDLERS_CNT)
 		handlers[handlerIdx++] = handlerConfigPtr;
 }
-void DisableIntr(u16 intrId)
-{
+void DisableIntr(u16 intrId){
 	for(int i = 0;i < handlerIdx; i++)
 	{
 		if(handlers[i]->IntrId == intrId)
 			XScuGic_Disconnect(&Intc, handlers[i]->IntrId);
 	}
 }
-void DisableIntrSystem()
-{
+void DisableIntrSystem(){
 //	LOG(1, "DisableIntrSystem");
 	for (int i = 0; i < handlerIdx; i++)
 	{
 		XScuGic_Disconnect(&Intc, handlers[i]->IntrId);
 	}
 }
-int SetupIntrSystem()
-{
+int SetupIntrSystem(){
 //	LOG(1, "SetupIntrSystem");
 
 	XScuGic_Config *IntcConfig;

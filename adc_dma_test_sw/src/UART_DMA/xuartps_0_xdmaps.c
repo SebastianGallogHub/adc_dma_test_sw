@@ -41,7 +41,7 @@ Intr_Config dmaCh0IntrConfig = {
 		DMA_DONE_INTR_0,
 		(Xil_ExceptionHandler)XDmaPs_DoneISR_0,
 		(void *)&DmaPs,
-		0xA0
+		0x08
 };
 
 /****************************************************************************/
