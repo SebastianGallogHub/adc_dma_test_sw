@@ -42,7 +42,7 @@ void AXI_TAR_SetHysteresis(int channel, u16 low, u16 high) {
 	if (channel == 0){
 		AXI_TAR_mWriteReg(AXI_TAR_BASE, AXI_TAR_CH1_HIST_OFF, histeresis);
 	}else{
-		AXI_TAR_mWriteReg(AXI_TAR_BASE, AXI_TAR_CH1_HIST_OFF, histeresis);
+		AXI_TAR_mWriteReg(AXI_TAR_BASE, AXI_TAR_CH2_HIST_OFF, histeresis);
 	}
 	return;
 }

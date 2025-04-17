@@ -35,7 +35,7 @@ void PrintRxData();
 
 /************************** Variable Definitions ***************************/
 
-u32 sector_rd_buffer[WORDS_PER_SECTOR] __attribute__ ((aligned (64)));
+u64 sector_rd_buffer[WORDS_PER_SECTOR] __attribute__ ((aligned (64)));
 
 /****************************************************************************/
 
@@ -46,7 +46,7 @@ int mefDatos(){
 	switch (st){
 	case 0:
 		if(SD_SectorsToRead() > 1){
-			xil_printf("&");
+//			xil_printf("&");
 			st = 1;
 		}
 
@@ -56,7 +56,7 @@ int mefDatos(){
 		if(SD_SectorsToRead() > 0) {
 			if(UARTPS_0_DoneSendBuffer()){
 				SD_ReadNextSector((unsigned char*)sector_rd_buffer);
-				UARTPS_0_SendBufferAsync((u32)sector_rd_buffer, SD_SECTOR_SIZE, sizeof(u32));
+				UARTPS_0_SendBufferAsync((u32)sector_rd_buffer, SD_SECTOR_SIZE, AXI_TAR_DMA_TRANSFER_LEN);
 			}
 		}
 
@@ -68,7 +68,10 @@ int mefDatos(){
 
 	case 2:
 		if(UARTPS_0_DoneSendBuffer()){
-			xil_printf("&");
+//			xil_printf("&");
+			usleep(1000);
+			xil_printf("%%%%");
+			usleep(1000);
 			st = 0;
 			res = 1;
 		}
@@ -85,12 +88,13 @@ int mefDatos(){
 
 int main()
 {
+	UARTPS_0_Init();
 	u16 h1_low, h1_high, h2_low, h2_high;
 
 	LOG(0, "--------------------- INICIO MAIN -----------------------");
-	LOG(1, "PRUEBA LÓGICA DE DETECCIÓN DE PULSO");
+	LOG(1, "PRUEBA LÓGICA DE DETECCIÓN DE PULSO + RINGBUFFER SD");
+	usleep(2000);
 
-	UARTPS_0_Init();
 	SD_Init();
 	AXI_DMA_Init();
 	AXI_TAR_Init();
@@ -107,8 +111,8 @@ int main()
 	LOG(2, "Canal 1, histéresis (%d ; %d)", h1_low, h1_high);
 	AXI_TAR_SetHysteresis(0, h1_low, h1_high);
 
-	h2_low = 1000/ZMODADC1410_RESOLUTION;//0x3fff;
-	h2_high = 3000/ZMODADC1410_RESOLUTION;
+	h2_low = 0x3fff;//1000/ZMODADC1410_RESOLUTION;//0x3fff;
+	h2_high = 0x3fff;//3000/ZMODADC1410_RESOLUTION;
 	LOG(2, "Canal 2, histéresis (%d ; %d)", h2_low, h2_high);
 	AXI_TAR_SetHysteresis(1, h2_low, h2_high);
 
