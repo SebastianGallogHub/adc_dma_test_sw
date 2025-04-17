@@ -185,6 +185,66 @@ void XUartPs_InterruptHandler_Wrapper(XUartPs *InstancePtr){
 	XUartPs_InterruptHandler(InstancePtr);
 }
 
+u8 command = 0;
+u8 parameter_f = 0;
+u16 parameter = 0;
+
+UART_COMMAND UART_0_GetCommand(){
+	u8 c = command;
+	command = 0;
+	return (UART_COMMAND)c;
+}
+
+u8 UART_0_HasParameter(){
+	return parameter_f;
+}
+
+u16 UART_0_GetParameter(){
+	if (!parameter_f) return 0;
+	u16 p = parameter;
+	parameter = 0;
+	parameter_f = 0;
+	return p;
+}
+
+void mefCommand(u8 chr){
+	static int state = 0;
+	static int cnt = 0;
+
+	switch (state) {
+	case 0:
+		if(chr == COMMAND_FORMAT_HEADER)
+			state = 1;
+
+		break;
+
+	case 1:
+		if(chr == CMD_START ||
+		   chr == CMD_STOP){
+			command = chr;
+			state = 0;
+		}
+		if(chr == CMD_CHA_H_L ||
+		   chr == CMD_CHA_H_H ||
+		   chr == CMD_CHB_H_L ||
+		   chr == CMD_CHB_H_H){
+			command = chr;
+			parameter = (u16)chr << 8;
+			state = 2;
+		}
+		break;
+
+	case 2:
+		parameter_f = 1;
+		parameter |= chr;
+		state = 0;
+		break;
+
+	default:
+			break;
+	}
+}
+
 void UART_O_Handler(void *CallBackRef, u32 Event, unsigned int EventData)
 {
 	XUartPs *UartPsPtr = (XUartPs*)CallBackRef;
@@ -203,14 +263,15 @@ void UART_O_Handler(void *CallBackRef, u32 Event, unsigned int EventData)
 		Event == XUARTPS_EVENT_RECV_TOUT) {
 
 		for (unsigned int i = 0; i < EventData; i++) {
-			if(RecvBuffer[i] == 'a'){
-				receivedCommand = 1;
-				break;
-			}
-			if(RecvBuffer[i] == 'f'){
-				receivedCommand = 2;
-				break;
-			}
+//			if(RecvBuffer[i] == 'a'){
+//				receivedCommand = 1;
+//				break;
+//			}
+//			if(RecvBuffer[i] == 'f'){
+//				receivedCommand = 2;
+//				break;
+//			}
+			mefCommand(RecvBuffer[i]);
 		}
 
 		/*

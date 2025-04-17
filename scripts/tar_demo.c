@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <stdint.h>
+#include <pthread.h>
 
 /**************************************************************************************************/
 #define SERIAL_PORT "/dev/ttyUSB1"
@@ -38,7 +39,7 @@ typedef enum
 {
     CONSOLE,
     WAITING_NEXT_PULSE,
-    RECEIVING_PULSE,
+    RECEIVING_PULSES,
     CHECK_FALSE_END,
     GENERATING_CSV,
 } mef_state;
@@ -46,39 +47,78 @@ typedef enum
 /**************************************************************************************************/
 
 int serial_init(char *port);
-int mefSerialToBin(char);
-void bin_to_csv();
 void openInputFile();
+void mefSerialToBin(char, int, int);
 int writeInputFile(char buffer);
+void bin_to_csv();
 
 /**************************************************************************************************/
 
 int serial_fd;
 int inputFile_fd;
 char buffer;
+volatile int keepReceiving = 1;
 
 /**************************************************************************************************/
-int main()
+void *rx_thread_func(void *arg)
 {
-    bin_to_csv();
-
-    return 0;
-
     int bytes_read;
-
-    serial_init("/dev/ttyUSB1");
 
     openInputFile();
 
-    do
+    while (1)
     {
         bytes_read = read(serial_fd, &buffer, 1);
 
-        if (bytes_read > 0)
-            if (mefSerialToBin(buffer))
-                break;
+        mefSerialToBin(buffer, bytes_read, keepReceiving);
+    }
 
-    } while (1);
+    return NULL;
+}
+
+int main()
+{
+    // bin_to_csv();
+
+    // return 0;
+
+    if (serial_init("/dev/ttyUSB1"))
+        return 1;
+
+    uint8_t command = 0;
+    char resp = 0;
+
+    pthread_t rx_thread;
+    if (pthread_create(&rx_thread, NULL, rx_thread_func, NULL) != 0)
+    {
+        perror("No se pudo crear el hilo de recepción");
+        close(serial_fd);
+        return 1;
+    }
+
+    do
+    {
+        scanf(" %c", &resp);
+    } while (resp != 's');
+
+    command = 0x25; // HEADER
+    write(serial_fd, &command, 1);
+    command = 0x01; // START
+    write(serial_fd, &command, 1);
+
+    usleep(10000 * 1000);
+
+    command = 0x25; // HEADER
+    write(serial_fd, &command, 1);
+    command = 0x02; // STOP
+    write(serial_fd, &command, 1);
+
+    usleep(10000 * 1000); // pausa para terminar de recibir todo lo que falte
+
+    keepReceiving = 0;
+    pthread_join(rx_thread, NULL);
+
+    close(serial_fd);
 
     return 0;
 }
@@ -115,80 +155,52 @@ int writeInputFile(char buffer)
     return 0;
 }
 
-int mefSerialToBin(char buffer)
+void mefSerialToBin(char buffer, int bytes_read, int keepReceiving)
 {
     static mef_state state = CONSOLE;
-    static int falseEndCount = 0;
 
     switch (state)
     {
     case CONSOLE:
 
-        if (buffer == CMD_FOOTER_PULSE) // Los datos vienen al revés!!!! BIGENDIAN
+        if (bytes_read)
         {
-            write(inputFile_fd, &buffer, 1);
-            falseEndCount = 0;
-            state = RECEIVING_PULSE;
-        }
-        else
-        {
-            printf("%c", buffer);
-            fflush(stdout);
-        }
-
-        break;
-
-    case RECEIVING_PULSE:
-        if (buffer == CMD_END)
-        {
-            falseEndCount++;
-            state = CHECK_FALSE_END;
-        }
-        else
-        {
-            if (writeInputFile(buffer))
-                break;
+            if (buffer == CMD_FOOTER_PULSE) // Los datos vienen al revés!!!! BIGENDIAN
+            {
+                writeInputFile(buffer);
+                state = RECEIVING_PULSES;
+            }
+            else
+            {
+                printf("%c", buffer);
+                fflush(stdout);
+            }
         }
 
         break;
-        // case CHECK_FALSE_HEADER:
 
-        //     if (buffer == CMD_END) // si llegan 2 seguidos termina
-        //     {
-        //         close(inputFile_fd);
-        //         state = GENERATING_CSV;
-        //     }
-        //     else
-        //     {
-        //         writeInputFile(CMD_END);
-        //         writeInputFile(buffer);
-        //         state = RECEIVING_PULSE;
-        //     }
-        //     break;
-    case CHECK_FALSE_END:
-
-        if (buffer == CMD_END)
-            falseEndCount++;
-
-        if (falseEndCount > 3)
+    case RECEIVING_PULSES:
+        if (keepReceiving)
         {
-            close(inputFile_fd);
+            if (bytes_read)
+            {
+                if (writeInputFile(buffer))
+                    break;
+            }
+        }
+        else
+        {
             state = GENERATING_CSV;
         }
-        else if (buffer != CMD_END)
-        {
-            for (int i = 0; i < falseEndCount; i++)
-                writeInputFile(CMD_END);
 
-            writeInputFile(buffer);
-            state = RECEIVING_PULSE;
-        }
         break;
 
     case GENERATING_CSV:
         printf("\nSe capturaron %d bytes (%d pulsos)\n", bytes_captured, bytes_captured / 8);
+
         bin_to_csv();
-        return 1;
+
+        state = CONSOLE;
 
         break;
 
@@ -196,7 +208,6 @@ int mefSerialToBin(char buffer)
         state = CONSOLE;
         break;
     }
-    return 0;
 }
 
 void bin_to_csv()
@@ -281,7 +292,7 @@ int serial_init(char *port)
 {
     struct termios options;
 
-    serial_fd = open(port, O_RDONLY | O_NOCTTY);
+    serial_fd = open(port, O_RDWR | O_NOCTTY);
     if (serial_fd == -1)
     {
         perror("Error abriendo el puerto serie");

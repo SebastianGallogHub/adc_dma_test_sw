@@ -35,7 +35,7 @@ void DisableIntr(u16 intrId)
 }
 void DisableIntrSystem()
 {
-	LOG(1, "DisableIntrSystem");
+//	LOG(1, "DisableIntrSystem");
 	for (int i = 0; i < handlerIdx; i++)
 	{
 		XScuGic_Disconnect(&Intc, handlers[i]->IntrId);
