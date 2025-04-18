@@ -7,7 +7,7 @@
 
 /***************************** Include Files *******************************/
 
-#include "axitar_axidma.h"
+#include "../AXITAR/axitar_axidma.h"
 
 #include "../includes/assert.h"
 #include "../includes/log.h"
@@ -19,7 +19,7 @@
 
 /************************** Function Prototypes *****************************/
 
-void AXI_DMA_RxIntrHandler(void *Callback);
+void AXIDMA_RxIntrHandler(void *Callback);
 
 /************************** Variable Definitions ***************************/
 
@@ -33,14 +33,13 @@ Intr_Config axiDmaIntrConfig;
 
 int rbSize;
 int bufferDataSize;
-int bufferCoalesce;
 int bufferProcessCoalesceCounter = 0;
-AXI_DMA_ProcessBufferDelegate ProcessBufferDelegate;
+AXIDMA_ProcessBufferDelegate ProcessBufferDelegate;
 
 
 /****************************************************************************/
 
-void AXI_DMA_Reset() {
+void AXIDMA_Reset() {
 	int TimeOut = 10000;
 
 	axiDmaIntCount = 0;
@@ -56,13 +55,13 @@ void AXI_DMA_Reset() {
 	}
 }
 
-int AXI_DMA_Init() {
+int AXIDMA_Init() {
 	XAxiDma_Config *Config;
 	XAxiDma_BdRing *RxRingPtr;
 
 	// Obtengo la configuración del DMA usando un identificador predefinido
-	Config = XAxiDma_LookupConfig(AXI_DMA_DEV_ID);
-	ASSERT(Config != NULL, "No config found for %d", AXI_DMA_DEV_ID);
+	Config = XAxiDma_LookupConfig(AXIDMA_DEV_ID);
+	ASSERT(Config != NULL, "No config found for %d", AXIDMA_DEV_ID);
 
 	// Inicializo la instancia del DMA con la configuración obtenida.
 	ASSERT_SUCCESS(
@@ -72,17 +71,17 @@ int AXI_DMA_Init() {
 	RxRingPtr = XAxiDma_GetRxRing(&AxiDma);
 
 	//dmaIntrConfig
-	axiDmaIntrConfig.IntrId = AXI_DMA_RX_INTR_ID;
-	axiDmaIntrConfig.Handler = (Xil_ExceptionHandler)AXI_DMA_RxIntrHandler;
+	axiDmaIntrConfig.IntrId = AXIDMA_RX_INTR_ID;
+	axiDmaIntrConfig.Handler = (Xil_ExceptionHandler)AXIDMA_RxIntrHandler;
 	axiDmaIntrConfig.CallBackRef = RxRingPtr;
 	axiDmaIntrConfig.Priority = 0xC0;
 
-	AddIntrHandler(&axiDmaIntrConfig);
+	IntrSystem_AddHandler(&axiDmaIntrConfig);
 
 	return 0;
 }
 
-int AXI_DMA_SetupRx(u32 ringBufferSize, u32 dataSize, int coalesceCount, AXI_DMA_ProcessBufferDelegate processBuffer) {
+int AXIDMA_SetupRx(u32 ringBufferSize, u32 dataSize, int coalesceCount, AXIDMA_ProcessBufferDelegate processBuffer) {
     LOG(1, "AXI_DMA_Init");
 
     XAxiDma_BdRing *RxRingPtr;
@@ -101,14 +100,14 @@ int AXI_DMA_SetupRx(u32 ringBufferSize, u32 dataSize, int coalesceCount, AXI_DMA
     XAxiDma_BdRingIntDisable(RxRingPtr, XAXIDMA_IRQ_ALL_MASK);
 
     // Reinicio del DMA para evitar estados incorrectos
-    AXI_DMA_Reset();
+    AXIDMA_Reset();
 
     // Calculo la cantidad de BDs disponibles en el espacio asignado para la recepción
-    BdCount = XAxiDma_BdRingCntCalc(XAXIDMA_BD_MINIMUM_ALIGNMENT, AXI_DMA_RX_BD_SPACE);
+    BdCount = XAxiDma_BdRingCntCalc(XAXIDMA_BD_MINIMUM_ALIGNMENT, AXIDMA_RX_BD_SPACE);
     ASSERT(BdCount >= ringBufferSize, "No hay suficientes BDs para las transferencias");
 
     // Creo el ringbuffer de BDs para la recepción, asignando el espacio de memoria definido
-    status = XAxiDma_BdRingCreate(RxRingPtr, AXI_DMA_RX_BD_SPACE_BASE, AXI_DMA_RX_BD_SPACE_BASE,
+    status = XAxiDma_BdRingCreate(RxRingPtr, AXIDMA_RX_BD_SPACE_BASE, AXIDMA_RX_BD_SPACE_BASE,
                                   XAXIDMA_BD_MINIMUM_ALIGNMENT, ringBufferSize);
     ASSERT_SUCCESS(status, "Rx bd create failed");
 
@@ -123,7 +122,7 @@ int AXI_DMA_SetupRx(u32 ringBufferSize, u32 dataSize, int coalesceCount, AXI_DMA
     		XAxiDma_BdRingAlloc(RxRingPtr, ringBufferSize, &BdPtr), "Rx bd alloc failed");
 
     BdCurPtr = BdPtr;
-    RxBufferPtr = AXI_DMA_RX_BUFFER_BASE;
+    RxBufferPtr = AXIDMA_RX_BUFFER_BASE;
 
     // Alinear el buffer a 64 bits para cumplir requisitos de hardware
     RxBufferPtr = (RxBufferPtr + 63) & ~0x3F;
@@ -150,12 +149,12 @@ int AXI_DMA_SetupRx(u32 ringBufferSize, u32 dataSize, int coalesceCount, AXI_DMA
     }
 
     // Limpieza del buffer de llegada
-    memset((void*)AXI_DMA_RX_BUFFER_BASE, 0, AXI_DMA_RX_BUFFER_HIGH - AXI_DMA_RX_BUFFER_BASE);
+    memset((void*)AXIDMA_RX_BUFFER_BASE, 0, AXIDMA_RX_BUFFER_HIGH - AXIDMA_RX_BUFFER_BASE);
 
     /* Me aseguro que las actualizaciones en la memoria se reflejen correctamente
        realizando un flush de la cache para los BDs y el buffer de recepción */
     Xil_DCacheFlushRange((UINTPTR)BdPtr, ringBufferSize * sizeof(XAxiDma_Bd));
-    Xil_DCacheFlushRange((UINTPTR)AXI_DMA_RX_BUFFER_BASE, ringBufferSize * dataSize);
+    Xil_DCacheFlushRange((UINTPTR)AXIDMA_RX_BUFFER_BASE, ringBufferSize * dataSize);
 
     LOG(2, "Interrupciones cada %d transacciones", coalesceCount);
     ASSERT_SUCCESS(
@@ -181,13 +180,12 @@ int AXI_DMA_SetupRx(u32 ringBufferSize, u32 dataSize, int coalesceCount, AXI_DMA
 
     rbSize = ringBufferSize;
     bufferDataSize = dataSize;
-    bufferCoalesce = ringBufferSize;
     ProcessBufferDelegate = processBuffer;
 
     return XST_SUCCESS;
 }
 
-void AXI_DMA_RxCallBack(XAxiDma_BdRing *RxRingPtr) {
+void AXIDMA_RxCallBack(XAxiDma_BdRing *RxRingPtr) {
 
 	int BdCount;
 	XAxiDma_Bd *BdPtr;
@@ -201,10 +199,10 @@ void AXI_DMA_RxCallBack(XAxiDma_BdRing *RxRingPtr) {
 	XAxiDma_BdRingFree(RxRingPtr, BdCount, BdPtr);
 
 	// Coalescencia manual porque no la está haciendo bien
-	if((ProcessBufferDelegate != NULL) && (bufferProcessCoalesceCounter >= bufferCoalesce)){
+	if((ProcessBufferDelegate != NULL) && (bufferProcessCoalesceCounter >= rbSize)){
 
 		// Proceso el buffer con el handler
-		ProcessBufferDelegate((unsigned char*)AXI_DMA_RX_BUFFER_BASE, 2);
+		ProcessBufferDelegate((unsigned char*)AXIDMA_RX_BUFFER_BASE, 2);
 
 		// Reseteo el contador de coalescencia para recaptar el suceso
 		bufferProcessCoalesceCounter = 0;
@@ -213,7 +211,7 @@ void AXI_DMA_RxCallBack(XAxiDma_BdRing *RxRingPtr) {
 	return;
 }
 
-void AXI_DMA_RxIntrHandler(void *Callback) {
+void AXIDMA_RxIntrHandler(void *Callback) {
 	XAxiDma_BdRing *RxRingPtr = (XAxiDma_BdRing *) Callback;
 	u32 IrqStatus;
 	int TimeOut;
@@ -263,7 +261,7 @@ void AXI_DMA_RxIntrHandler(void *Callback) {
 	 * to handle the processed BDs and then raise the according flag.
 	 */
 	if ((IrqStatus & (XAXIDMA_IRQ_DELAY_MASK | XAXIDMA_IRQ_IOC_MASK)))
-		AXI_DMA_RxCallBack(RxRingPtr);
+		AXIDMA_RxCallBack(RxRingPtr);
 
 	return;
 }

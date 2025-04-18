@@ -25,9 +25,9 @@ typedef struct InterruptionHandlerConfig
 	u8 Priority;
 }Intr_Config;
 
-void AddIntrHandler(Intr_Config* handlerConfig);
-int SetupIntrSystem();
-void DisableIntr(u16 intrId);
-void DisableIntrSystem();
+void IntrSystem_AddHandler(Intr_Config* handlerConfig);
+int IntrSystem_Setup();
+void IntrSystem_DisableIntr(u16 intrId);
+void IntrSystem_Disable();
 
 #endif /* SRC_INTERRUPTSYSTEM_INTERRUPTSYSTEM_H_ */

@@ -3,144 +3,110 @@
 #define MAIN
 #ifdef MAIN
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <unistd.h>
 
 #include "xparameters.h"
 #include "xil_printf.h"
-#include "xil_util.h"
-#include "xdebug.h"
-#include "xtime_l.h"
 
+#include "mefSendDataAsync.h"
 #include "includes/log.h"
 #include "includes/assert.h"
-#include "AXI_TAR/axitar.h"
-#include "AXI_TAR/axitar_axidma.h"
+#include "AXITAR/axitar.h"
+#include "AXITAR/axitar_axidma.h"
 #include "SD_CARD/sd_card.h"
-#include "UART_DMA/xuartps_0.h"
+#include "UART/uart.h"
+#include "UART/uart_mefCommand.h"
+
 #include "ZMOD_ADC1410/zmodadc1410.h"
 #include "InterruptSystem/interruptSystem.h"
 
 /************************** Constant Definitions **************************/
 
-#define ZMODADC1410_RESOLUTION 	3.21
-
-#define WORDS_PER_SECTOR 		SD_WORDS_PER_SECTOR(AXI_TAR_DMA_TRANSFER_LEN)
-
 /**************************** Type Definitions ******************************/
 
 /************************** Function Prototypes *****************************/
-void PrintRxData();
 
 /************************** Variable Definitions ***************************/
 
-u64 sector_rd_buffer[WORDS_PER_SECTOR] __attribute__ ((aligned (64)));
-
 /****************************************************************************/
 
-void mefSendDataAsync(){
-	static int st = 0;
-
-	switch (st){
-	case 0:
-		if(SD_SectorsToRead() > 1){
-			st = 1;
-		}
-
-		break;
-
-	case 1:
-		if(SD_SectorsToRead() > 0) {
-			if(UARTPS_0_DoneSendBuffer()){
-				SD_ReadNextSector((unsigned char*)sector_rd_buffer);
-				UARTPS_0_SendBufferAsync((u32)sector_rd_buffer, SD_SECTOR_SIZE, AXI_TAR_DMA_TRANSFER_LEN);
-			}
-		}
-
-		if(SD_SectorsToRead() <= 0){
-			st = 2;
-		}
-
-		break;
-
-	case 2:
-		if(UARTPS_0_DoneSendBuffer()){
-			st = 0;
-		}
-
-		break;
-
-	default:
-		st = 0;
-		break;
-	}
-}
-
 int main(){
-	u16 h0_low, h0_high, h1_low, h1_high;
+	u32 p;
 	UART_COMMAND c;
-	u16 p;
+	u16 h0_low = 0, h0_high = 0;
+	u16 h1_low = 0, h1_high = 0;
 
-	UARTPS_0_Init();
+	UART_Init();
 
 	LOG(0, "--------------------- INICIO MAIN -----------------------");
 	LOG(1, "PRUEBA LÓGICA DE DETECCIÓN DE PULSO + RINGBUFFER SD");
 	usleep(2000);
 
 	SD_Init();
-	AXI_DMA_Init();
-	AXI_TAR_Init();
+	AXIDMA_Init();
+	AXITAR_Init();
 	ZMODADC1410_Init();
 
 	ASSERT_SUCCESS(
-			SetupIntrSystem(),
+			IntrSystem_Setup(),
 			"Fallo al inicializar el sistema de interrupciones");
 
-	UARTPS_0_StartRx();
+	UART_SetupRx();
+	AXIDMA_SetupRx(
+		SD_WORDS_PER_SECTOR(AXITAR_AXIDMA_TRANSFER_LEN) * 2,  	// Cantidad de DATOS a recibir en el buffer
+		AXITAR_AXIDMA_TRANSFER_LEN,								// Longitud de 1 dato en bytes
+		SD_WORDS_PER_SECTOR(AXITAR_AXIDMA_TRANSFER_LEN),		// Coalescencia
+		(AXIDMA_ProcessBufferDelegate)SD_WriteNextSector);		// Handler para procesar el buffer
 
-	h0_low = 1000/ZMODADC1410_RESOLUTION;
-	h0_high = 3000/ZMODADC1410_RESOLUTION;
-	LOG(2, "Canal 0, histéresis (%d ; %d)", h0_low, h0_high);
-	AXI_TAR_SetHysteresis(0, h0_low, h0_high);
-//	AXI_TAR_DisableChannel(0);
-
-	h1_low = 1000/ZMODADC1410_RESOLUTION;
-	h1_high = 3000/ZMODADC1410_RESOLUTION;
-	LOG(2, "Canal 1, histéresis (%d ; %d)", h1_low, h1_high);
-	AXI_TAR_SetHysteresis(1, h1_low, h1_high);
-//	AXI_TAR_DisableChannel(1);
-
-	AXI_DMA_SetupRx(
-				WORDS_PER_SECTOR * 2,  									// Cantidad de DATOS a recibir en el buffer
-				AXI_TAR_DMA_TRANSFER_LEN,								// Longitud de 1 dato en bytes
-				WORDS_PER_SECTOR,										// Coalescencia
-				(AXI_DMA_ProcessBufferDelegate)SD_WriteNextSector);		// Handler para procesar el buffer
+//	AXITAR_SetHysteresis(0, (((u32)1000/ZMODADC1410_RESOLUTION)<<16)|(3000/ZMODADC1410_RESOLUTION));
+//	AXITAR_SetHysteresis(1, (((u32)1000/ZMODADC1410_RESOLUTION)<<16)|(3000/ZMODADC1410_RESOLUTION));
 
 	while(1){
-		// mefMedicion
-		c = UART_0_GetCommand();
+
+		mefSendDataAsync();
+
+		c = UART_GetCommand();
 
 		if(c == CMD_START){
 			LOG(1, "----- Inicio adquisición -----");
+			SD_ResetRB();
 			usleep(2000);
-			AXI_TAR_Start();
+			AXITAR_Start();
 		}
 
 		if(c == CMD_STOP){
-			AXI_TAR_StopAll();
-			AXI_DMA_Reset();
+			AXITAR_StopAll();
+			AXIDMA_Reset();
 		}
 
-		mefSendDataAsync();
+		if(c == CMD_CH0_H ||
+		   c == CMD_CH1_H){
+
+			while(1){
+				if(UART_HasParameter()){
+					p = UART_GetParameter();
+					break;
+				}
+			}
+
+			switch (c) {
+				case CMD_CH0_H: AXITAR_SetHysteresis(0, p); break;
+				case CMD_CH1_H: AXITAR_SetHysteresis(1, p); break;
+				default: break;
+			}
+
+			if(c == CMD_CH0_H){
+				LOG(2, "Canal 0, histéresis (%u ; %u)", (u16)(p >> 16), (u16)(p & 0xFFFF));
+			}
+
+			if(c == CMD_CH1_H){
+				LOG(2, "Canal 1, histéresis (%u ; %u)", (u16)(p >> 16), (u16)(p & 0xFFFF));
+			}
+		}
 	}
-
-//	DisableIntrSystem();
-
-//	LOG(0, "--------------------- FIN MAIN -----------------------");
 	return 0;
-
 }
+
 #endif // MAIN
 
 

@@ -6,11 +6,11 @@
  */
 /***************************** Include Files *******************************/
 
+#include "../UART/uart_dmaps.h"
+
 #include "xdmaps.h"
 #include "xil_exception.h"
 #include "xil_printf.h"
-
-#include "xuartps_0_xdmaps.h"
 
 #include "../InterruptSystem/interruptSystem.h"
 
@@ -56,8 +56,8 @@ void DMAPS_Init(){
 
 	XDmaPs_SetDoneHandler(DmaPsPtr, DMA_CHANNEL, DMAPS_DoneHandler, (void *)&dmaPsDone);
 
-	AddIntrHandler(&dmaFaultIntrConfig);
-	AddIntrHandler(&dmaCh0IntrConfig);
+	IntrSystem_AddHandler(&dmaFaultIntrConfig);
+	IntrSystem_AddHandler(&dmaCh0IntrConfig);
 
 	// Configurar el formato del envío de datos
 	memset(&DmaCmd, 0, sizeof(XDmaPs_Cmd));

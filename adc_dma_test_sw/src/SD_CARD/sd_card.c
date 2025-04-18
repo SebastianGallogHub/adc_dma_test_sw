@@ -12,6 +12,8 @@
 #include "diskio.h"
 #include "sleep.h"
 
+#include "../includes/log.h"
+
 /************************** Constant Definitions **************************/
 
 /**************************** Type Definitions ******************************/
@@ -20,6 +22,7 @@
 
 /************************** Variable Definitions ***************************/
 DWORD total_sectors;
+DWORD limit;
 
 u32 sector_wr_idx = 0;
 u32 sector_rd_idx = 0;
@@ -27,6 +30,7 @@ u32 sector_rd_idx = 0;
 /****************************************************************************/
 
 int SD_Init(){
+	LOG(1, "SD Init");
 	DSTATUS res;
 
 	res = disk_initialize(0);
@@ -41,9 +45,15 @@ int SD_Init(){
 		return -1;
 	}
 
-	xil_printf("Total sectores disponibles: %u\r\n", total_sectors);
+	LOG(2, "Total sectores disponibles: %u", total_sectors);
 
 	return 0;
+}
+
+void SD_ResetRB(){
+	sector_wr_idx = 0;
+	sector_rd_idx = 0;
+	limit = 0;
 }
 
 int SD_WriteNextSector(BYTE *buffer, UINT countSectors){
@@ -53,7 +63,8 @@ int SD_WriteNextSector(BYTE *buffer, UINT countSectors){
 
 	if (res == RES_OK){
 		sector_wr_idx += countSectors;
-		if(sector_wr_idx > total_sectors-countSectors)
+		limit = total_sectors - countSectors;
+		if(sector_wr_idx > limit)
 				sector_wr_idx = 0;
 		return 1;
 	} else{
@@ -62,7 +73,10 @@ int SD_WriteNextSector(BYTE *buffer, UINT countSectors){
 }
 
 int SD_SectorsToRead(){
-	return sector_wr_idx - sector_rd_idx;
+	if(sector_rd_idx<=sector_wr_idx)
+		return sector_wr_idx - sector_rd_idx;
+	else
+		return limit - sector_rd_idx;
 }
 
 int SD_ReadNextSector(BYTE *out_buffer){
@@ -84,7 +98,7 @@ int SD_ReadNextSector(BYTE *out_buffer){
 
 	if (res == RES_OK) {
 		sector_rd_idx ++;
-		if(sector_rd_idx > total_sectors-1)
+		if(sector_rd_idx > limit)
 			sector_rd_idx = 0;
 
 		return 1;

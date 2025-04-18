@@ -41,12 +41,12 @@ void ZMODADC1410_Init()
 	ZMOD_WriteRegFld(ZMOD_REGFLD_CR_RST, 0);
 
 	//Canal 1
-	LOG(2, "CH1: LOW Gain; DC Coupling");
+	LOG(2, "CH0: LOW Gain; DC Coupling");
 	ZMODADC1410_SetGain(SC1, LOW_GAIN);
 	ZMODADC1410_SetCoupling(SC1, DC_COUPLING);
 
 	//Canal 2
-	LOG(2, "CH2: LOW Gain; DC Coupling");
+	LOG(2, "CH1: LOW Gain; DC Coupling");
 	ZMODADC1410_SetGain(SC2, LOW_GAIN);
 	ZMODADC1410_SetCoupling(SC2, DC_COUPLING);
 

@@ -17,6 +17,7 @@ int SD_Init();
 int SD_SectorsToRead();
 int SD_WriteNextSector(unsigned char *buffer, unsigned int countSectors);
 int SD_ReadNextSector(unsigned char *out_buffer);
+void SD_ResetRB();
 
 
 #endif /* SRC_SD_CARD_SD_CARD_H_ */

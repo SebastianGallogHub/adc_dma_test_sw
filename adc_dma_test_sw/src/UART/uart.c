@@ -1,47 +1,50 @@
 /*
- * xuartps_0.c
+ * uart.c
  *
  *  Created on: Mar 24, 2025
  *      Author: sebas
  */
 
 /***************************** Include Files *******************************/
+#include "../UART/uart.h"
+#include "../UART/uart_dmaps.h"
+#include "../UART/uart_mefCommand.h"
+#include "../InterruptSystem/interruptSystem.h"
 
 #include "xuartps.h"
 #include "xil_exception.h"
 #include "xil_printf.h"
 #include "sleep.h"
 
-#include "xuartps_0.h"
-#include "xuartps_0_xdmaps.h"
-
-#include "../InterruptSystem/interruptSystem.h"
-
 /************************** Constant Definitions **************************/
 
 /**************************** Type Definitions ******************************/
+typedef enum{
+	WAITING_COMMAND,
+	COMMAND_RECEIVED,
+	WAITING_PARAMETER_MSB,
+	WAITING_PARAMETER_LSB,
+}MEF_COMMAND_STATE;
 
 /************************** Function Prototypes *****************************/
-
 void XUartPs_InterruptHandler_Wrapper(XUartPs *InstancePtr);
-void UART_O_Handler(void *CallBackRef, u32 Event, unsigned int EventData);
-void setIntrTXEMPTY_On();
-void clearIntrTXEMPTY();
+void UART_Handler(void *CallBackRef, u32 Event, unsigned int EventData);
+void mefCommand(u8 chr);
 
 /************************** Variable Definitions ***************************/
-
 static XUartPs UartPs;
 
-//static u8 SendBuffer[BUFFER_SIZE];	/* Buffer for Transmitting Data */
 static u8 RecvBuffer[BUFFER_SIZE];	/* Buffer for Receiving Data */
 
-volatile int receivedCommand = 0;
-volatile int sendOnRepeat = 0;
-int uart0DoneTx = 0;
+// Envío de datos contínuos asincrónicos por DMA
+volatile int uart0DoneTx = 0;
+int maxData = 0;
+int maxBytes = 0;
+int pendingBytes = 0;
+int sendBytes = 0;
+u8 *nextBuffer;
+int doneSendBuffer = 1;
 
-volatile int TotalReceivedCount;
-volatile int TotalSentCount;
-int TotalErrorCount;
 u32 IntrMask;
 
 Intr_Config uartIntrConfig = {
@@ -52,8 +55,7 @@ Intr_Config uartIntrConfig = {
 };
 
 /****************************************************************************/
-
-void UARTPS_0_Init() {
+void UART_Init() {
 	XUartPs *UartPsPtr = &UartPs;
 	XUartPs_Config *Config;
 
@@ -65,7 +67,7 @@ void UARTPS_0_Init() {
 
 	XUartPs_CfgInitialize(UartPsPtr, Config, Config->BaseAddress);
 
-	XUartPs_SetHandler(UartPsPtr, (XUartPs_Handler) UART_O_Handler, UartPsPtr);
+	XUartPs_SetHandler(UartPsPtr, (XUartPs_Handler) UART_Handler, UartPsPtr);
 
 	IntrMask =
 		XUARTPS_IXR_TOUT | XUARTPS_IXR_PARITY  | XUARTPS_IXR_FRAMING |
@@ -76,23 +78,21 @@ void UARTPS_0_Init() {
 
 	XUartPs_SetRecvTimeout(UartPsPtr, 8);
 
-	AddIntrHandler(&uartIntrConfig);
+	IntrSystem_AddHandler(&uartIntrConfig);
 
 	DMAPS_Init();
 }
 
-void UARTPS_0_StartRx(){
-	/*
-	 * El buffer de recepción y su tamaño se configuran en esta función no bloqueante
-	 */
+void UART_SetupRx(){
+	// El buffer de recepción y su tamaño se configuran en esta función no bloqueante
 	XUartPs_Recv(&UartPs, RecvBuffer, BUFFER_SIZE);
 }
 
-void UARTPS_0_SendAsync(u32 sendBufferAddr, int buffSizeBytes, int dataLen) {
+void UART_SendAsync(u32 sendBufferAddr, int buffSizeBytes, int dataLen) {
 
 	// Para poder llamarla 2 veces seguidas
 	while(1){
-		if (UARTPS_0_DoneTx())
+		if (UART_DoneTx())
 			break;
 	}
 
@@ -105,14 +105,9 @@ void UARTPS_0_SendAsync(u32 sendBufferAddr, int buffSizeBytes, int dataLen) {
 	DMAPS_Send();
 }
 
-int maxData = 0;
-int maxBytes = 0;
-int pendingBytes = 0;
-int sendBytes = 0;
-u8 *nextBuffer;
-int doneSendBuffer = 1;
 
-void UARTPS_0_SendBufferAsync(u32 sendBufferAddr, int buffSizeBytes, int dataLen){
+
+void UART_SendBufferAsync(u32 sendBufferAddr, int buffSizeBytes, int dataLen){
 	if (buffSizeBytes == 0) return;
 	if (sendBufferAddr == 0) return;
 
@@ -145,12 +140,12 @@ void UARTPS_0_SendBufferAsync(u32 sendBufferAddr, int buffSizeBytes, int dataLen
 	}
 }
 
-int UARTPS_0_DoneTx(){
+int UART_DoneTx(){
 	int c = XUartPs_IsTransmitEmpty(&UartPs);
 	return uart0DoneTx && c && DMAPS_Done();
 }
 
-int UARTPS_0_DoneSendBuffer(){
+int UART_DoneSendBuffer(){
 	return doneSendBuffer && DMAPS_Done();
 }
 
@@ -171,7 +166,7 @@ void XUartPs_InterruptHandler_Wrapper(XUartPs *InstancePtr){
 		// Disparo una transacción por lo que quede, registrado en estas variables
 		// 0 en data len para que se use el máximo dinámico de bytes a enviar en función
 		// de la primera llamada
-		UARTPS_0_SendBufferAsync((u32)nextBuffer, pendingBytes, 0);
+		UART_SendBufferAsync((u32)nextBuffer, pendingBytes, 0);
 	}
 
 	// Por último llamo a la función original que debía estar conectada al evento
@@ -179,67 +174,7 @@ void XUartPs_InterruptHandler_Wrapper(XUartPs *InstancePtr){
 	XUartPs_InterruptHandler(InstancePtr);
 }
 
-u8 command = 0;
-u8 parameter_f = 0;
-u16 parameter = 0;
-
-UART_COMMAND UART_0_GetCommand(){
-	u8 c = command;
-	command = 0;
-	return (UART_COMMAND)c;
-}
-
-u8 UART_0_HasParameter(){
-	return parameter_f;
-}
-
-u16 UART_0_GetParameter(){
-	if (!parameter_f) return 0;
-	u16 p = parameter;
-	parameter = 0;
-	parameter_f = 0;
-	return p;
-}
-
-void mefCommand(u8 chr){
-	static int state = 0;
-
-	switch (state) {
-	case 0:
-		if(chr == COMMAND_FORMAT_HEADER)
-			state = 1;
-
-		break;
-
-	case 1:
-		if(chr == CMD_START ||
-		   chr == CMD_STOP){
-			command = chr;
-			state = 0;
-		}
-		if(chr == CMD_CHA_H_L ||
-		   chr == CMD_CHA_H_H ||
-		   chr == CMD_CHB_H_L ||
-		   chr == CMD_CHB_H_H){
-			command = chr;
-			parameter = (u16)chr << 8;
-			state = 2;
-		}
-		break;
-
-	case 2:
-		parameter_f = 1;
-		parameter |= chr;
-		state = 0;
-		break;
-
-	default:
-			break;
-	}
-}
-
-void UART_O_Handler(void *CallBackRef, u32 Event, unsigned int EventData){
-	static int state = 0;
+void UART_Handler(void *CallBackRef, u32 Event, unsigned int EventData){
 	XUartPs *UartPsPtr = (XUartPs*)CallBackRef;
 	u32 IntrMask;
 
@@ -272,3 +207,5 @@ void UART_O_Handler(void *CallBackRef, u32 Event, unsigned int EventData){
 //		Event == XUARTPS_EVENT_PARE_FRAME_BRKE ||
 //		Event == XUARTPS_EVENT_RECV_ORERR) {}
 }
+
+
