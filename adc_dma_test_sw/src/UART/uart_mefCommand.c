@@ -45,7 +45,7 @@ u32 UART_GetParameter(){
 	return p;
 }
 
-void mefCommand(u8 chr){
+void UART_mefCommand(u8 chr){
 	static MEF_COMMAND_STATE state = WAITING_COMMAND;
 
 	switch (state) {

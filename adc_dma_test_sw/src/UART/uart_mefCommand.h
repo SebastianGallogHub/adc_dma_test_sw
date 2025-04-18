@@ -11,6 +11,7 @@
 #include "xil_types.h"
 
 typedef enum{
+	CMD_NONE = 0,
 	CMD_HEADER = 0x25,
 	CMD_START = 0x01,
 	CMD_STOP  = 0x02,
@@ -18,7 +19,7 @@ typedef enum{
 	CMD_CH1_H = 0xB0,
 }UART_COMMAND;
 
-void mefCommand(u8 chr);
+void UART_mefCommand(u8 chr);
 
 UART_COMMAND UART_GetCommand();
 u8 UART_HasParameter();

@@ -7,12 +7,11 @@
 
 /***************************** Include Files *******************************/
 
-#include "sleep.h"
-
 #include "zmodadc1410.h"
 
-#include "../ZMOD/zmod.h"
+#include <sleep.h>
 
+#include "../ZMOD/zmod.h"
 #include "../includes/log.h"
 
 /************************** Constant Definitions **************************/
@@ -29,11 +28,10 @@ void ZMODADC1410_Init()
 {
 	LOG(1, "ZMODADC1410_Init");
 	/*
-	 * Esta función utiliza la clase ZMODADC1410 para comunicarse con
-	 * ZMOD1410 AXI ADAPTER y configurar el ZMOD140 a través del
-	 * LLC. Este es su único propósito.
+	 * Esta función se comunica con ZMOD1410 AXI ADAPTER para
+	 * configurar el ZMOD1410 a través del LLC. Este es su único propósito.
 	 *
-	 * El resto de las comunicaciones se realizarán mediante AXI_TAR + AXI_DMA
+	 * El resto de las comunicaciones se realizarán mediante AXITAR_*() + AXIDMA_*()
 	 * */
 
 	// Reseteo el IP AXI_ZmodADC1410

@@ -30,7 +30,7 @@ u32 sector_rd_idx = 0;
 /****************************************************************************/
 
 int SD_Init(){
-	LOG(1, "SD Init");
+	LOG(1, "SD_Init");
 	DSTATUS res;
 
 	res = disk_initialize(0);
@@ -73,7 +73,7 @@ int SD_WriteNextSector(BYTE *buffer, UINT countSectors){
 }
 
 int SD_SectorsToRead(){
-	if(sector_rd_idx<=sector_wr_idx)
+	if(sector_rd_idx <= sector_wr_idx)
 		return sector_wr_idx - sector_rd_idx;
 	else
 		return limit - sector_rd_idx;

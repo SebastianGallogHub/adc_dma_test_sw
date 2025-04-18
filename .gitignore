@@ -99,3 +99,4 @@ scripts/csv/*
 !scripts/tar_serial_control
 scripts/tar_serial_control/*raw*
 scripts/tar_serial_control/*.csv
+scripts/tar_serial_control/170425-prueba completa/

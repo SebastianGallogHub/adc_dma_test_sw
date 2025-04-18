@@ -9,8 +9,8 @@
 
 #include "../AXITAR/axitar_axidma.h"
 
-#include "../includes/assert.h"
 #include "../includes/log.h"
+#include "../includes/assert.h"
 #include "../InterruptSystem/interruptSystem.h"
 
 /************************** Constant Definitions **************************/
@@ -42,10 +42,6 @@ AXIDMA_ProcessBufferDelegate ProcessBufferDelegate;
 void AXIDMA_Reset() {
 	int TimeOut = 10000;
 
-	axiDmaIntCount = 0;
-	axiDmaTransferCount = 0;
-	Error = 0;
-
 	XAxiDma_Reset(&AxiDma);
 
 	while (TimeOut--)
@@ -53,9 +49,15 @@ void AXIDMA_Reset() {
 		if (XAxiDma_ResetIsDone(&AxiDma))
 			break;
 	}
+
+	Error = 0;
+	axiDmaIntCount = 0;
+	axiDmaTransferCount = 0;
 }
 
 int AXIDMA_Init() {
+	LOG(1, "AXIDMA_Init");
+
 	XAxiDma_Config *Config;
 	XAxiDma_BdRing *RxRingPtr;
 
@@ -82,7 +84,7 @@ int AXIDMA_Init() {
 }
 
 int AXIDMA_SetupRx(u32 ringBufferSize, u32 dataSize, int coalesceCount, AXIDMA_ProcessBufferDelegate processBuffer) {
-    LOG(1, "AXI_DMA_Init");
+    LOG(1, "AXIDMA_SetupRx");
 
     XAxiDma_BdRing *RxRingPtr;
     XAxiDma_Bd BdTemplate, *BdPtr, *BdCurPtr;
@@ -180,6 +182,7 @@ int AXIDMA_SetupRx(u32 ringBufferSize, u32 dataSize, int coalesceCount, AXIDMA_P
 
     rbSize = ringBufferSize;
     bufferDataSize = dataSize;
+    bufferProcessCoalesceCounter = 0;
     ProcessBufferDelegate = processBuffer;
 
     return XST_SUCCESS;

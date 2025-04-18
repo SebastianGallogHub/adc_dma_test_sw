@@ -7,11 +7,11 @@
 
 
 /***************************** Include Files *******************************/
-#include "mefSendDataAsync.h"
+#include "../mefs/mefSendDataAsync.h"
 
-#include "UART/uart.h"
-#include "AXITAR/axitar.h"
-#include "SD_CARD/sd_card.h"
+#include "../UART/uart.h"
+#include "../AXITAR/axitar.h"
+#include "../SD_CARD/sd_card.h"
 
 /************************** Constant Definitions **************************/
 
@@ -28,10 +28,6 @@ typedef enum{
 u64 sector_rd_buffer[SD_WORDS_PER_SECTOR(AXITAR_AXIDMA_TRANSFER_LEN)] __attribute__ ((aligned (64)));
 
 /****************************************************************************/
-
-void mefSendDataAsync_Reset(){
-	SD_ResetRB();
-}
 
 void mefSendDataAsync(){
 	static MEF_SEND_DATA_STATE st = WAITING_FOR_DATA_TO_SEND;

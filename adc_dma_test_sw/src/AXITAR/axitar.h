@@ -13,21 +13,30 @@
 #include "xil_io.h"
 #include "AXI_TAR.h"
 
-#define AXITAR_BASE			XPAR_AXI_TAR_0_S00_AXI_BASEADDR
+#define AXITAR_AXIDMA_TRANSFER_LEN	sizeof(u64)//sizeof(u32)
+
+#define AXITAR_DR_INTR_ID 			XPAR_FABRIC_AXI_TAR_0_INTROUT_INTR
+
+#define AXITAR_BASE					XPAR_AXI_TAR_0_S00_AXI_BASEADDR
+
+#define AXITAR_DISABLE_CH_MASK		0x3FFF3FFF
+#define AXITAR_LowHist(p)			(u16)((u32)p & 0xFFFF) 	& 0x3FFF
+#define AXITAR_HighHist(p)			(u16)((u32)p >> 16)		& 0x3FFF
+
 // General config
-#define AXITAR_CONFIG_OFF		AXI_TAR_S00_AXI_SLV_REG0_OFFSET
-#define AXITAR_StopAll()		AXI_TAR_mWriteReg(AXITAR_BASE,AXITAR_CONFIG_OFF, 0x00);
+#define AXITAR_CONFIG_OFF			AXI_TAR_S00_AXI_SLV_REG0_OFFSET
+#define AXITAR_StopAll_() 			AXI_TAR_mWriteReg(AXITAR_BASE, AXITAR_CONFIG_OFF, 0x00)
 
 // TAR
-#define AXITAR_CH1_HIST_OFF	AXI_TAR_S00_AXI_SLV_REG1_OFFSET
-#define AXITAR_CH2_HIST_OFF	AXI_TAR_S00_AXI_SLV_REG2_OFFSET
-#define AXITAR_Start()			AXI_TAR_mWriteReg(AXITAR_BASE,AXITAR_CONFIG_OFF, 0x01);
+#define AXITAR_CH0_HIST_OFF			AXI_TAR_S00_AXI_SLV_REG1_OFFSET
+#define AXITAR_CH1_HIST_OFF			AXI_TAR_S00_AXI_SLV_REG2_OFFSET
+#define AXITAR_Start_()				AXI_TAR_mWriteReg(AXITAR_BASE, AXITAR_CONFIG_OFF, 0x01)
 
 // master_test
-#define master_COUNT_CFG_OFF	AXI_TAR_S00_AXI_SLV_REG1_OFFSET
-#define master_COUNT_OFF		AXI_TAR_S00_AXI_SLV_REG3_OFFSET
-#define master_INTR_COUNT_OFF	AXI_TAR_S00_AXI_SLV_REG2_OFFSET
-#define AXITAR_Start_master_test()	AXI_TAR_mWriteReg(AXITAR_BASE,AXITAR_CONFIG_OFF, 0x10);
+#define master_COUNT_CFG_OFF		AXI_TAR_S00_AXI_SLV_REG1_OFFSET
+#define master_COUNT_OFF			AXI_TAR_S00_AXI_SLV_REG3_OFFSET
+#define master_INTR_COUNT_OFF		AXI_TAR_S00_AXI_SLV_REG2_OFFSET
+#define AXITAR_Start_master_test_()	AXI_TAR_mWriteReg(AXITAR_BASE,AXITAR_CONFIG_OFF, 0x10);
 
 //#define AXITAR_MASTER_TRANSFER_PERIOD_ms 	1
 #define AXITAR_MASTER_TRANSFER_PERIOD_us 	1
@@ -56,15 +65,14 @@
 #endif
 #endif
 
-#define AXITAR_AXIDMA_TRANSFER_LEN	sizeof(u64)//sizeof(u32)
-
-#define AXITAR_DR_INTR_ID		XPAR_FABRIC_AXI_TAR_0_INTROUT_INTR
-
 extern u32 axiTarTransferCount;
 
 void AXITAR_master_test_Init(u32);
 
 void AXITAR_Init();
+int AXITAR_SetupRx();
+void AXITAR_Start();
+void AXITAR_Stop();
 
 void AXITAR_DisableChannel(int channel);
 void AXITAR_SetHysteresis(int channel, u32 hist);
