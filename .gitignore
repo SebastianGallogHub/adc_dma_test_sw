@@ -96,3 +96,6 @@ scripts/*
 scripts/csv/*
 !scripts/csv
 !scripts/csv/*.c
+!scripts/tar_serial_control
+scripts/tar_serial_control/*raw*
+scripts/tar_serial_control/*.csv

@@ -1,0 +1,26 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug tar-serial",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/tar-serial",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "Compilar tar-serial", // 👈 este debe ser el nombre exacto de la tarea del tasks.json
+            "miDebuggerPath": "/usr/bin/gdb"
+        }
+    ]
+}

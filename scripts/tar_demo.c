@@ -259,7 +259,7 @@ void bin_to_csv()
         if (ii == 59)
             ii = 59;
 
-        printf("%lu\t%u\t%lu\t\t%u\t\t(0x%x)\n", ii++, ch, time + ts, vp, (unsigned int)pulse);
+        printf("%lu\t%u\t%lu\t\t%u\t\t(0x%x)\n", ii++, ch, ts, vp, (unsigned int)pulse);
 
         switch (ch)
         {

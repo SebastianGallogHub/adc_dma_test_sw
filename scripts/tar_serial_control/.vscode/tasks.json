@@ -1,0 +1,27 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Compilar tar-serial",
+            "type": "shell",
+            "command": "gcc",
+            "args": [
+                "-g",
+                "tar_serial_control.c", // <- Asegurate que este nombre coincida con tu archivo fuente
+                "mefSerialToBin.c",
+                "serial_port.c",
+                "-o",
+                "tar-serial", // <- Esto es el ejecutable de salida
+                "-lpthread"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}" // <- Ajustalo según tu estructura
+            },
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}
