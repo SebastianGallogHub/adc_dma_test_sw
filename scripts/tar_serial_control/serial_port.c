@@ -32,6 +32,11 @@ void serial_WriteByte(char chr)
     write(serial_fd, &chr, 1);
 }
 
+void serial_Flush()
+{
+    tcflush(serial_fd, TCIOFLUSH); // Limpia el buffer
+}
+
 void serial_SendCommand(SERIAL_COMMAND c, ...)
 {
     serial_WriteByte((char)CMD_HEADER);
@@ -66,8 +71,7 @@ int serial_Init(char *port)
 {
     struct termios options;
 
-    serial_fd = open(port, O_RDWR | O_NOCTTY);
-    // serial_fd = open(port, O_RDWR | O_NOCTTY | O_NONBLOCK); // No bloqueante
+    serial_fd = open(port, O_RDWR | O_NOCTTY | O_NONBLOCK); // No bloqueante
 
     if (serial_fd == -1)
     {
@@ -83,15 +87,22 @@ int serial_Init(char *port)
     options.c_cflag &= ~PARENB; // Sin paridad
     options.c_cflag &= ~CSTOPB; // 1 bit de stop
     options.c_cflag &= ~CSIZE;
-    options.c_cflag |= CS8;                             // 8 bits de datos
-    options.c_cflag |= CREAD | CLOCAL;                  // Habilitar recepción
-    options.c_iflag &= ~(INLCR | ICRNL | IGNCR);        // No convierte \n o \r
+    options.c_cflag |= CS8;            // 8 bits de datos
+    options.c_cflag |= CREAD | CLOCAL; // Habilitar recepción
+
+    options.c_iflag &= ~(IXON | IXOFF | IXANY);           // Desactiva control de flujo por software
+    options.c_iflag &= ~(INLCR | ICRNL | IGNCR | ISTRIP); // No convierte \n o \r. ISTRIP desactiva el stripping de 8 bits
+
     options.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG); // Modo raw
+
     options.c_oflag &= ~OPOST;
+
+    options.c_cc[VMIN] = 0;  // read() no espera ningún byte
+    options.c_cc[VTIME] = 0; // read() devuelve 0 si no hay datos de inmediato
 
     tcsetattr(serial_fd, TCSANOW, &options);
 
-    tcflush(serial_fd, TCIOFLUSH);
+    serial_Flush();
 
     printf("Escuchando puerto serie\n");
 

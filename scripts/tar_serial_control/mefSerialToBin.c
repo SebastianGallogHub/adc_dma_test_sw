@@ -32,10 +32,6 @@ int keepReceiving;
 void mefSerialToBin_StopReceivingData()
 {
     keepReceiving = 0;
-    // Fuerzo que lea el estado de keepReceiving
-    mefSerialToBin(0, 0);
-    // Fuerzo que ejecute el estado GENERATE_CSV
-    mefSerialToBin(0, 0);
 }
 
 void mefSerialToBin_StartReceivingData()
@@ -51,9 +47,9 @@ void mefSerialToBin(char buffer, int bytes_read)
     switch (state)
     {
     case CONSOLE:
-        if (bytes_read)
+        if (bytes_read > 0)
         {
-            if (buffer == CMD_FOOTER_PULSE) // Los datos vienen al revés!!!! BIGENDIAN
+            if (buffer == CMD_FOOTER_PULSE && keepReceiving) // Los datos vienen al revés!!!! BIGENDIAN
             {
                 writeBinFile(buffer);
                 state = RECEIVING_PULSES;
@@ -68,7 +64,7 @@ void mefSerialToBin(char buffer, int bytes_read)
         break;
 
     case RECEIVING_PULSES:
-        if (bytes_read)
+        if (bytes_read > 0 && keepReceiving)
         {
             if (writeBinFile(buffer))
                 break;

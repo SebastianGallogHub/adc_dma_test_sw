@@ -27,8 +27,8 @@ void *rx_thread_func(void *arg);
 int main()
 {
     char resp = 0;
-    int tEnsayo_s = 1;
-    int tPausaInicio_s = 1;
+    int tEnsayo_s = 10;
+    int tPausaInicio_s = 2;
     int tPausaFin_s = 3;
     uint16_t hist0_low = 1000, hist0_high = 3000;
     uint16_t hist1_low = 980, hist1_high = 3080;
@@ -52,6 +52,8 @@ int main()
     while (resp == 's')
     {
         // Configuro la histéresis de ambos canales
+        serial_Flush();
+
         serial_SendCommand(CMD_CH0_H, to_hist(to_cad(hist0_low), to_cad(hist0_high)));
 
         serial_SendCommand(CMD_CH1_H, to_hist(to_cad(hist1_low), to_cad(hist1_high)));
@@ -97,6 +99,8 @@ void *rx_thread_func(void *arg)
         bytes_read = serial_ReadByte(&buffer);
 
         mefSerialToBin(buffer, bytes_read);
+
+        // usleep(100);
     }
 
     return NULL;

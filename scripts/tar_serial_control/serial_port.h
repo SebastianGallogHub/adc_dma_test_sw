@@ -12,6 +12,7 @@ typedef enum
 
 int serial_Init(char *port);
 void serial_WriteByte(char chr);
+void serial_Flush();
 void serial_SendCommand(SERIAL_COMMAND c, ...);
 int serial_ReadByte(char *buffer);
 void serial_Close();

@@ -65,6 +65,8 @@ void AXITAR_Start(){
 void AXITAR_Stop(){
 	AXITAR_StopAll_();
 	AXIDMA_Reset();
+	usleep(4000);
+	SD_ResetRB();
 }
 
 void AXITAR_DisableChannel(int channel){

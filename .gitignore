@@ -100,3 +100,5 @@ scripts/csv/*
 scripts/tar_serial_control/*raw*
 scripts/tar_serial_control/*.csv
 scripts/tar_serial_control/170425-prueba completa/
+scripts/tar_serial_control/190425-PROBLEMA/
+scripts/tar_serial_control/190425/

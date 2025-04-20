@@ -55,6 +55,14 @@ int writeBinFile(char buffer)
 
 void binToCSV()
 {
+    uint8_t buffer[8];
+    uint64_t pulse;
+    size_t index_ch0 = 0, index_ch1 = 0, ii = 0, of_count = 0;
+    uint8_t ch = 0;
+    uint32_t ts = 0;
+    uint16_t vp = 0;
+    uint64_t time = 0;
+
     FILE *input = fopen(BIN_FILE, "rb");
     if (!input)
     {
@@ -78,22 +86,10 @@ void binToCSV()
     fprintf(output_ch0, "Index,Timestamp,Value\n");
     fprintf(output_ch1, "Index,Timestamp,Value\n");
 
-    printf("Index\tChannel\tTimestamp\tValue\n");
+    // printf("Index\tChannel\tTimestamp\tValue\n");
 
-    uint8_t buffer[8];
-    uint64_t pulse;
-    size_t index_ch0 = 0, index_ch1 = 0, ii = 0, of_count = 0;
-    uint8_t ch = 0;
-    uint32_t ts = 0;
-    uint16_t vp = 0;
-    uint64_t time = 0;
-
-    // while (fread(&pulse, sizeof(uint64_t), 1, input) == 1)
     while (fread(&buffer, 1, 8, input) == 8)
     {
-        // if (buffer[7] == 0)
-        //     fread(&(buffer[7]), 1, 1, input);
-
         pulse = 0;
         for (int i = 7; i >= 0; i--) // Los datos vienen al revés BIGENDIAN
             pulse |= ((uint64_t)buffer[i]) << (8 * i);
@@ -102,7 +98,7 @@ void binToCSV()
         ts = GetFieldFromPulse(pulse, MSK_TS, MSK_TS_OFF);
         vp = GetFieldFromPulse(pulse, MSK_VP, MSK_VP_OFF);
 
-        printf("%lu\t%u\t%u\t\t%u\t\t(0x%x)\n", ii++, ch, ts, vp, (unsigned int)pulse);
+        // printf("%lu\t%u\t%u\t\t%u\t\t(0x%x)\n", ii++, ch, ts, vp, (unsigned int)pulse);
 
         switch (ch)
         {
@@ -131,4 +127,6 @@ void binToCSV()
     printf("Se capturaron %d bytes (%d pulsos)\n", bytes_captured, bytes_captured / 8);
     printf("Se capturaron %lu marcas de tiempo\n", of_count);
     printf("Conversión completa:\n\t - Canal 0: %s (%lu)\n\t - Canal 1: %s (%lu)\n", OUTPUT_CH0, index_ch0, OUTPUT_CH1, index_ch1);
+
+    bytes_captured = 0;
 }
