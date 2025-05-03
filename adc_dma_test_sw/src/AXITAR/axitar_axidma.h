@@ -38,7 +38,6 @@ typedef void (*AXIDMA_ProcessBufferDelegate) (unsigned char *sendBuffer, unsigne
 
 
 int AXIDMA_Init();
-
 void AXIDMA_Reset();
 
 int AXIDMA_SetupRx(u32 ringBufferSize, u32 dataSize, int bufferProcessCoalesce, AXIDMA_ProcessBufferDelegate processBuffer);

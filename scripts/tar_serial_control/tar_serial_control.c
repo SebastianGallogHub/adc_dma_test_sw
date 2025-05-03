@@ -28,7 +28,7 @@ int main()
 {
     char resp = 0;
     int tEnsayo_s = 10;
-    int tPausaInicio_s = 2;
+    int tPausaInicio_s = 10;
     int tPausaFin_s = 3;
     uint16_t hist0_low = 1000, hist0_high = 3000;
     uint16_t hist1_low = 980, hist1_high = 3080;
@@ -49,23 +49,33 @@ int main()
         scanf(" %c", &resp);
     } while (resp != 's');
 
+    int c;
     while (resp == 's')
     {
         // Configuro la histéresis de ambos canales
         serial_Flush();
+        mefSerialToBin_Reset();
 
         serial_SendCommand(CMD_CH0_H, to_hist(to_cad(hist0_low), to_cad(hist0_high)));
 
         serial_SendCommand(CMD_CH1_H, to_hist(to_cad(hist1_low), to_cad(hist1_high)));
 
-        usleep(to_us(tPausaInicio_s)); // Pausa para esperar la respuesta de log del TAR
+        serial_SendCommand(CMD_GET_CONFIG);
+
+        usleep(to_us(tPausaInicio_s)); // Se detiene el hilo para recibir datos
+
+        // while (1)
+        // {
+        //     if (mefSerialToBin_ConfigReceived())
+        //         break;
+        // }
 
         printf("Iniciando ensayo %d s\n", tEnsayo_s);
 
         // Aviso a la mef que captura el archivo crudo que se prepare para recibir datos
-        mefSerialToBin_StartReceivingData();
+        // mefSerialToBin_StartReceivingData();
 
-        usleep(to_us(1));
+        // usleep(to_us(1));
 
         // Envío la señal de inicio a TAR
         serial_SendCommand(CMD_START);
@@ -78,7 +88,7 @@ int main()
         usleep(to_us(tPausaFin_s)); // Pausa para terminar de recibir todo lo que falte
 
         // Aviso a la mef que captura los datos que puede exportar el archivo crudo a CSV
-        mefSerialToBin_StopReceivingData();
+        // mefSerialToBin_StopReceivingData();
 
         // Redo
         scanf(" %c", &resp);
@@ -98,9 +108,12 @@ void *rx_thread_func(void *arg)
     {
         bytes_read = serial_ReadByte(&buffer);
 
-        mefSerialToBin(buffer, bytes_read);
-
-        // usleep(100);
+        // if (bytes_read > 0)
+        // {
+        //     printf("%c", buffer);
+        //     // fflush(stdout);
+        // }
+        // mefSerialToBin(buffer, bytes_read);
     }
 
     return NULL;

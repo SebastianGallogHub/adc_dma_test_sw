@@ -6,7 +6,7 @@
  */
 
 /***************************** Include Files *******************************/
-#include "sd_card.h"
+#include "../SD_CARD/sd_card.h"
 
 #include "xil_printf.h"
 #include "diskio.h"
@@ -30,22 +30,22 @@ u32 sector_rd_idx = 0;
 /****************************************************************************/
 
 int SD_Init(){
-	LOG(1, "SD_Init");
+//	LOG(1, "SD_Init");
 	DSTATUS res;
 
 	res = disk_initialize(0);
 	if (res != RES_OK) {
 		xil_printf("Fallo en disk_initialize\r\n");
-		return -1;
+		return 1;
 	}
 
 	res = disk_ioctl(0, GET_SECTOR_COUNT, &total_sectors);
 	if (res != RES_OK) {
 		xil_printf("Fallo en GET_SECTOR_COUNT\r\n");
-		return -1;
+		return 1;
 	}
 
-	LOG(2, "Total sectores disponibles: %u", total_sectors);
+//	LOG(2, "Total sectores disponibles: %u", total_sectors);
 
 	return 0;
 }

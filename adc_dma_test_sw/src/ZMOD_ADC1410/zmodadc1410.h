@@ -30,6 +30,7 @@ typedef enum ZMODADC1410_GAIN {
 } ZmodADC1410_GAIN;
 
 void ZMODADC1410_Init();
+void ZMODADC1410_PrintConfigLog(int);
 void ZMODADC1410_SetGain(ZmodADC1410_SC channel, ZmodADC1410_GAIN gain);
 void ZMODADC1410_SetCoupling(ZmodADC1410_SC channel, ZmodADC1410_COUPLING coupling);
 uint16_t ZMODADC1410_ChannelData(ZmodADC1410_SC channel, uint32_t data);

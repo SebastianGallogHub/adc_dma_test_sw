@@ -15,7 +15,6 @@
 /************************** Variable Definitions ***************************/
 int binFile_fd = 0;
 int bytes_captured = 0;
-int keepReceiving = 0;
 int terminalBreak = 0;
 
 /****************************************************************************/
@@ -48,7 +47,7 @@ int writeBinFile(char buffer)
     if (bytes_captured % 80 == 0)
     {
         printf(".");
-        fflush(stdout);
+        // fflush(stdout);
     }
     return 0;
 }

@@ -82,6 +82,8 @@ void UART_Init() {
 	IntrSystem_AddHandler(&uartIntrConfig);
 
 	DMAPS_Init();
+
+	usleep(2000);
 }
 
 void UART_SetupRx(){
@@ -133,7 +135,7 @@ void UART_SendBufferAsync(u32 sendBufferAddr, int buffSizeBytes, int dataLen){
 
 	// Recalculo el siguiente buffer
 	pendingBytes -= sendBytes;
-	if(pendingBytes != 0){
+	if(pendingBytes > 0){
 		doneSendBuffer = 0;
 		nextBuffer = (u8*)(sendBufferAddr + sendBytes);
 	}else{

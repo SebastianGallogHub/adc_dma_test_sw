@@ -1,13 +1,15 @@
 #ifndef SERIAL_PORT_H_
 #define SERIAL_PORT_H_
 
+#define CMD_HEADER 0x25
+
 typedef enum
 {
-    CMD_HEADER = 0x25,
     CMD_START = 0x01,
     CMD_STOP = 0x02,
     CMD_CH0_H = 0xA0,
     CMD_CH1_H = 0xB0,
+    CMD_GET_CONFIG = 0xF0,
 } SERIAL_COMMAND;
 
 int serial_Init(char *port);

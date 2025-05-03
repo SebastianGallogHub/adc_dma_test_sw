@@ -25,44 +25,68 @@ typedef enum{
 /************************** Function Prototypes *****************************/
 
 /************************** Variable Definitions ***************************/
+
+MEF_SEND_DATA_STATE st = WAITING_FOR_DATA_TO_SEND;
+
+u8 cancelAsync = 0;
+
 u64 sector_rd_buffer[SD_WORDS_PER_SECTOR(AXITAR_AXIDMA_TRANSFER_LEN)] __attribute__ ((aligned (64)));
 
 /****************************************************************************/
 
-void mefSendDataAsync(){
-	static MEF_SEND_DATA_STATE st = WAITING_FOR_DATA_TO_SEND;
+void mefSendDataAsync_Init(){
+	SD_Init();
+}
+
+void mefSendDataAsync_Reset(){
+	SD_ResetRB();
+
+	cancelAsync = 0;
+
+	st = WAITING_FOR_DATA_TO_SEND;
+}
+
+void mefSendDataAsync_CancelAsync(){
+	cancelAsync = 1;
+}
+
+int mefSendDataAsync(){
+	int res = 0;
 
 	switch (st){
-	case WAITING_FOR_DATA_TO_SEND:
-		if(SD_SectorsToRead() > 1){
-			st = SENDING_DATA;
-		}
-
-		break;
-
-	case SENDING_DATA:
-		if(SD_SectorsToRead() > 0) {
-			if(UART_DoneSendBuffer()){
-				SD_ReadNextSector((unsigned char*)sector_rd_buffer);
-				UART_SendBufferAsync((u32)sector_rd_buffer, SD_SECTOR_SIZE, AXITAR_AXIDMA_TRANSFER_LEN);
+		case WAITING_FOR_DATA_TO_SEND:
+			if(SD_SectorsToRead() > 1){
+				st = SENDING_DATA;
 			}
-		}
 
-		if(SD_SectorsToRead() <= 0){
-			st = AWAITING_LAST_DATA_SEND_DONE;
-		}
+			break;
 
-		break;
+		case SENDING_DATA:
+			if(SD_SectorsToRead() > 0) {
+				if(UART_DoneSendBuffer()){
+					SD_ReadNextSector((unsigned char*)sector_rd_buffer);
+					UART_SendBufferAsync((u32)sector_rd_buffer, SD_SECTOR_SIZE, AXITAR_AXIDMA_TRANSFER_LEN);
+				}
+			}
 
-	case AWAITING_LAST_DATA_SEND_DONE:
-		if(UART_DoneSendBuffer()){
+			if(SD_SectorsToRead() <= 0 || cancelAsync){
+				st = AWAITING_LAST_DATA_SEND_DONE;
+			}
+
+			break;
+
+		case AWAITING_LAST_DATA_SEND_DONE:
+			if(UART_DoneSendBuffer()){
+				st = WAITING_FOR_DATA_TO_SEND;
+				res = 1;
+			}
+
+			break;
+
+		default:
 			st = WAITING_FOR_DATA_TO_SEND;
-		}
-
-		break;
-
-	default:
-		st = WAITING_FOR_DATA_TO_SEND;
-		break;
+			break;
 	}
+
+	return res;
 }

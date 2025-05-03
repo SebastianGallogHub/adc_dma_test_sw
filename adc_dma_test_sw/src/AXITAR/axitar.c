@@ -26,6 +26,8 @@
 void AXITAR_master_test_IntrHandler(void * Callback);
 
 /************************** Variable Definitions ***************************/
+u32 ch0_hist = 0;
+u32 ch1_hist = 0;
 u32 axiTarTransferCount = 0;
 Intr_Config tarMasterTestIntrConfig ={
 		AXITAR_DR_INTR_ID,
@@ -36,16 +38,34 @@ Intr_Config tarMasterTestIntrConfig ={
 
 /****************************************************************************/
 void AXITAR_Init() {
-	LOG(1, "AXITAR_Init");
+//	LOG(1, "AXITAR_Init");
 
 	AXITAR_StopAll_();
 
 	//Espero que se registre el valor de stop
 	while(AXI_TAR_mReadReg(AXITAR_BASE, AXITAR_CONFIG_OFF));
 
-	SD_Init();
 	AXIDMA_Init();
 	ZMODADC1410_Init();
+
+	AXITAR_DisableChannel(0);
+	AXITAR_DisableChannel(1);
+}
+
+void AXITAR_PrintConfigLog(int l){
+	ZMODADC1410_PrintConfigLog(l);
+
+	LOG(l, "AXI_TAR config:");
+
+	if(ch0_hist == AXITAR_DISABLE_CH_MASK)
+		LOG(l+1, "CHA: DESHABILITADO");
+	else
+		LOG(l+1, "CHA: histéresis (%u ; %u)", AXITAR_LowHist(ch0_hist), AXITAR_HighHist(ch0_hist));
+
+	if(ch1_hist == AXITAR_DISABLE_CH_MASK)
+		LOG(l+1, "CHB: DESHABILITADO");
+	else
+		LOG(l+1, "CHB: histéresis (%u ; %u)", AXITAR_LowHist(ch1_hist), AXITAR_HighHist(ch1_hist));
 }
 
 void AXITAR_Start(){
@@ -55,18 +75,16 @@ void AXITAR_Start(){
 		SD_WORDS_PER_SECTOR(AXITAR_AXIDMA_TRANSFER_LEN),		// Coalescencia
 		(AXIDMA_ProcessBufferDelegate)SD_WriteNextSector);		// Handler para procesar el buffer
 
-	LOG(1, "----- Inicio adquisición -----");
-	usleep(4000);
+//	LOG(1, "----- Inicio adquisición -----");
 
-	SD_ResetRB();
 	AXITAR_Start_();
 }
 
 void AXITAR_Stop(){
 	AXITAR_StopAll_();
 	AXIDMA_Reset();
-	usleep(4000);
-	SD_ResetRB();
+	AXITAR_DisableChannel(0);
+	AXITAR_DisableChannel(1);
 }
 
 void AXITAR_DisableChannel(int channel){
@@ -74,10 +92,13 @@ void AXITAR_DisableChannel(int channel){
 }
 
 void AXITAR_SetHysteresis(int channel, u32 hist) {
-	if (channel == 0)
+	if (channel == 0){
+		ch0_hist = hist;
 		AXI_TAR_mWriteReg(AXITAR_BASE, AXITAR_CH0_HIST_OFF, hist & AXITAR_DISABLE_CH_MASK);
-	else
+	}else{
+		ch1_hist = hist;
 		AXI_TAR_mWriteReg(AXITAR_BASE, AXITAR_CH1_HIST_OFF, hist & AXITAR_DISABLE_CH_MASK);
+	}
 }
 
 /****************************************************************************/

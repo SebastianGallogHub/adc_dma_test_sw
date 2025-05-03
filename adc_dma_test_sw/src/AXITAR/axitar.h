@@ -73,6 +73,7 @@ void AXITAR_Init();
 int AXITAR_SetupRx();
 void AXITAR_Start();
 void AXITAR_Stop();
+void AXITAR_PrintConfigLog(int);
 
 void AXITAR_DisableChannel(int channel);
 void AXITAR_SetHysteresis(int channel, u32 hist);

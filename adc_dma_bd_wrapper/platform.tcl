@@ -163,3 +163,10 @@ bsp write
 bsp reload
 catch {bsp regenerate}
 platform generate -domains standalone_ps7_cortexa9_0 
+platform clean
+platform generate
+platform clean
+platform generate
+platform clean
+platform clean
+platform generate

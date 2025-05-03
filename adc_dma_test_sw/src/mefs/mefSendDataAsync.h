@@ -8,6 +8,9 @@
 #ifndef SRC_MEFS_MEFSENDDATAASYNC_H_
 #define SRC_MEFS_MEFSENDDATAASYNC_H_
 
-void mefSendDataAsync();
+void mefSendDataAsync_Init();
+void mefSendDataAsync_Reset();
+void mefSendDataAsync_CancelAsync();
+int mefSendDataAsync();
 
 #endif /* SRC_MEFS_MEFSENDDATAASYNC_H_ */

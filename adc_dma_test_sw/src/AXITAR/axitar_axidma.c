@@ -56,7 +56,7 @@ void AXIDMA_Reset() {
 }
 
 int AXIDMA_Init() {
-	LOG(1, "AXIDMA_Init");
+//	LOG(1, "AXIDMA_Init");
 
 	XAxiDma_Config *Config;
 	XAxiDma_BdRing *RxRingPtr;
@@ -84,7 +84,7 @@ int AXIDMA_Init() {
 }
 
 int AXIDMA_SetupRx(u32 ringBufferSize, u32 dataSize, int coalesceCount, AXIDMA_ProcessBufferDelegate processBuffer) {
-    LOG(1, "AXIDMA_SetupRx");
+//    LOG(1, "AXIDMA_SetupRx");
 
     XAxiDma_BdRing *RxRingPtr;
     XAxiDma_Bd BdTemplate, *BdPtr, *BdCurPtr;
@@ -119,7 +119,6 @@ int AXIDMA_SetupRx(u32 ringBufferSize, u32 dataSize, int coalesceCount, AXIDMA_P
     		XAxiDma_BdRingClone(RxRingPtr, &BdTemplate), "Rx bd clone failed");
 
     // Reservo la cantidad de BDs necesarios para las transferencias y obtiene el primer BD
-    LOG(2, "DMA configurado para recibir %d transferencias. Longitud %d bytes", ringBufferSize, dataSize);
     ASSERT_SUCCESS(
     		XAxiDma_BdRingAlloc(RxRingPtr, ringBufferSize, &BdPtr), "Rx bd alloc failed");
 
@@ -158,7 +157,7 @@ int AXIDMA_SetupRx(u32 ringBufferSize, u32 dataSize, int coalesceCount, AXIDMA_P
     Xil_DCacheFlushRange((UINTPTR)BdPtr, ringBufferSize * sizeof(XAxiDma_Bd));
     Xil_DCacheFlushRange((UINTPTR)AXIDMA_RX_BUFFER_BASE, ringBufferSize * dataSize);
 
-    LOG(2, "Interrupciones cada %d transacciones", coalesceCount);
+//    LOG(2, "Interrupciones cada %d transacciones", coalesceCount);
     ASSERT_SUCCESS(
     		XAxiDma_BdRingSetCoalesce(RxRingPtr, coalesceCount, 255),
 			"Rx set coalesce failed. Max 255 was %d", coalesceCount);
@@ -169,7 +168,6 @@ int AXIDMA_SetupRx(u32 ringBufferSize, u32 dataSize, int coalesceCount, AXIDMA_P
 
     XAxiDma_BdRingIntEnable(RxRingPtr, XAXIDMA_IRQ_ALL_MASK);	// Habilito interrupciones
 
-    LOG(2, "Modo cíclico activado");
     XAxiDma_BdRingEnableCyclicDMA(RxRingPtr);					// Activo el modo cíclico
     XAxiDma_SelectCyclicMode(&AxiDma, XAXIDMA_DEVICE_TO_DMA, 1); // Configuro DMA para operar en modo cíclico
 
@@ -177,8 +175,6 @@ int AXIDMA_SetupRx(u32 ringBufferSize, u32 dataSize, int coalesceCount, AXIDMA_P
     status = XAxiDma_BdRingStart(RxRingPtr);
     ASSERT_SUCCESS(
     		status, "Error starting XAxiDma_BdRingStart");
-
-    LOG(2, "Primer buffer de datos: direccion 0x%08x",  (unsigned int)XAxiDma_BdGetBufAddr(BdPtr));
 
     rbSize = ringBufferSize;
     bufferDataSize = dataSize;

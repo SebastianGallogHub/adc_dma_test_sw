@@ -7,7 +7,7 @@
 
 /***************************** Include Files *******************************/
 
-#include "zmodadc1410.h"
+#include "../ZMOD_ADC1410/zmodadc1410.h"
 
 #include <sleep.h>
 
@@ -24,9 +24,15 @@
 
 /****************************************************************************/
 
+void ZMODADC1410_PrintConfigLog(int l){
+	LOG(l, "ZMOD Scope 1410-105 config:");
+	LOG(l+1, "CHA: LOW Gain; DC Coupling");
+	LOG(l+1, "CHB: LOW Gain; DC Coupling");
+}
+
 void ZMODADC1410_Init()
 {
-	LOG(1, "ZMODADC1410_Init");
+//	LOG(1, "ZMODADC1410_Init");
 	/*
 	 * Esta función se comunica con ZMOD1410 AXI ADAPTER para
 	 * configurar el ZMOD1410 a través del LLC. Este es su único propósito.
@@ -36,15 +42,16 @@ void ZMODADC1410_Init()
 
 	// Reseteo el IP AXI_ZmodADC1410
 	ZMOD_WriteRegFld(ZMOD_REGFLD_CR_RST, 1);
+	usleep(1000U);
+
 	ZMOD_WriteRegFld(ZMOD_REGFLD_CR_RST, 0);
+	usleep(1000U);
 
 	//Canal 1
-	LOG(2, "CH0: LOW Gain; DC Coupling");
 	ZMODADC1410_SetGain(SC1, LOW_GAIN);
 	ZMODADC1410_SetCoupling(SC1, DC_COUPLING);
 
 	//Canal 2
-	LOG(2, "CH1: LOW Gain; DC Coupling");
 	ZMODADC1410_SetGain(SC2, LOW_GAIN);
 	ZMODADC1410_SetCoupling(SC2, DC_COUPLING);
 

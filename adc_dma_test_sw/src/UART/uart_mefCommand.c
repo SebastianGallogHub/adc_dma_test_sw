@@ -56,7 +56,12 @@ void UART_mefCommand(u8 chr){
 
 	case COMMAND_RECEIVED:
 		if(chr == CMD_START ||
-		   chr == CMD_STOP){
+		   chr == CMD_GET_CONF){
+			command = chr;
+			state = WAITING_COMMAND;
+		}
+
+		if(chr == CMD_STOP){
 			command = chr;
 			state = WAITING_COMMAND;
 		}

@@ -26,7 +26,7 @@ UART_COMMAND c;
 /****************************************************************************/
 
 void mefCaptureCommand_Init(){
-	AXITAR_Init();
+
 }
 
 void mefCaptureCommand(){
