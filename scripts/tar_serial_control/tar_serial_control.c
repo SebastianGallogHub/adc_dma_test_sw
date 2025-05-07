@@ -62,12 +62,12 @@ int main()
         bytes_read = serial_ReadBuffer(buffer, sizeof(buffer), 1000);
 
         // Envío la configuración de histéresis
-        printf("Enviando histéresis...\n");
+        printf("-> Enviando histéresis\n");
         serial_SendCommand(CMD_CH0_H, to_hist(to_cad(hist0_low), to_cad(hist0_high)));
         serial_SendCommand(CMD_CH1_H, to_hist(to_cad(hist1_low), to_cad(hist1_high)));
 
         // Leo el log del sistema
-        printf("Leyendo LOG...\n");
+        printf("-> Leyendo LOG\n");
         serial_SendCommand(CMD_GET_CONFIG);
 
         bytes_read = serial_ReadBuffer(buffer, sizeof(buffer), 1000);
@@ -114,7 +114,7 @@ int main()
         openBinFile();
 
         // Evío comando de start
-        printf("Ensayo %d s\n", tEnsayo_s);
+        printf("-> Iniciando medición: %d s\n", tEnsayo_s);
         serial_SendCommand(CMD_START);
 
         // Creo el hilo de lectura

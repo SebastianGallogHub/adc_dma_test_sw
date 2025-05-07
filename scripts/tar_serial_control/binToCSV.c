@@ -110,8 +110,8 @@ void binToCSV()
     snprintf(outAFilename, sizeof(outAFilename), OUTPUT_CHA, timestamp);
     snprintf(outBFilename, sizeof(outBFilename), OUTPUT_CHB, timestamp);
 
-    printf("Se capturaron %d bytes (%d pulsos)\n", bytes_captured, bytes_captured / 8);
-    printf("Convirtiendo archivo binario -> CSV\n");
+    printf("\n\n-> Se capturaron %d bytes (%d registros)\n", bytes_captured, bytes_captured / 8);
+    printf("-> Convirtiendo archivo binario -> CSV\n");
     fflush(stdout);
 
     FILE *input = fopen(binFilename, "rb");
@@ -151,11 +151,11 @@ void binToCSV()
 
         // printf("%lu\t%u\t%u\t\t%u\t\t(0x%x)\n", ii, ch, ts, vp, (unsigned int)pulse);
 
-        if (ii++ % 800 == 0)
-        {
-            printf(".");
-            fflush(stdout);
-        }
+        // if (ii++ % 800 == 0)
+        // {
+        //     printf(".");
+        //     fflush(stdout);
+        // }
 
         switch (ch)
         {
@@ -181,8 +181,10 @@ void binToCSV()
     fclose(output_chA);
     fclose(output_chB);
 
-    printf("\nSe reconocieron %lu marcas de tiempo\n", of_count);
-    printf("Conversión completa:\n\tCHA: %s (%lu pulsos)\n\tCHB: %s (%lu pulsos)\n", outAFilename, index_chA, outBFilename, index_chB);
+    printf("-> Conversión completa:\n");
+    printf("\tMarcas de tiempo: %lu\n", of_count);
+    printf("\tCHA: %s (%lu pulsos)\n", outAFilename, index_chA);
+    printf("\tCHB: %s (%lu pulsos)\n", outBFilename, index_chB);
     fflush(stdout);
 
     bytes_captured = 0;
