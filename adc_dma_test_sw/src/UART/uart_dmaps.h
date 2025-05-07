@@ -17,11 +17,8 @@
 #define DMA_CHANNEL			0
 
 void DMAPS_Init();
-
 int DMAPS_Done();
-
 void DMAPS_ConfigSend(u32 src, u32 dst, unsigned int transferLen);
-
 void DMAPS_Send();
 
 #endif /* SRC_UART_UART_DMAPS_H_ */

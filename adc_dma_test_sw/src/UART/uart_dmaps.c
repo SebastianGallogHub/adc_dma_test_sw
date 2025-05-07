@@ -4,8 +4,8 @@
  *  Created on: Mar 24, 2025
  *      Author: sebas
  */
-/***************************** Include Files *******************************/
 
+/***************************** Include Files *******************************/
 #include "../UART/uart_dmaps.h"
 
 #include "xdmaps.h"
@@ -19,11 +19,9 @@
 /**************************** Type Definitions ******************************/
 
 /************************** Function Prototypes *****************************/
-
 void DMAPS_DoneHandler(unsigned int Channel, XDmaPs_Cmd *DmaCmd, void *CallbackRef);
 
 /************************** Variable Definitions ***************************/
-
 static XDmaPs 		DmaPs;
 static XDmaPs_Cmd 	DmaCmd;
 

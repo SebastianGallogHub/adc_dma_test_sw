@@ -32,7 +32,6 @@ void ZMODADC1410_PrintConfigLog(int l){
 
 void ZMODADC1410_Init()
 {
-//	LOG(1, "ZMODADC1410_Init");
 	/*
 	 * Esta función se comunica con ZMOD1410 AXI ADAPTER para
 	 * configurar el ZMOD1410 a través del LLC. Este es su único propósito.

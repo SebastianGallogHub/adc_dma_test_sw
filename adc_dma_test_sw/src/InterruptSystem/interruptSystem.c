@@ -5,25 +5,34 @@
  *      Author: sebas
  */
 
+/***************************** Include Files *******************************/
+#include "../InterruptSystem/interruptSystem.h"
+
 #include "xil_exception.h"
 #include "xscugic.h"
-
-#include "interruptSystem.h"
 
 #include "../includes/assert.h"
 #include "../includes/log.h"
 
-static INTC Intc;
-
+/************************** Constant Definitions **************************/
 #define MAX_HANDLERS_CNT 10
 
+/**************************** Type Definitions ******************************/
+
+/************************** Function Prototypes *****************************/
+
+/************************** Variable Definitions ***************************/
+static INTC Intc;
 int handlerIdx = 0;
 Intr_Config* handlers[MAX_HANDLERS_CNT];
+
+/****************************************************************************/
 
 void IntrSystem_AddHandler(Intr_Config* handlerConfigPtr){
 	if(handlerConfigPtr->IntrId != 0 && handlerIdx < MAX_HANDLERS_CNT)
 		handlers[handlerIdx++] = handlerConfigPtr;
 }
+
 void IntrSystem_DisableIntr(u16 intrId){
 	for(int i = 0;i < handlerIdx; i++)
 	{
@@ -31,16 +40,15 @@ void IntrSystem_DisableIntr(u16 intrId){
 			XScuGic_Disconnect(&Intc, handlers[i]->IntrId);
 	}
 }
+
 void IntrSystem_Disable(){
-//	LOG(1, "DisableIntrSystem");
 	for (int i = 0; i < handlerIdx; i++)
 	{
 		XScuGic_Disconnect(&Intc, handlers[i]->IntrId);
 	}
 }
-int IntrSystem_Setup(){
-//	LOG(1, "SetupIntrSystem");
 
+int IntrSystem_Setup(){
 	XScuGic_Config *IntcConfig;
 
 	IntcConfig = XScuGic_LookupConfig(INTC_DEVICE_ID);

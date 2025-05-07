@@ -30,7 +30,6 @@ u32 sector_rd_idx = 0;
 /****************************************************************************/
 
 int SD_Init(){
-//	LOG(1, "SD_Init");
 	DSTATUS res;
 
 	res = disk_initialize(0);
@@ -44,8 +43,6 @@ int SD_Init(){
 		xil_printf("Fallo en GET_SECTOR_COUNT\r\n");
 		return 1;
 	}
-
-//	LOG(2, "Total sectores disponibles: %u", total_sectors);
 
 	return 0;
 }

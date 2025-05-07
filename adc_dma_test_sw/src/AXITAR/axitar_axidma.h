@@ -34,9 +34,6 @@ extern u32 axiDmaIntCount;
 extern u32 axiDmaTransferCount;
 extern u32 Error;
 
-//typedef void (*AXIDMA_ProcessBufferDelegate) (unsigned char *sendBuffer);
-
-
 int AXIDMA_Init();
 int AXIDMA_SetupRx(u32 ringBufferSize, u32 dataSize, int bufferProcessCoalesce);
 void AXIDMA_StopRxAsync();

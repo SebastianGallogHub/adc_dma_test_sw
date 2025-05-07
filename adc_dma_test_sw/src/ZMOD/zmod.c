@@ -5,10 +5,20 @@
  *      Author: sebas
  */
 
+/***************************** Include Files *******************************/
+#include "../ZMOD/zmod.h"
+
 #include "xil_io.h"
 
-#include "zmod.h"
+/************************** Constant Definitions **************************/
 
+/**************************** Type Definitions ******************************/
+
+/************************** Function Prototypes *****************************/
+
+/************************** Variable Definitions ***************************/
+
+/****************************************************************************/
 
 void ZMOD_WriteRegFld(uint8_t regAddr, uint8_t lsbBit, uint8_t noBits, uint32_t value)
 {
@@ -29,6 +39,7 @@ void ZMOD_WriteRegFld(uint8_t regAddr, uint8_t lsbBit, uint8_t noBits, uint32_t 
 
 	Xil_Out32(ZMOD_BASE_ADDR + regAddr, regValue);
 }
+
 int32_t ZMOD_ToSigned(uint32_t value, uint8_t noBits)
 {
 	// align value to bit 31 (left justify), to preserve sign

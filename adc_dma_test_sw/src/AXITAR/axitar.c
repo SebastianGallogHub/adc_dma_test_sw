@@ -39,8 +39,6 @@ Intr_Config tarMasterTestIntrConfig ={
 
 /****************************************************************************/
 void AXITAR_Init() {
-//	LOG(1, "AXITAR_Init");
-
 	AXITAR_StopAll_();
 
 	//Espero que se registre el valor de stop
@@ -70,7 +68,6 @@ void AXITAR_PrintConfigLog(int l){
 }
 
 int AXITAR_Start(){
-
 	// Se configura un buffer equivalente a 4 sectores de SD y luego
 	// se escribe de a 2 sectores
 

@@ -23,7 +23,7 @@ int main(){
 	ASSERT_SUCCESS(mefTAR_Init(), "Fallo al inicializar TAR");
 
 	while(1){
-		if (mefTAR(0))
+		if (mefTAR())
 			return 1;
 	}
 }

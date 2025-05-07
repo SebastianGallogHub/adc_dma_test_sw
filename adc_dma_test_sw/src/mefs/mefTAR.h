@@ -10,7 +10,7 @@
 
 
 int mefTAR_Init();
-int mefTAR(int);
+int mefTAR();
 
 
 #endif /* SRC_MEFS_MEFTAR_H_ */

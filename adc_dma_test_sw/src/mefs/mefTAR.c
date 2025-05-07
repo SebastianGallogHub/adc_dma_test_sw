@@ -66,7 +66,7 @@ int mefTAR_Init(){
 	return 0;
 }
 
-int mefTAR(int awaitFinish){
+int mefTAR(){
 	switch(state){
 		case IDLE:
 			cmd = UART_GetCommand();

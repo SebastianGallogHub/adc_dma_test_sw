@@ -6,7 +6,6 @@
  */
 
 /***************************** Include Files *******************************/
-
 #include "../AXITAR/axitar_axidma.h"
 
 #include "../includes/log.h"
@@ -18,7 +17,6 @@
 /**************************** Type Definitions ******************************/
 
 /************************** Function Prototypes *****************************/
-
 void AXIDMA_RxIntrHandler(void *Callback);
 
 /************************** Variable Definitions ***************************/
@@ -28,6 +26,7 @@ static XAxiDma AxiDma;
 u8 stopDma = 0;
 u8 bufferComplete = 0;
 u8 bufferA = 0; // primera mitad del buffer
+
 u32 axiDmaIntCount = 0;
 u32 axiDmaTransferCount = 0;
 u32 Error = 0;
@@ -37,7 +36,6 @@ Intr_Config axiDmaIntrConfig;
 int rbSize;
 int bufferDataSize;
 int buffersReadCounter = 0;
-//AXIDMA_ProcessBufferDelegate ProcessBufferDelegate;
 
 
 /****************************************************************************/
@@ -62,8 +60,6 @@ void AXIDMA_Reset() {
 }
 
 int AXIDMA_Init() {
-//	LOG(1, "AXIDMA_Init");
-
 	XAxiDma_Config *Config;
 	XAxiDma_BdRing *RxRingPtr;
 
@@ -92,8 +88,6 @@ int AXIDMA_Init() {
 }
 
 int AXIDMA_SetupRx(u32 ringBufferSize, u32 dataSize, int coalesceCount) {
-//    LOG(1, "AXIDMA_SetupRx");
-
     XAxiDma_BdRing *RxRingPtr;
     XAxiDma_Bd BdTemplate, *BdPtr, *BdCurPtr;
     UINTPTR RxBufferPtr;
@@ -165,7 +159,6 @@ int AXIDMA_SetupRx(u32 ringBufferSize, u32 dataSize, int coalesceCount) {
     Xil_DCacheFlushRange((UINTPTR)BdPtr, ringBufferSize * sizeof(XAxiDma_Bd));
     Xil_DCacheFlushRange((UINTPTR)AXIDMA_RX_BUFFER_BASE, ringBufferSize * dataSize);
 
-//    LOG(2, "Interrupciones cada %d transacciones", coalesceCount);
     ASSERT_SUCCESS(
     		XAxiDma_BdRingSetCoalesce(RxRingPtr, coalesceCount, 255),
 			"Rx set coalesce failed. Max 255 was %d", coalesceCount);
