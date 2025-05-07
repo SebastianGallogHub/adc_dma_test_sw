@@ -25,6 +25,9 @@ void AXIDMA_RxIntrHandler(void *Callback);
 
 static XAxiDma AxiDma;
 
+u8 stopDma = 0;
+u8 bufferComplete = 0;
+u8 bufferA = 0; // primera mitad del buffer
 u32 axiDmaIntCount = 0;
 u32 axiDmaTransferCount = 0;
 u32 Error = 0;
@@ -33,8 +36,8 @@ Intr_Config axiDmaIntrConfig;
 
 int rbSize;
 int bufferDataSize;
-int bufferProcessCoalesceCounter = 0;
-AXIDMA_ProcessBufferDelegate ProcessBufferDelegate;
+int buffersReadCounter = 0;
+//AXIDMA_ProcessBufferDelegate ProcessBufferDelegate;
 
 
 /****************************************************************************/
@@ -51,6 +54,9 @@ void AXIDMA_Reset() {
 	}
 
 	Error = 0;
+	stopDma = 0;
+	bufferComplete = 0;
+	bufferA = 0; // primera mitad del buffer
 	axiDmaIntCount = 0;
 	axiDmaTransferCount = 0;
 }
@@ -72,7 +78,7 @@ int AXIDMA_Init() {
 	// Cargo la configuración de interrupciones
 	RxRingPtr = XAxiDma_GetRxRing(&AxiDma);
 
-	//dmaIntrConfig
+	// Configuro el handler de las interrupciones
 	axiDmaIntrConfig.IntrId = AXIDMA_RX_INTR_ID;
 	axiDmaIntrConfig.Handler = (Xil_ExceptionHandler)AXIDMA_RxIntrHandler;
 	axiDmaIntrConfig.CallBackRef = RxRingPtr;
@@ -80,10 +86,12 @@ int AXIDMA_Init() {
 
 	IntrSystem_AddHandler(&axiDmaIntrConfig);
 
+	stopDma = 0;
+
 	return 0;
 }
 
-int AXIDMA_SetupRx(u32 ringBufferSize, u32 dataSize, int coalesceCount, AXIDMA_ProcessBufferDelegate processBuffer) {
+int AXIDMA_SetupRx(u32 ringBufferSize, u32 dataSize, int coalesceCount) {
 //    LOG(1, "AXIDMA_SetupRx");
 
     XAxiDma_BdRing *RxRingPtr;
@@ -166,7 +174,7 @@ int AXIDMA_SetupRx(u32 ringBufferSize, u32 dataSize, int coalesceCount, AXIDMA_P
     ASSERT_SUCCESS(
     		XAxiDma_BdRingToHw(RxRingPtr, ringBufferSize, BdPtr), "Rx ToHw failed");
 
-    XAxiDma_BdRingIntEnable(RxRingPtr, XAXIDMA_IRQ_ALL_MASK);	// Habilito interrupciones
+    XAxiDma_BdRingIntEnable(RxRingPtr, XAXIDMA_IRQ_ALL_MASK);	// Habilito interrupciones del hardware
 
     XAxiDma_BdRingEnableCyclicDMA(RxRingPtr);					// Activo el modo cíclico
     XAxiDma_SelectCyclicMode(&AxiDma, XAXIDMA_DEVICE_TO_DMA, 1); // Configuro DMA para operar en modo cíclico
@@ -176,12 +184,54 @@ int AXIDMA_SetupRx(u32 ringBufferSize, u32 dataSize, int coalesceCount, AXIDMA_P
     ASSERT_SUCCESS(
     		status, "Error starting XAxiDma_BdRingStart");
 
+    stopDma = 0;
+    bufferComplete = 0;
+    bufferA = 0; // primera mitad del buffer
+
     rbSize = ringBufferSize;
     bufferDataSize = dataSize;
-    bufferProcessCoalesceCounter = 0;
-    ProcessBufferDelegate = processBuffer;
+    buffersReadCounter = 0;
 
     return XST_SUCCESS;
+}
+
+void AXIDMA_StopRxAsync(){
+	stopDma = 1;
+}
+
+void stopRx() {
+	XAxiDma_BdRing *RxRingPtr = XAxiDma_GetRxRing(&AxiDma);
+
+	// Deshabilitar interrupciones para evitar nuevas activaciones
+	XAxiDma_BdRingIntDisable(RxRingPtr, XAXIDMA_IRQ_ALL_MASK);
+
+	// Desactivar modo cíclico directamente al registrar del DMA
+	XAxiDma_SelectCyclicMode(&AxiDma, XAXIDMA_DEVICE_TO_DMA, 0);
+
+	// Reset del DMA para garantizar que se limpien todos los estados internos
+	XAxiDma_Reset(&AxiDma);
+
+	// Esperar a que el reset finalice
+	int TimeOut = 10000;
+	while (TimeOut--) {
+		if (XAxiDma_ResetIsDone(&AxiDma))
+			break;
+	}
+}
+
+int AXIDMA_BufferComplete(u32 *bufferAddr){
+	if (bufferComplete)
+	{
+		bufferComplete = 0;
+
+		if(bufferA)
+			*bufferAddr = (u32)AXIDMA_RX_BUFFER_BASE;
+		else
+			*bufferAddr = (u32)(AXIDMA_RX_BUFFER_BASE + (bufferDataSize * (rbSize/2)));
+
+		return 1;
+	}
+	return 0;
 }
 
 void AXIDMA_RxCallBack(XAxiDma_BdRing *RxRingPtr) {
@@ -193,18 +243,21 @@ void AXIDMA_RxCallBack(XAxiDma_BdRing *RxRingPtr) {
 	axiDmaTransferCount += BdCount;
 	axiDmaIntCount ++;
 
-	bufferProcessCoalesceCounter += BdCount;
+	buffersReadCounter += BdCount;
 
 	XAxiDma_BdRingFree(RxRingPtr, BdCount, BdPtr);
 
-	// Coalescencia manual porque no la está haciendo bien
-	if((ProcessBufferDelegate != NULL) && (bufferProcessCoalesceCounter >= rbSize)){
+	if(buffersReadCounter >= rbSize/2){
 
-		// Proceso el buffer con el handler
-		ProcessBufferDelegate((unsigned char*)AXIDMA_RX_BUFFER_BASE, 2);
+		bufferComplete = 1;
+
+		bufferA = !bufferA;
 
 		// Reseteo el contador de coalescencia para recaptar el suceso
-		bufferProcessCoalesceCounter = 0;
+		buffersReadCounter = 0;
+
+		if(stopDma)
+			stopRx();
 	}
 
 	return;

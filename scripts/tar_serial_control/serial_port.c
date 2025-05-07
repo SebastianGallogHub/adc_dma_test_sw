@@ -8,6 +8,9 @@
 #include <termios.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <sys/time.h>  // <- Para struct timeval
+#include <sys/types.h> // <- Para select()
+#include <string.h>
 
 /************************** Constant Definitions **************************/
 #define requires_param(c) c == CMD_CH0_H || c == CMD_CH1_H
@@ -39,6 +42,7 @@ void serial_Flush()
 
 void serial_SendCommand(SERIAL_COMMAND c, ...)
 {
+    serial_Flush();
     serial_WriteByte((char)CMD_HEADER);
     serial_WriteByte((char)c);
 
@@ -49,7 +53,7 @@ void serial_SendCommand(SERIAL_COMMAND c, ...)
     {
         uint32_t param = va_arg(args, uint32_t);
 
-        // Enviar el parámetro como 4 bytes (big endian o little endian según necesites)
+        // Enviar el parámetro como 4 bytes
         serial_WriteByte((param >> 24) & 0xFF);
         serial_WriteByte((param >> 16) & 0xFF);
         serial_WriteByte((param >> 8) & 0xFF);
@@ -58,13 +62,47 @@ void serial_SendCommand(SERIAL_COMMAND c, ...)
 
     va_end(args);
 
-    usleep(1000);
+    usleep(700000); // 700ms
 }
 
-int serial_ReadByte(char *buffer)
+int serial_ReadBuffer(char *buffer, int len, int idle_timeout_ms)
 {
-    bytes_read = read(serial_fd, buffer, 1);
-    return bytes_read;
+    fd_set readfds;
+    struct timeval timeout;
+    int total_read = 0;
+    int done = 0;
+
+    while (!done)
+    {
+        FD_ZERO(&readfds);
+        FD_SET(serial_fd, &readfds);
+
+        timeout.tv_sec = 0;
+        timeout.tv_usec = idle_timeout_ms * 1000; // microsegundos
+
+        int sel = select(serial_fd + 1, &readfds, NULL, NULL, &timeout);
+
+        if (sel > 0 && FD_ISSET(serial_fd, &readfds))
+        {
+            int bytes = read(serial_fd, buffer + total_read, len - total_read);
+            if (bytes > 0)
+            {
+                total_read += bytes;
+                if (total_read >= len)
+                    break; // buffer lleno
+            }
+            else
+            {
+                done = 1; // fin por error o cierre
+            }
+        }
+        else
+        {
+            done = 1; // timeout sin datos nuevos
+        }
+    }
+
+    return total_read;
 }
 
 int serial_Init(char *port)

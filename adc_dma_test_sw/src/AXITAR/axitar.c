@@ -13,6 +13,7 @@
 #include "AXI_TAR.h"
 
 #include "../includes/log.h"
+#include "../includes/assert.h"
 #include "../SD_CARD/sd_card.h"
 #include "../AXITAR/axitar_axidma.h"
 #include "../ZMOD_ADC1410/zmodadc1410.h"
@@ -68,21 +69,33 @@ void AXITAR_PrintConfigLog(int l){
 		LOG(l+1, "CHB: histéresis (%u ; %u)", AXITAR_LowHist(ch1_hist), AXITAR_HighHist(ch1_hist));
 }
 
-void AXITAR_Start(){
-	AXIDMA_SetupRx(
-		SD_WORDS_PER_SECTOR(AXITAR_AXIDMA_TRANSFER_LEN) * 2,  	// Cantidad de pulsos a recibir en el buffer
-		AXITAR_AXIDMA_TRANSFER_LEN,								// Longitud de 1 pulso en bytes
-		SD_WORDS_PER_SECTOR(AXITAR_AXIDMA_TRANSFER_LEN),		// Coalescencia
-		(AXIDMA_ProcessBufferDelegate)SD_WriteNextSector);		// Handler para procesar el buffer
+int AXITAR_Start(){
 
-//	LOG(1, "----- Inicio adquisición -----");
+	// Se configura un buffer equivalente a 4 sectores de SD y luego
+	// se escribe de a 2 sectores
+
+	ASSERT_SUCCESS(AXIDMA_SetupRx(
+		(SD_WORDS_PER_SECTOR(AXITAR_AXIDMA_TRANSFER_LEN)) * 4,  // Cantidad de pulsos a recibir en el buffer (n sectores)
+		AXITAR_AXIDMA_TRANSFER_LEN,								// Longitud de un pulso (en bytes)
+		SD_WORDS_PER_SECTOR(AXITAR_AXIDMA_TRANSFER_LEN)), 		// Coalescencia (interrupci de a 1 sector)
+		"Fallo al inicializar AXI_DMA Rx");
 
 	AXITAR_Start_();
+
+	return 0;
+}
+
+void AXITAR_SaveDataAsync(){
+	u32 buffer;
+
+	if (AXIDMA_BufferComplete(&buffer))
+		SD_WriteSectors((unsigned char *)buffer, 2);
+
 }
 
 void AXITAR_Stop(){
 	AXITAR_StopAll_();
-	AXIDMA_Reset();
+	AXIDMA_StopRxAsync();
 	AXITAR_DisableChannel(0);
 	AXITAR_DisableChannel(1);
 }
@@ -95,9 +108,11 @@ void AXITAR_SetHysteresis(int channel, u32 hist) {
 	if (channel == 0){
 		ch0_hist = hist;
 		AXI_TAR_mWriteReg(AXITAR_BASE, AXITAR_CH0_HIST_OFF, hist & AXITAR_DISABLE_CH_MASK);
+		while ((AXI_TAR_mReadReg(AXITAR_BASE, AXITAR_CH0_HIST_OFF) != (hist & AXITAR_DISABLE_CH_MASK)));
 	}else{
 		ch1_hist = hist;
 		AXI_TAR_mWriteReg(AXITAR_BASE, AXITAR_CH1_HIST_OFF, hist & AXITAR_DISABLE_CH_MASK);
+		while ((AXI_TAR_mReadReg(AXITAR_BASE, AXITAR_CH1_HIST_OFF) != (hist & AXITAR_DISABLE_CH_MASK)));
 	}
 }
 
@@ -109,7 +124,7 @@ void AXITAR_master_test_Init(u32 cuenta){
 	AXITAR_StopAll_();
 
 	//Espero que se registre el valor de stop
-	while(AXI_TAR_mReadReg(AXITAR_BASE,AXITAR_CONFIG_OFF));
+	while(AXI_TAR_mReadReg(AXITAR_BASE, AXITAR_CONFIG_OFF));
 
 	AXI_TAR_mWriteReg(AXITAR_BASE, master_COUNT_CFG_OFF, cuenta);
 

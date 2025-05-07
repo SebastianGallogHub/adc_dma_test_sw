@@ -8,7 +8,6 @@
             "args": [
                 "-g",
                 "tar_serial_control.c", // <- Asegurate que este nombre coincida con tu archivo fuente
-                "mefSerialToBin.c",
                 "serial_port.c",
                 "binToCSV.c",
                 "-o",

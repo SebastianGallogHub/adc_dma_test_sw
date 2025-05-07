@@ -23,10 +23,11 @@
 typedef enum{
 	INIT_MODULES,
 	IDLE,
+	PROCESS_COMMAND,
 	SET_CH_HYSTERESIS,
 	SEND_CONFIG_LOG,
 	START_TAR,
-	SENDING_DATA_ASYNC,
+	MEASURE,
 	STOP_TAR,
 	AWAITING_LAST_DATA_SEND,
 } MEF_TAR_STATE;
@@ -41,7 +42,7 @@ u32 param = 0;
 
 /****************************************************************************/
 
-void mefTAR_Init(){
+int mefTAR_Init(){
 	// Como manipula el puerto serie hay que inicializarlo
 	// antes de empezar a mandar al terminal
 	UART_Init();
@@ -50,25 +51,23 @@ void mefTAR_Init(){
 
 	mefSendDataAsync_Init();
 
-	state = INIT_MODULES;
+	// Se configura el sistema de interrupciones con los handlers
+	// registrados hasta este punto
+	ASSERT_SUCCESS(
+			IntrSystem_Setup(),
+			"Fallo al inicializar el sistema de interrupciones");
+
+	// Se inicializa la recepción siempre después de configurar
+	// el sistema de interrupciones
+	UART_SetupRx();
+
+	state = IDLE;
+
+	return 0;
 }
 
-int mefTAR(){
+int mefTAR(int awaitFinish){
 	switch(state){
-		case INIT_MODULES:
-			// Se configura el sistema de interrupciones con los handlers
-			// registrados hasta este punto
-			ASSERT_SUCCESS(
-					IntrSystem_Setup(),
-					"Fallo al inicializar el sistema de interrupciones");
-
-			// Se inicializa la recepción siempre después de configurar
-			// el sistema de interrupciones
-			UART_SetupRx();
-
-			state = IDLE;
-			break;
-
 		case IDLE:
 			cmd = UART_GetCommand();
 
@@ -81,7 +80,11 @@ int mefTAR(){
 			}
 
 			if(cmd == CMD_START){
-				state = START_TAR;
+				mefSendDataAsync_Reset();
+
+				ASSERT_SUCCESS(AXITAR_Start(), "Fallo al iniciar TAR");
+
+				state = MEASURE;
 			}
 			break;
 
@@ -102,36 +105,30 @@ int mefTAR(){
 			break;
 
 		case SEND_CONFIG_LOG:
-			LOG(0, "%%");
+			LOG(0, "{");
 			AXITAR_PrintConfigLog(0);
-			LOG(0, "%%");
+			LOG(0, "}");
 
 			state = IDLE;
 			break;
 
-		case START_TAR:
-			mefSendDataAsync_Reset();
-			AXITAR_Start();
 
-			state = SENDING_DATA_ASYNC;
-			break;
-
-		case SENDING_DATA_ASYNC:
+		case MEASURE:
 			cmd = UART_GetCommand();
+
+			AXITAR_SaveDataAsync();
+
 			mefSendDataAsync();
 
-			if (cmd == CMD_STOP){
-				state = STOP_TAR;
+			if(cmd == CMD_STOP){
+				AXITAR_Stop();
+				state = AWAITING_LAST_DATA_SEND;
 			}
 			break;
 
-		case STOP_TAR:
-			AXITAR_Stop();
-			mefSendDataAsync_CancelAsync();
-			state = AWAITING_LAST_DATA_SEND;
-			break;
-
 		case AWAITING_LAST_DATA_SEND:
+			AXITAR_SaveDataAsync();
+
 			if(mefSendDataAsync()){
 				state = IDLE;
 			}

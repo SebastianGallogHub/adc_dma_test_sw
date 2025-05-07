@@ -10,7 +10,7 @@
 
 void mefSendDataAsync_Init();
 void mefSendDataAsync_Reset();
-void mefSendDataAsync_CancelAsync();
+void mefSendDataAsync_Cancel();
 int mefSendDataAsync();
 
 #endif /* SRC_MEFS_MEFSENDDATAASYNC_H_ */

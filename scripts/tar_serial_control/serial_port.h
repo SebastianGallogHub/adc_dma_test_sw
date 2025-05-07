@@ -18,5 +18,6 @@ void serial_Flush();
 void serial_SendCommand(SERIAL_COMMAND c, ...);
 int serial_ReadByte(char *buffer);
 void serial_Close();
+int serial_ReadBuffer(char *buffer, int len, int idle_timeout_ms);
 
 #endif // SERIAL_PORT_H_

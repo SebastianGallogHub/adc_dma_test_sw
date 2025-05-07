@@ -31,7 +31,8 @@ void UART_Init();
 void UART_SetupRx();
 
 void UART_SendAsync(u32 sendBufferAddr, int buffSizeBytes, int dataLen);
-void UART_SendBufferAsync(u32 sendBufferAddr, int buffSizeBytes, int dataLen);
+void UART_SendBufferAsync(u32 sendBufferAddr, int buffSizeBytes, int dataLen, int cancel);
+void UART_SendBufferAsync_Cancel();
 
 int UART_DoneSendBuffer();
 int UART_DoneTx();

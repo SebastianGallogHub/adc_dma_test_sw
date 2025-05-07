@@ -1,10 +1,14 @@
 #ifndef BINTOCSV_H_
 #define BINTOCSV_H_
 
-#define BIN_FILE "salida_raw"
+#define TIMESTAMP_FMT "%d%m%y-%H%M%S"
 
-#define OUTPUT_CH0 "canal_0.csv"
-#define OUTPUT_CH1 "canal_1.csv"
+#define BIN_FILE "test-raw_%s"
+
+#define LOG_FILE "test-log_%s.txt"
+
+#define OUTPUT_CHA "test-chA_%s.csv"
+#define OUTPUT_CHB "test-chB_%s.csv"
 
 #define T_PERIOD 0xFFFFFFFF
 
@@ -21,9 +25,13 @@
 
 #define GetFieldFromPulse(pulse, mask, offset) (((pulse) & (mask)) >> (offset))
 
+void openLogFile();
+void closeLogFile();
+int writeLogFile(char *buffer, int len);
+
 void openBinFile();
 void closeBinFile();
-int writeBinFile(char buffer);
+int writeBinFile(char *buffer, int len);
 void binToCSV();
 
 #endif // BINTOCSV_H_

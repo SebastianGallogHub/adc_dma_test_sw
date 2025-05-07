@@ -14,8 +14,9 @@
 #define SD_WORDS_PER_SECTOR(dataSize) 	SD_SECTOR_SIZE / dataSize
 
 int SD_Init();
-int SD_SectorsToRead();
-int SD_WriteNextSector(unsigned char *buffer, unsigned int countSectors);
+int SD_GetSectorsToRead();
+int SD_SetSectorsToWrite(unsigned int);
+int SD_WriteSectors(unsigned char *buffer, unsigned int countSectors);
 int SD_ReadNextSector(unsigned char *out_buffer);
 void SD_ResetRB();
 

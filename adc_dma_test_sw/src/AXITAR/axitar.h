@@ -71,7 +71,8 @@ void AXITAR_master_test_Init(u32);
 
 void AXITAR_Init();
 int AXITAR_SetupRx();
-void AXITAR_Start();
+int AXITAR_Start();
+void AXITAR_SaveDataAsync();
 void AXITAR_Stop();
 void AXITAR_PrintConfigLog(int);
 

@@ -9,8 +9,8 @@
 #define SRC_MEFS_MEFTAR_H_
 
 
-void mefTAR_Init();
-int mefTAR();
+int mefTAR_Init();
+int mefTAR(int);
 
 
 #endif /* SRC_MEFS_MEFTAR_H_ */

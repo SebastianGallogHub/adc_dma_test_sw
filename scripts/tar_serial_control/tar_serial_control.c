@@ -6,8 +6,8 @@
 #include <errno.h>
 #include <pthread.h>
 
-#include "mefSerialToBin.h"
 #include "serial_port.h"
+#include "binToCSV.h"
 
 /************************** Constant Definitions **************************/
 #define ZMODADC1410_RESOLUTION 3.21f /*mv*/
@@ -16,104 +16,155 @@
 #define to_us(s) s * 1000 /*ms*/ * 1000 /*us*/
 
 /**************************** Type Definitions ******************************/
+typedef enum
+{
+    SEND_HYSTERESIS,
+    GET_CONFIG_LOG,
+    START_TAR,
+    RECEIVING_DATA,
+    STOP_TAR,
+    AWAIT_DATA,
+    REPEAT,
+} MEF_TAR_CONTROL_STATE;
 
 /************************** Function Prototypes *****************************/
-void *rx_thread_func(void *arg);
+void *serialToBin_thread_func(void *arg);
 
 /************************** Variable Definitions ***************************/
-
+int rx_thread_stop = 0;
 /****************************************************************************/
 
 int main()
 {
     char resp = 0;
-    int tEnsayo_s = 10;
-    int tPausaInicio_s = 10;
-    int tPausaFin_s = 3;
+    int tEnsayo_s = 60;
+
     uint16_t hist0_low = 1000, hist0_high = 3000;
-    uint16_t hist1_low = 980, hist1_high = 3080;
+    uint16_t hist1_low = 1500, hist1_high = 3080;
+
+    int i = 0, j = 0;
+    int log = 0;
+    int bytes_read;
+    char buffer[1024];
+    pthread_t rx_thread;
 
     if (serial_Init("/dev/ttyUSB1"))
         return 1;
 
-    pthread_t rx_thread;
-    if (pthread_create(&rx_thread, NULL, rx_thread_func, NULL) != 0)
-    {
-        perror("No se pudo crear el hilo de recepción");
-        serial_Close();
-        return 1;
-    }
-
     do
     {
-        scanf(" %c", &resp);
-    } while (resp != 's');
+        i = 0;
+        j = 0;
+        log = 0;
+        rx_thread_stop = 0;
 
-    int c;
-    while (resp == 's')
-    {
-        // Configuro la histéresis de ambos canales
-        serial_Flush();
-        mefSerialToBin_Reset();
+        // Limpio el buffer Tx del micro
+        bytes_read = serial_ReadBuffer(buffer, sizeof(buffer), 1000);
 
+        // Envío la configuración de histéresis
+        printf("Enviando histéresis...\n");
         serial_SendCommand(CMD_CH0_H, to_hist(to_cad(hist0_low), to_cad(hist0_high)));
-
         serial_SendCommand(CMD_CH1_H, to_hist(to_cad(hist1_low), to_cad(hist1_high)));
 
+        // Leo el log del sistema
+        printf("Leyendo LOG...\n");
         serial_SendCommand(CMD_GET_CONFIG);
 
-        usleep(to_us(tPausaInicio_s)); // Se detiene el hilo para recibir datos
+        bytes_read = serial_ReadBuffer(buffer, sizeof(buffer), 1000);
 
-        // while (1)
-        // {
-        //     if (mefSerialToBin_ConfigReceived())
-        //         break;
-        // }
+        if (bytes_read > 0)
+        {
+            while (1)
+            {
+                if (log == 0)
+                {
+                    if (buffer[i++] == '{')
+                    {
+                        log = 1;
+                        j += i;
+                    }
+                }
+                else
+                {
+                    if (buffer[j++] == '}')
+                    {
+                        j--;
+                        j--;
+                        break;
+                    }
+                }
+            }
 
-        printf("Iniciando ensayo %d s\n", tEnsayo_s);
+            openLogFile();
+            writeLogFile(buffer + i, j);
+            closeLogFile();
 
-        // Aviso a la mef que captura el archivo crudo que se prepare para recibir datos
-        // mefSerialToBin_StartReceivingData();
+            fwrite(buffer + i, 1, j, stdout);
+            printf("\n");
+            fflush(stdout);
+        }
+        else
+        {
+            printf("NO LEYÓ LOG\n");
+            serial_Close();
+            return 1;
+        }
 
-        // usleep(to_us(1));
+        // Abro el archivo para que esté preparado
+        openBinFile();
 
-        // Envío la señal de inicio a TAR
+        // Evío comando de start
+        printf("Ensayo %d s\n", tEnsayo_s);
         serial_SendCommand(CMD_START);
 
-        usleep(to_us(tEnsayo_s)); // Se detiene el hilo para recibir datos
+        // Creo el hilo de lectura
+        if (pthread_create(&rx_thread, NULL, serialToBin_thread_func, NULL) != 0)
+        {
+            perror("No se pudo crear el hilo de recepción");
+            serial_SendCommand(CMD_STOP);
+            serial_Close();
+            return 1;
+        }
 
-        // Envío la señal de fin a TAR
+        // Se detiene el hilo para recibir datos
+        usleep(to_us(tEnsayo_s));
+
+        // Envío comando de stop
         serial_SendCommand(CMD_STOP);
+        rx_thread_stop = 1;
 
-        usleep(to_us(tPausaFin_s)); // Pausa para terminar de recibir todo lo que falte
+        // Espero a que el hilo de lectura termine
+        pthread_join(rx_thread, NULL);
 
-        // Aviso a la mef que captura los datos que puede exportar el archivo crudo a CSV
-        // mefSerialToBin_StopReceivingData();
+        // Cierro el archivo binario
+        printf("\n");
+        closeBinFile();
 
-        // Redo
+        // Convierto a CSV
+        binToCSV();
+
+        printf("Repeat?\n");
         scanf(" %c", &resp);
-    }
+    } while (resp == 's' || resp == 'S');
 
-    pthread_join(rx_thread, NULL);
+    serial_Close();
 
     return 0;
 }
 
-void *rx_thread_func(void *arg)
+void *serialToBin_thread_func(void *arg)
 {
-    char buffer;
+    char buffer[800];
     int bytes_read;
 
     while (1)
     {
-        bytes_read = serial_ReadByte(&buffer);
+        bytes_read = serial_ReadBuffer(buffer, sizeof(buffer), 1000);
 
-        // if (bytes_read > 0)
-        // {
-        //     printf("%c", buffer);
-        //     // fflush(stdout);
-        // }
-        // mefSerialToBin(buffer, bytes_read);
+        if (bytes_read > 0)
+            writeBinFile(buffer, bytes_read);
+        else if (rx_thread_stop)
+            break;
     }
 
     return NULL;

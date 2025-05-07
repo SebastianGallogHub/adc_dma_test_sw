@@ -26,8 +26,8 @@
 
 void ZMODADC1410_PrintConfigLog(int l){
 	LOG(l, "ZMOD Scope 1410-105 config:");
-	LOG(l+1, "CHA: LOW Gain; DC Coupling");
-	LOG(l+1, "CHB: LOW Gain; DC Coupling");
+	LOG(l+1, "CHA: LOW Gain - Res 3.21mV; DC Coupling");
+	LOG(l+1, "CHB: LOW Gain - Res 3.21mV; DC Coupling");
 }
 
 void ZMODADC1410_Init()

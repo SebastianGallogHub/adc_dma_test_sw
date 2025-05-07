@@ -7,6 +7,7 @@
 
 /***************************** Include Files *******************************/
 #include "mefs/mefTAR.h"
+#include "includes/assert.h"
 
 /************************** Constant Definitions **************************/
 
@@ -19,10 +20,10 @@
 /****************************************************************************/
 
 int main(){
-	mefTAR_Init();
+	ASSERT_SUCCESS(mefTAR_Init(), "Fallo al inicializar TAR");
 
 	while(1){
-		if (mefTAR())
+		if (mefTAR(0))
 			return 1;
 	}
 }

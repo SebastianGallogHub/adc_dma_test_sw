@@ -9,6 +9,7 @@
 #define SRC_INCLUDES_ASSERT_H_
 
 #include "xstatus.h"
+#include "xil_printf.h"
 
 /*
  * Verifica que condición = true

@@ -56,7 +56,8 @@ void SD_ResetRB(){
 	limit = 0;
 }
 
-int SD_WriteNextSector(BYTE *buffer, UINT countSectors){
+
+int SD_WriteSectors(BYTE *buffer, UINT countSectors){
 	DSTATUS res;
 
 	res = disk_write(0, buffer, sector_wr_idx, countSectors);
@@ -72,7 +73,7 @@ int SD_WriteNextSector(BYTE *buffer, UINT countSectors){
 	}
 }
 
-int SD_SectorsToRead(){
+int SD_GetSectorsToRead(){
 	if(sector_rd_idx <= sector_wr_idx)
 		return sector_wr_idx - sector_rd_idx;
 	else

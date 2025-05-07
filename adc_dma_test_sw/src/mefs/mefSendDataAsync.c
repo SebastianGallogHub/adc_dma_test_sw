@@ -46,7 +46,9 @@ void mefSendDataAsync_Reset(){
 	st = WAITING_FOR_DATA_TO_SEND;
 }
 
-void mefSendDataAsync_CancelAsync(){
+void mefSendDataAsync_Cancel(){
+	UART_SendBufferAsync_Cancel();
+
 	cancelAsync = 1;
 }
 
@@ -55,30 +57,35 @@ int mefSendDataAsync(){
 
 	switch (st){
 		case WAITING_FOR_DATA_TO_SEND:
-			if(SD_SectorsToRead() > 1){
+			if(SD_GetSectorsToRead() > 1 && !cancelAsync){
 				st = SENDING_DATA;
 			}
 
 			break;
 
 		case SENDING_DATA:
-			if(SD_SectorsToRead() > 0) {
+			if(SD_GetSectorsToRead() > 0) {
 				if(UART_DoneSendBuffer()){
 					SD_ReadNextSector((unsigned char*)sector_rd_buffer);
-					UART_SendBufferAsync((u32)sector_rd_buffer, SD_SECTOR_SIZE, AXITAR_AXIDMA_TRANSFER_LEN);
+					UART_SendBufferAsync((u32)sector_rd_buffer, SD_SECTOR_SIZE, AXITAR_AXIDMA_TRANSFER_LEN, cancelAsync);
 				}
 			}
 
-			if(SD_SectorsToRead() <= 0 || cancelAsync){
+			if(SD_GetSectorsToRead() <= 0){
 				st = AWAITING_LAST_DATA_SEND_DONE;
+			}
+
+			if(cancelAsync){
+				st = WAITING_FOR_DATA_TO_SEND;
 			}
 
 			break;
 
 		case AWAITING_LAST_DATA_SEND_DONE:
 			if(UART_DoneSendBuffer()){
-				st = WAITING_FOR_DATA_TO_SEND;
 				res = 1;
+				cancelAsync = 0;
+				st = WAITING_FOR_DATA_TO_SEND;
 			}
 
 			break;

@@ -45,6 +45,7 @@ int pendingBytes = 0;
 int sendBytes = 0;
 u8 *nextBuffer;
 int doneSendBuffer = 1;
+u8 cancel = 0;
 
 u32 IntrMask;
 
@@ -108,14 +109,25 @@ void UART_SendAsync(u32 sendBufferAddr, int buffSizeBytes, int dataLen) {
 	DMAPS_Send();
 }
 
+void UART_SendBufferAsync_Cancel(){
+	cancel = 1;
+	maxData = 0;
+	maxBytes = 0;
+	sendBytes = 0;
+	pendingBytes = 0;
+	doneSendBuffer = 1;
+}
 
-
-void UART_SendBufferAsync(u32 sendBufferAddr, int buffSizeBytes, int dataLen){
-	if (buffSizeBytes == 0) return;
+void UART_SendBufferAsync(u32 sendBufferAddr, int buffSizeBytes, int dataLen, int cancelToken){
+	if (cancelToken == 1) return;
+	if (buffSizeBytes <= 0) return;
 	if (sendBufferAddr == 0) return;
 
-	// Configuro dinámicamente el límite la primera vez que llamo y hago la copia
+	cancel = cancelToken;
+
+	// Configuro dinámicamente el límite la primera vez que llamo desde afuera
 	if(dataLen != 0){
+		doneSendBuffer = 0;
 		maxBytes = UART_TX_FIFO_DEPTH - dataLen;
 		maxData = maxBytes / dataLen;
 	}
@@ -136,7 +148,6 @@ void UART_SendBufferAsync(u32 sendBufferAddr, int buffSizeBytes, int dataLen){
 	// Recalculo el siguiente buffer
 	pendingBytes -= sendBytes;
 	if(pendingBytes > 0){
-		doneSendBuffer = 0;
 		nextBuffer = (u8*)(sendBufferAddr + sendBytes);
 	}else{
 		doneSendBuffer = 1;
@@ -169,7 +180,7 @@ void XUartPs_InterruptHandler_Wrapper(XUartPs *InstancePtr){
 		// Disparo una transacción por lo que quede, registrado en estas variables
 		// 0 en data len para que se use el máximo dinámico de bytes a enviar en función
 		// de la primera llamada
-		UART_SendBufferAsync((u32)nextBuffer, pendingBytes, 0);
+		UART_SendBufferAsync((u32)nextBuffer, pendingBytes, 0, cancel);
 	}
 
 	// Por último llamo a la función original que debía estar conectada al evento
