@@ -37,10 +37,10 @@ int rx_thread_stop = 0;
 int main()
 {
     char resp = 0;
-    int tEnsayo_s = 60;
+    int tEnsayo_s = 1;
 
     uint16_t hist0_low = 1000, hist0_high = 3000;
-    uint16_t hist1_low = 1500, hist1_high = 3080;
+    uint16_t hist1_low = 3000, hist1_high = 3080;
 
     int i = 0, j = 0;
     int log = 0;
@@ -137,7 +137,6 @@ int main()
         pthread_join(rx_thread, NULL);
 
         // Cierro el archivo binario
-        printf("\n");
         closeBinFile();
 
         // Convierto a CSV

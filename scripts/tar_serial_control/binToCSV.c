@@ -62,7 +62,7 @@ void openBinFile()
     // Usar timestamp para varios archivos
     snprintf(filename, sizeof(filename), BIN_FILE, timestamp);
 
-    printf("Capturando datos en %s\n", filename);
+    printf("-> Capturando datos en %s\n", filename);
     fflush(stdout);
 
     // Abrir el archivo de salida
@@ -110,7 +110,7 @@ void binToCSV()
     snprintf(outAFilename, sizeof(outAFilename), OUTPUT_CHA, timestamp);
     snprintf(outBFilename, sizeof(outBFilename), OUTPUT_CHB, timestamp);
 
-    printf("\n\n-> Se capturaron %d bytes (%d registros)\n", bytes_captured, bytes_captured / 8);
+    printf("\n-> Se capturaron %d bytes (%d registros)\n", bytes_captured, bytes_captured / 8);
     printf("-> Convirtiendo archivo binario -> CSV\n");
     fflush(stdout);
 
