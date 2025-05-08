@@ -3,12 +3,12 @@
 
 #define TIMESTAMP_FMT "%d%m%y-%H%M%S"
 
-#define BIN_FILE "test-raw_%s"
+#define BIN_FILE "%s_test-raw"
 
-#define LOG_FILE "test-log_%s.txt"
+#define LOG_FILE "%s_test-log.txt"
 
-#define OUTPUT_CHA "test-chA_%s.csv"
-#define OUTPUT_CHB "test-chB_%s.csv"
+#define OUTPUT_CHA "%s_test-chA.csv"
+#define OUTPUT_CHB "%s_test-chB.csv"
 
 #define T_PERIOD 0xFFFFFFFF
 
