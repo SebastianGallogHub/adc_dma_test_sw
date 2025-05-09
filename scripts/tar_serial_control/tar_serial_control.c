@@ -40,7 +40,7 @@ int main()
     int tEnsayo_s = 1;
 
     uint16_t hist0_low = 1000, hist0_high = 3000;
-    uint16_t hist1_low = 3000, hist1_high = 3080;
+    uint16_t hist1_low = 1000, hist1_high = 3080;
 
     int i = 0, j = 0;
     int log = 0;
@@ -64,6 +64,7 @@ int main()
         // Envío la configuración de histéresis
         printf("-> Enviando histéresis\n");
         serial_SendCommand(CMD_CH0_H, to_hist(to_cad(hist0_low), to_cad(hist0_high)));
+        usleep(1000000);
         serial_SendCommand(CMD_CH1_H, to_hist(to_cad(hist1_low), to_cad(hist1_high)));
 
         // Leo el log del sistema
