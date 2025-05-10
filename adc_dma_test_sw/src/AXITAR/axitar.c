@@ -68,13 +68,16 @@ void AXITAR_PrintConfigLog(int l){
 }
 
 int AXITAR_Start(){
-	// Se configura un buffer equivalente a 4 sectores de SD y luego
-	// se escribe de a 2 sectores
+	// (SD_WORDS_PER_SECTOR(AXITAR_AXIDMA_TRANSFER_LEN)) * 48
+	// Se configura que haya un equivalente a 48 segmentos de SD. Debe ser divisible por 3
+	// Se configuran 3072 bd's de datos de que apuntan a un buffer de longitud de 1 registro (8 bytes) = 24576 bytes = 24 KB
+	// Se usan 48 KB de memoria interna para los datos
 
 	ASSERT_SUCCESS(AXIDMA_SetupRx(
-		(SD_WORDS_PER_SECTOR(AXITAR_AXIDMA_TRANSFER_LEN)) * 4,  // Cantidad de pulsos a recibir en el buffer (n sectores)
-		AXITAR_AXIDMA_TRANSFER_LEN,								// Longitud de un pulso (en bytes)
-		SD_WORDS_PER_SECTOR(AXITAR_AXIDMA_TRANSFER_LEN)), 		// Coalescencia (interrupci de a 1 sector)
+		(SD_WORDS_PER_SECTOR(AXITAR_AXIDMA_TRANSFER_LEN)) * 48, 	// Tamaño total del buffer en cantidad de bd's
+		AXITAR_AXIDMA_TRANSFER_LEN,									// Longitud de un registro de pulso en bytes
+		(SD_WORDS_PER_SECTOR(AXITAR_AXIDMA_TRANSFER_LEN)) * 2), 	// Coalescencia, cada cuántos sectores recibidos
+																	// va a hacer una interrupción
 		"Fallo al inicializar AXI_DMA Rx");
 
 	AXITAR_Start_();
@@ -86,7 +89,12 @@ void AXITAR_SaveDataAsync(){
 	u32 buffer;
 
 	if (AXIDMA_BufferComplete(&buffer))
-		SD_WriteSectors((unsigned char *)buffer, 2);
+		SD_WriteSectors((unsigned char *)buffer, 16);
+
+	// Se registra cada tercio del ringbuffer que tiene 48 segmentos = 3072 bd's
+	// Cada 1024 bd's procesados se guarda en la SD
+	//      8192 bytes
+	//      16   segmentos
 
 }
 

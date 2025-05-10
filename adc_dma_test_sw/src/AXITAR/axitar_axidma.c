@@ -25,7 +25,7 @@ static XAxiDma AxiDma;
 
 u8 stopDma = 0;
 u8 bufferComplete = 0;
-u8 bufferA = 0; // primera mitad del buffer
+u8 bufferPart = 2; // Parte del ring buffer a procesar
 
 u32 axiDmaIntCount = 0;
 u32 axiDmaTransferCount = 0;
@@ -54,7 +54,7 @@ void AXIDMA_Reset() {
 	Error = 0;
 	stopDma = 0;
 	bufferComplete = 0;
-	bufferA = 0; // primera mitad del buffer
+	bufferPart = 2; // Parte del ring buffer a procesar
 	axiDmaIntCount = 0;
 	axiDmaTransferCount = 0;
 }
@@ -179,7 +179,7 @@ int AXIDMA_SetupRx(u32 ringBufferSize, u32 dataSize, int coalesceCount) {
 
     stopDma = 0;
     bufferComplete = 0;
-    bufferA = 0; // primera mitad del buffer
+    bufferPart = 2; // Parte del ring buffer a procesar
 
     rbSize = ringBufferSize;
     bufferDataSize = dataSize;
@@ -217,10 +217,19 @@ int AXIDMA_BufferComplete(u32 *bufferAddr){
 	{
 		bufferComplete = 0;
 
-		if(bufferA)
-			*bufferAddr = (u32)AXIDMA_RX_BUFFER_BASE;
-		else
-			*bufferAddr = (u32)(AXIDMA_RX_BUFFER_BASE + (bufferDataSize * (rbSize/2)));
+		switch (bufferPart) {
+			case 0:
+				*bufferAddr = (u32)AXIDMA_RX_BUFFER_BASE;
+				break;
+			case 1:
+				*bufferAddr = (u32)(AXIDMA_RX_BUFFER_BASE + (bufferDataSize * (rbSize/3)));
+				break;
+			case 2:
+				*bufferAddr = (u32)(AXIDMA_RX_BUFFER_BASE + (bufferDataSize * 2 * (rbSize/3)));
+				break;
+			default:
+				break;
+		}
 
 		return 1;
 	}
@@ -240,11 +249,15 @@ void AXIDMA_RxCallBack(XAxiDma_BdRing *RxRingPtr) {
 
 	XAxiDma_BdRingFree(RxRingPtr, BdCount, BdPtr);
 
-	if(buffersReadCounter >= rbSize/2){
+	if(buffersReadCounter >= (rbSize/3)){
 
 		bufferComplete = 1;
 
-		bufferA = !bufferA;
+		bufferPart ++; // Proceso la siguiente parte
+		bufferPart = bufferPart % 3; // Limito las partes a 3
+
+		// La primera vez sube a 3 y se resetea a 0 lo que indica que se debe procesar
+		// la primera parte
 
 		// Reseteo el contador de coalescencia para recaptar el suceso
 		buffersReadCounter = 0;

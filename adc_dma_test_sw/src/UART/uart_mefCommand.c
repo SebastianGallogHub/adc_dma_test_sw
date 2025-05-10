@@ -30,7 +30,7 @@ volatile u32 parameter = 0;
 
 UART_COMMAND UART_GetCommand(){
 	UART_COMMAND c = (UART_COMMAND)command;
-	command = 0;
+	command = CMD_NONE;
 	return c;
 }
 

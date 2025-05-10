@@ -66,6 +66,7 @@ int main()
         serial_SendCommand(CMD_CH0_H, to_hist(to_cad(hist0_low), to_cad(hist0_high)));
         usleep(1000000);
         serial_SendCommand(CMD_CH1_H, to_hist(to_cad(hist1_low), to_cad(hist1_high)));
+        usleep(1000000);
 
         // Leo el log del sistema
         printf("-> Leyendo LOG\n");
@@ -142,6 +143,15 @@ int main()
 
         // Convierto a CSV
         binToCSV();
+
+        printf("\n");
+
+        serial_SendCommand(CMD_GET_CONFIG);
+        bytes_read = serial_ReadBuffer(buffer, sizeof(buffer), 3000);
+        if (bytes_read > 0)
+        {
+            fwrite(buffer, 1, bytes_read, stdout);
+        }
 
         printf("Repeat?\n");
         scanf(" %c", &resp);

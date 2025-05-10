@@ -59,8 +59,9 @@ int mefSendDataAsync(){
 		case WAITING_FOR_DATA_TO_SEND:
 			if(SD_GetSectorsToRead() > 1 && !cancelAsync){
 				st = SENDING_DATA;
+			} else {
+				res = 1;
 			}
-
 			break;
 
 		case SENDING_DATA:
