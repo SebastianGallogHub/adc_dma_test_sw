@@ -35,8 +35,8 @@ extern u32 axiDmaTransferCount;
 extern u32 Error;
 
 int AXIDMA_Init();
-int AXIDMA_SetupRx(u32 ringBufferSize, u32 dataSize, int bufferProcessCoalesce);
+int AXIDMA_SetupRx(u32 ringBufferSize, u32 ringBufferSectorSize, u32 dataSize, int bufferProcessCoalesce);
 void AXIDMA_StopRxAsync();
-int AXIDMA_BufferComplete(u32 *bufferAddr);
+int AXIDMA_BufferSectorComplete(u32 *bufferAddr);
 
 #endif /* SRC_AXITAR_AXITAR_AXIDMA_H_ */

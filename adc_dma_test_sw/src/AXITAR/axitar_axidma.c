@@ -24,8 +24,10 @@ void AXIDMA_RxIntrHandler(void *Callback);
 static XAxiDma AxiDma;
 
 u8 stopDma = 0;
-u8 bufferComplete = 0;
-u8 bufferPart = 2; // Parte del ring buffer a procesar
+u16 bufferSectorSize = 0;
+u16 bufferSectorComplete = 0;
+u16 bufferSectorCount = 0;
+u16 bufferSector = 0; // Parte del ring buffer a procesar
 
 u32 axiDmaIntCount = 0;
 u32 axiDmaTransferCount = 0;
@@ -35,7 +37,7 @@ Intr_Config axiDmaIntrConfig;
 
 int rbSize;
 int bufferDataSize;
-int buffersReadCounter = 0;
+int wordsCounter = 0;
 
 
 /****************************************************************************/
@@ -53,8 +55,10 @@ void AXIDMA_Reset() {
 
 	Error = 0;
 	stopDma = 0;
-	bufferComplete = 0;
-	bufferPart = 2; // Parte del ring buffer a procesar
+	bufferSectorSize = 0;
+	bufferSectorComplete = 0;
+	bufferSectorCount = 0;
+	bufferSector = 0; // Parte del ring buffer a procesar
 	axiDmaIntCount = 0;
 	axiDmaTransferCount = 0;
 }
@@ -87,7 +91,7 @@ int AXIDMA_Init() {
 	return 0;
 }
 
-int AXIDMA_SetupRx(u32 ringBufferSize, u32 dataSize, int coalesceCount) {
+int AXIDMA_SetupRx(u32 ringBufferSize, u32 ringBufferSectorSize, u32 dataSize, int coalesceCount) {
     XAxiDma_BdRing *RxRingPtr;
     XAxiDma_Bd BdTemplate, *BdPtr, *BdCurPtr;
     UINTPTR RxBufferPtr;
@@ -178,12 +182,14 @@ int AXIDMA_SetupRx(u32 ringBufferSize, u32 dataSize, int coalesceCount) {
     		status, "Error starting XAxiDma_BdRingStart");
 
     stopDma = 0;
-    bufferComplete = 0;
-    bufferPart = 2; // Parte del ring buffer a procesar
+    bufferSectorComplete = 0;
+    bufferSectorSize = ringBufferSectorSize;
+    bufferSectorCount = ringBufferSize / ringBufferSectorSize;
+    bufferSector = bufferSectorCount; // Para que al sumar 1 comience desde el sector 0
 
     rbSize = ringBufferSize;
     bufferDataSize = dataSize;
-    buffersReadCounter = 0;
+    wordsCounter = 0;
 
     return XST_SUCCESS;
 }
@@ -212,24 +218,15 @@ void stopRx() {
 	}
 }
 
-int AXIDMA_BufferComplete(u32 *bufferAddr){
-	if (bufferComplete)
-	{
-		bufferComplete = 0;
+int AXIDMA_BufferSectorComplete(u32 *bufferAddr){
+	// Almaceno la variable en caso de que se modifique en una interrupción
+	u8 sector = bufferSector;
 
-		switch (bufferPart) {
-			case 0:
-				*bufferAddr = (u32)AXIDMA_RX_BUFFER_BASE;
-				break;
-			case 1:
-				*bufferAddr = (u32)(AXIDMA_RX_BUFFER_BASE + (bufferDataSize * (rbSize/3)));
-				break;
-			case 2:
-				*bufferAddr = (u32)(AXIDMA_RX_BUFFER_BASE + (bufferDataSize * 2 * (rbSize/3)));
-				break;
-			default:
-				break;
-		}
+	if (bufferSectorComplete)
+	{
+		bufferSectorComplete = 0;
+
+		*bufferAddr = (u32)(AXIDMA_RX_BUFFER_BASE + sector * bufferDataSize * bufferSectorSize);
 
 		return 1;
 	}
@@ -245,22 +242,23 @@ void AXIDMA_RxCallBack(XAxiDma_BdRing *RxRingPtr) {
 	axiDmaTransferCount += BdCount;
 	axiDmaIntCount ++;
 
-	buffersReadCounter += BdCount;
+	wordsCounter += BdCount;
 
 	XAxiDma_BdRingFree(RxRingPtr, BdCount, BdPtr);
 
-	if(buffersReadCounter >= (rbSize/3)){
+	if(wordsCounter >= bufferSectorSize){
+		// Proceso el siguiente sector
+		bufferSector ++;
+		if (bufferSector >= bufferSectorCount) // count-1
+			bufferSector = 0;
 
-		bufferComplete = 1;
-
-		bufferPart ++; // Proceso la siguiente parte
-		bufferPart = bufferPart % 3; // Limito las partes a 3
-
+		// Notifico que se puede procesar
+		bufferSectorComplete = 1;
 		// La primera vez sube a 3 y se resetea a 0 lo que indica que se debe procesar
 		// la primera parte
 
 		// Reseteo el contador de coalescencia para recaptar el suceso
-		buffersReadCounter = 0;
+		wordsCounter = 0;
 
 		if(stopDma)
 			stopRx();
