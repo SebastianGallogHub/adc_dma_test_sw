@@ -74,7 +74,7 @@ int AXITAR_Start(){
 	// Se configuran bd's de datos de que apuntan a un buffer de longitud de 1 registro (8 bytes)
 
 	ASSERT_SUCCESS(AXIDMA_SetupRx(
-		(SD_WORDS_PER_SECTOR(AXITAR_AXIDMA_TRANSFER_LEN)) * SECTORS_TO_WRITE * 3, 	// Tamaño total del buffer en cantidad de bd's (en palabras de 8 bytes)
+		(SD_WORDS_PER_SECTOR(AXITAR_AXIDMA_TRANSFER_LEN)) * SECTORS_TO_WRITE * 48, 	// Tamaño total del buffer en cantidad de bd's (en palabras de 8 bytes)
 		(SD_WORDS_PER_SECTOR(AXITAR_AXIDMA_TRANSFER_LEN)) * SECTORS_TO_WRITE,		// Tamaño de la porción del buffer que se procesa (en palabras de 8 bytes)
 		AXITAR_AXIDMA_TRANSFER_LEN,													// Longitud de un registro de pulso en bytes
 		(SD_WORDS_PER_SECTOR(AXITAR_AXIDMA_TRANSFER_LEN)) * 2), 					// Coalescencia, cada cuántos sectores recibidos

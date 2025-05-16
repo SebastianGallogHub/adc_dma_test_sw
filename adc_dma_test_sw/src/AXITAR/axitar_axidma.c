@@ -25,9 +25,9 @@ static XAxiDma AxiDma;
 
 u8 stopDma = 0;
 u16 bufferSectorSize = 0;
-u16 bufferSectorComplete = 0;
 u16 bufferSectorCount = 0;
-u16 bufferSector = 0; // Parte del ring buffer a procesar
+u16 bufferSectorToProcess = 0;
+u64 bufferSectorsCompleted = 0; // Parte del ring buffer a procesar
 
 u32 axiDmaIntCount = 0;
 u32 axiDmaTransferCount = 0;
@@ -56,9 +56,9 @@ void AXIDMA_Reset() {
 	Error = 0;
 	stopDma = 0;
 	bufferSectorSize = 0;
-	bufferSectorComplete = 0;
 	bufferSectorCount = 0;
-	bufferSector = 0; // Parte del ring buffer a procesar
+	bufferSectorToProcess = 0;
+	bufferSectorsCompleted = 0; // Parte del ring buffer a procesar
 	axiDmaIntCount = 0;
 	axiDmaTransferCount = 0;
 }
@@ -112,7 +112,7 @@ int AXIDMA_SetupRx(u32 ringBufferSize, u32 ringBufferSectorSize, u32 dataSize, i
 
     // Calculo la cantidad de BDs disponibles en el espacio asignado para la recepción
     BdCount = XAxiDma_BdRingCntCalc(XAXIDMA_BD_MINIMUM_ALIGNMENT, AXIDMA_RX_BD_SPACE);
-    ASSERT(BdCount >= ringBufferSize, "No hay suficientes BDs para las transferencias");
+    ASSERT(BdCount >= ringBufferSize, "No hay suficientes BDs para las transferencias. Hay %d pide %d", BdCount, ringBufferSize);
 
     // Creo el ringbuffer de BDs para la recepción, asignando el espacio de memoria definido
     status = XAxiDma_BdRingCreate(RxRingPtr, AXIDMA_RX_BD_SPACE_BASE, AXIDMA_RX_BD_SPACE_BASE,
@@ -182,10 +182,10 @@ int AXIDMA_SetupRx(u32 ringBufferSize, u32 ringBufferSectorSize, u32 dataSize, i
     		status, "Error starting XAxiDma_BdRingStart");
 
     stopDma = 0;
-    bufferSectorComplete = 0;
     bufferSectorSize = ringBufferSectorSize;
     bufferSectorCount = ringBufferSize / ringBufferSectorSize;
-    bufferSector = bufferSectorCount; // Para que al sumar 1 comience desde el sector 0
+    bufferSectorToProcess = 0;
+    bufferSectorsCompleted = 0;
 
     rbSize = ringBufferSize;
     bufferDataSize = dataSize;
@@ -219,18 +219,24 @@ void stopRx() {
 }
 
 int AXIDMA_BufferSectorComplete(u32 *bufferAddr){
-	// Almaceno la variable en caso de que se modifique en una interrupción
-	u8 sector = bufferSector;
+	// Si en la interrupción aún no se completó ningún sector, salgo
+	if (bufferSectorsCompleted <= 0)
+		return 0;
 
-	if (bufferSectorComplete)
-	{
-		bufferSectorComplete = 0;
+	// Asigno la dirección del sector del buffer que corresponde
+	*bufferAddr = (u32)(AXIDMA_RX_BUFFER_BASE + bufferSectorToProcess * bufferDataSize * bufferSectorSize);
 
-		*bufferAddr = (u32)(AXIDMA_RX_BUFFER_BASE + sector * bufferDataSize * bufferSectorSize);
+	// Resto 1 a la cantidad de sectores de buffer completados
+	bufferSectorsCompleted --;
 
-		return 1;
-	}
-	return 0;
+	// Preparo el siguiente sector para ser procesado
+	bufferSectorToProcess ++;
+
+	// Verifico no sobrepasar la cantidad de sectores
+	if (bufferSectorToProcess >= bufferSectorCount)
+		bufferSectorToProcess = 0;
+
+	return 1;
 }
 
 void AXIDMA_RxCallBack(XAxiDma_BdRing *RxRingPtr) {
@@ -247,13 +253,13 @@ void AXIDMA_RxCallBack(XAxiDma_BdRing *RxRingPtr) {
 	XAxiDma_BdRingFree(RxRingPtr, BdCount, BdPtr);
 
 	if(wordsCounter >= bufferSectorSize){
-		// Proceso el siguiente sector
-		bufferSector ++;
-		if (bufferSector >= bufferSectorCount) // count-1
-			bufferSector = 0;
+		// Escribió un sector más
+		bufferSectorsCompleted ++;
+		if (bufferSectorsCompleted >= 0xFFFFFFFFFFFFFFFF) // Para que no se pase del máximo de u64
+			bufferSectorsCompleted = 0;
 
 		// Notifico que se puede procesar
-		bufferSectorComplete = 1;
+//		bufferSectorComplete = 1;
 		// La primera vez sube a 3 y se resetea a 0 lo que indica que se debe procesar
 		// la primera parte
 

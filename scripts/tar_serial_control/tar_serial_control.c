@@ -40,7 +40,7 @@ int main()
     int tEnsayo_s = 1;
 
     uint16_t hist0_low = 1000, hist0_high = 3000;
-    uint16_t hist1_low = 1000, hist1_high = 3080;
+    uint16_t hist1_low = 1000, hist1_high = 3000;
 
     int i = 0, j = 0;
     int log = 0;
