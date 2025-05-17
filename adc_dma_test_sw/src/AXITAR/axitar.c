@@ -10,7 +10,8 @@
 
 #include <sleep.h>
 #include "xil_io.h"
-#include "AXI_TAR.h"
+#include "xparameters.h"
+#include "AXI_TAR.h" // Librería generada por Vivado
 
 #include "../includes/log.h"
 #include "../includes/assert.h"
@@ -20,7 +21,12 @@
 #include "../InterruptSystem/interruptSystem.h"
 
 /************************** Constant Definitions **************************/
-#define SECTORS_TO_WRITE 16
+// Para configurar el ZMOD y su calibración
+#define IIC_BASE_ADDR   	XPAR_PS7_I2C_1_BASEADDR
+#define FLASH_ADDR_ADC   	0x30
+
+// Para almacenar los datos en la SD hasta su envío a PC
+#define SECTORS_TO_WRITE 	16
 
 /**************************** Type Definitions ******************************/
 
@@ -46,7 +52,7 @@ void AXITAR_Init() {
 	while(AXI_TAR_mReadReg(AXITAR_BASE, AXITAR_CONFIG_OFF));
 
 	AXIDMA_Init();
-	ZMODADC1410_Init();
+	ZMODADC1410_Init(IIC_BASE_ADDR, FLASH_ADDR_ADC);
 
 	AXITAR_DisableChannel(0);
 	AXITAR_DisableChannel(1);

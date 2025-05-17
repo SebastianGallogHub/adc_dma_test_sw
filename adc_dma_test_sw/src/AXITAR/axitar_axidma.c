@@ -258,11 +258,6 @@ void AXIDMA_RxCallBack(XAxiDma_BdRing *RxRingPtr) {
 		if (bufferSectorsCompleted >= 0xFFFFFFFFFFFFFFFF) // Para que no se pase del máximo de u64
 			bufferSectorsCompleted = 0;
 
-		// Notifico que se puede procesar
-//		bufferSectorComplete = 1;
-		// La primera vez sube a 3 y se resetea a 0 lo que indica que se debe procesar
-		// la primera parte
-
 		// Reseteo el contador de coalescencia para recaptar el suceso
 		wordsCounter = 0;
 
