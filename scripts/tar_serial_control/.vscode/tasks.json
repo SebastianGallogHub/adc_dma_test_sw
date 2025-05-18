@@ -2,7 +2,7 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Compilar tar-serial",
+            "label": "Compilar tar_serial_control",
             "type": "shell",
             "command": "gcc",
             "args": [
@@ -11,7 +11,7 @@
                 "serial_port.c",
                 "binToCSV.c",
                 "-o",
-                "tar-serial", // <- Esto es el ejecutable de salida
+                "tar_serial_control", // <- Esto es el ejecutable de salida
                 "-lpthread"
             ],
             "options": {

@@ -2,9 +2,7 @@
     "files.associations": {
         "bintocsv.h": "c",
         "pthread.h": "c",
-        "tarcontrol.h": "c",
         "serial_port.h": "c",
-        "mefserialtobin.h": "c",
         "stdio.h": "c"
     }
 }

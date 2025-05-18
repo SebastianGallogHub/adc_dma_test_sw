@@ -59,7 +59,7 @@ void ZMODADC1410_Init(uintptr_t iicAddress, uintptr_t flashAddress)
 //	ZMOD_ReadUserCalib();
 
 	// Calibración
-	// Coeficientes de fábrica consultados de la flash del ADC, transformados a int32_t
+	// Coeficientes de fábrica consultados de la flash del ZMOD, transformados a int32_t
 	// por computeCoefMult y computeCoefAdd (18bit), alterados empíricamente para
 	// medir correctamente la componente de contínua
 	// CHA

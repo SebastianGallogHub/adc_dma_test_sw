@@ -2,10 +2,10 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Debug tar-serial",
+            "name": "Debug tar_serial_control",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/tar-serial",
+            "program": "${workspaceFolder}/tar_serial_control",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
@@ -19,7 +19,7 @@
                     "ignoreFailures": true
                 }
             ],
-            "preLaunchTask": "Compilar tar-serial", // 👈 este debe ser el nombre exacto de la tarea del tasks.json
+            "preLaunchTask": "Compilar tar_serial_control", // 👈 este debe ser el nombre exacto de la tarea del tasks.json
             "miDebuggerPath": "/usr/bin/gdb"
         }
     ]

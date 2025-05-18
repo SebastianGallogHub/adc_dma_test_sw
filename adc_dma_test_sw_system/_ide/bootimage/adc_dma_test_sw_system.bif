@@ -1,0 +1,12 @@
+/* /tmp/bootgen_adc_dma_test_sw_system12454781375223799325/sd_card_temp/boot.bif */
+/* Command to create bitstream .bin file:       */
+/*   bootgen -image <bif_file> -split bin -w    */
+/* Command to create BOOT.BIN file:             */
+/*   bootgen  -image <bif_file> -w -o i BOOT.BIN */
+/*adc_dma_bd_wrapper*/
+the_ROM_image:
+{
+ [bootloader] /home/sebas/Escritorio/proyecto/workspace/adc_dma_test/vitis_workspace/adc_dma_bd_wrapper/export/adc_dma_bd_wrapper/sw/adc_dma_bd_wrapper/boot/fsbl.elf
+ /home/sebas/Escritorio/proyecto/workspace/adc_dma_test/vitis_workspace/adc_dma_test_sw/_ide/bitstream/adc_dma_bd_wrapper.bit
+ /home/sebas/Escritorio/proyecto/workspace/adc_dma_test/vitis_workspace/adc_dma_test_sw/Debug/adc_dma_test_sw.elf
+}
