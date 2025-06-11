@@ -1,9 +1,24 @@
-/*
- * dma_config.c
+/***************************************************************
+ * Nombre del Proyecto : Registrador de Amplitud y Tiempo (TAR)
+ * Archivo             : axitar_axidma.c
+ * Descripción         : Archivo de implementación para las herramientas de
+ * 						 conexión con el IP AXI_DMA que obtiene los datos de
+ * 						 AXI_TAR.
+ * Autor               : Sebastián Nahuel Gallo
+ * Fecha de creación   : 08/11/2024
+ * Fecha de modificación: 11/06/2025
+ * Versión             : v1.0
  *
- *  Created on: Nov 8, 2024
- *      Author: sebas
- */
+ * Institución         : Universidad Nacional de Rosario (UNR)
+ * Carrera             : Ingeniería Electrónica
+ *
+ * Derechos reservados:
+ * Este código ha sido desarrollado en el marco del Proyecto Final de Ingeniería
+ * por Sebastián Nahuel Gallo. Su uso está autorizado únicamente por la
+ * Comisión Nacional de Energía Atómica (CNEA) con fines internos.
+ * Queda prohibida su reproducción, modificación o distribución sin
+ * autorización expresa por escrito del autor.
+ ***************************************************************/
 
 /***************************** Include Files *******************************/
 #include "../AXITAR/axitar_axidma.h"

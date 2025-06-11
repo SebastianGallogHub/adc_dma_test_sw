@@ -1,9 +1,28 @@
-/*
- * zmod.c
+/***************************************************************
+ * Nombre del Proyecto : Registrador de Amplitud y Tiempo (TAR)
+ * Archivo             : zmod.c
+ * Descripción         : Archivo de implementación de herramientas base para
+ * 						 comunicación con un módulo ZMOD genérico basado en
+ * 						 desarrollo del fabricante
+ * 						 @file zmod.cpp
+ * 						 @author Cosmin Tanislav
+ * 						 @author Cristian Fatu
+ * 						 @date 15 Nov 2019
+ * Autor               : Sebastián Nahuel Gallo
+ * Fecha de creación   : 14/03/2025
+ * Fecha de modificación: 11/06/2025
+ * Versión             : v1.0
  *
- *  Created on: Mar 14, 2025
- *      Author: sebas
- */
+ * Institución         : Universidad Nacional de Rosario (UNR)
+ * Carrera             : Ingeniería Electrónica
+ *
+ * Derechos reservados:
+ * Este código ha sido desarrollado en el marco del Proyecto Final de Ingeniería
+ * por Sebastián Nahuel Gallo. Su uso está autorizado únicamente por la
+ * Comisión Nacional de Energía Atómica (CNEA) con fines internos.
+ * Queda prohibida su reproducción, modificación o distribución sin
+ * autorización expresa por escrito del autor.
+ ***************************************************************/
 
 /***************************** Include Files *******************************/
 #include "../ZMOD/zmod.h"
