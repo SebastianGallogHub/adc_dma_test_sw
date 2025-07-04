@@ -12,6 +12,7 @@
 /**************************** Type Definitions ******************************/
 
 /************************** Function Prototypes *****************************/
+void binToCSV_console(const char *path);
 
 /************************** Variable Definitions ***************************/
 int logFile_fd = 0;
@@ -93,6 +94,41 @@ int writeBinFile(char *buffer, int len)
     return 0;
 }
 
+#ifdef BUILD_BINTOCSV_MAIN
+int main(int argc, char *argv[])
+{
+    if (argc != 2)
+    {
+        fprintf(stderr, "Uso: %s path_archivo\n", argv[0]);
+        return 1;
+    }
+    binToCSV_console(argv[1]);
+    return 0;
+}
+#endif
+
+void binToCSV_console(const char *path)
+{
+    int max_len = 32;
+    const char *guion_bajo = strchr(path, '_');
+    if (guion_bajo != NULL)
+    {
+        size_t len = guion_bajo - path;
+        if (len >= max_len)
+            len = max_len - 1; // prevenir overflow
+        strncpy(timestamp, path, len);
+        timestamp[len] = '\0'; // terminador nulo
+    }
+    else
+    {
+        // Si no hay '_', copiamos todo o lo que entre
+        strncpy(timestamp, path, max_len - 1);
+        timestamp[max_len - 1] = '\0';
+    }
+
+    binToCSV();
+}
+
 void binToCSV()
 {
     uint8_t buffer[8];
@@ -110,7 +146,9 @@ void binToCSV()
     snprintf(outAFilename, sizeof(outAFilename), OUTPUT_CHA, timestamp);
     snprintf(outBFilename, sizeof(outBFilename), OUTPUT_CHB, timestamp);
 
-    printf("\n-> Se capturaron %d bytes (%d registros)\n", bytes_captured, bytes_captured / 8);
+    if (bytes_captured > 0) // En caso que se ejecute desde consola
+        printf("\n-> Se capturaron %d bytes (%d registros)\n", bytes_captured, bytes_captured / 8);
+
     printf("-> Convirtiendo archivo binario -> CSV\n");
     fflush(stdout);
 

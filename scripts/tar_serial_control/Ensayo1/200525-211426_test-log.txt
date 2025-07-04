@@ -1,0 +1,7 @@
+
+ZMOD Scope 1410-105 config:
+	CHA: LOW Gain - Res 3.21mV; DC Coupling
+	CHB: LOW Gain - Res 3.21mV; DC Coupling
+AXI_TAR config:
+	CHA: histéresis (467 ; 903)
+	CHB: histéresis (311 ; 934)
