@@ -102,3 +102,15 @@ scripts/tar_serial_control/*.csv
 scripts/tar_serial_control/170425-prueba completa/
 scripts/tar_serial_control/190425-PROBLEMA/
 scripts/tar_serial_control/190425/
+
+# --- Archivos necesarios para Vitis ---
+!.project
+!.cproject
+!adc_dma_test_sw/.project
+!adc_dma_test_sw/.cproject
+!adc_dma_test_sw/src/**
+!adc_dma_test_sw_system/**
+!platform/**
+!*.xsa
+!*.xpfm
+
