@@ -1,0 +1,231 @@
+/***************************** Include Files *******************************/
+#include "binToCSV.h"
+
+#include <stdio.h>
+#include <stdint.h>
+#include <string.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <time.h>
+
+/************************** Constant Definitions **************************/
+
+/**************************** Type Definitions ******************************/
+
+/************************** Function Prototypes *****************************/
+void binToCSV_console(const char *path);
+
+/************************** Variable Definitions ***************************/
+int logFile_fd = 0;
+int binFile_fd = 0;
+int bytes_captured = 0;
+int terminalBreak = 0;
+
+char timestamp[32];
+
+/****************************************************************************/
+void openLogFile()
+{
+    time_t now = time(NULL);
+    struct tm *t = localtime(&now);
+    char filename[256];
+
+    // Guardar el timestamp en una variable reutilizable
+    strftime(timestamp, sizeof(timestamp), TIMESTAMP_FMT, t);
+
+    // Usar timestamp para varios archivos
+    snprintf(filename, sizeof(filename), LOG_FILE, timestamp);
+
+    // Abrir el archivo de log
+    logFile_fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+}
+
+void closeLogFile()
+{
+    close(logFile_fd);
+}
+
+int writeLogFile(char *buffer, int len)
+{
+    if (write(logFile_fd, buffer, len) == -1)
+    {
+        perror("\nError escribiendo en el archivo log\n");
+        return 1;
+    }
+}
+
+/****************************************************************************/
+void openBinFile()
+{
+    char filename[256];
+
+    bytes_captured = 0;
+
+    // Usar timestamp para varios archivos
+    snprintf(filename, sizeof(filename), BIN_FILE, timestamp);
+
+    printf("-> Capturando datos en %s\n", filename);
+    fflush(stdout);
+
+    // Abrir el archivo de salida
+    binFile_fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+}
+
+void closeBinFile()
+{
+    close(binFile_fd);
+}
+
+int writeBinFile(char *buffer, int len)
+{
+    if (write(binFile_fd, buffer, len) == -1)
+    {
+        perror("\nError escribiendo en el archivo crudo\n");
+        return 1;
+    }
+
+    bytes_captured += len;
+
+    // if (bytes_captured % 80 == 0)
+    // {
+    printf(".");
+    fflush(stdout);
+    // }
+
+    return 0;
+}
+
+// gcc -o bin_to_csv binToCSV.c -DBUILD_BINTOCSV_MAIN
+#ifdef BUILD_BINTOCSV_MAIN
+int main(int argc, char *argv[])
+{
+    if (argc != 2)
+    {
+        fprintf(stderr, "Uso: %s path_archivo\n", argv[0]);
+        return 1;
+    }
+    binToCSV_console(argv[1]);
+    return 0;
+}
+#endif
+
+void binToCSV_console(const char *path)
+{
+    int max_len = 32;
+    const char *guion_bajo = strchr(path, '_');
+    if (guion_bajo != NULL)
+    {
+        size_t len = guion_bajo - path;
+        if (len >= max_len)
+            len = max_len - 1; // prevenir overflow
+        strncpy(timestamp, path, len);
+        timestamp[len] = '\0'; // terminador nulo
+    }
+    else
+    {
+        // Si no hay '_', copiamos todo o lo que entre
+        strncpy(timestamp, path, max_len - 1);
+        timestamp[max_len - 1] = '\0';
+    }
+
+    binToCSV();
+}
+
+void binToCSV()
+{
+    uint8_t buffer[8];
+    uint64_t pulse;
+    size_t index_chA = 0, index_chB = 0, ii = 0, of_count = 0;
+    uint8_t ch = 0;
+    uint32_t ts = 0;
+    uint16_t vp = 0;
+    uint64_t time = 0;
+
+    char binFilename[256];
+    char outAFilename[256];
+    char outBFilename[256];
+    snprintf(binFilename, sizeof(binFilename), BIN_FILE, timestamp);
+    snprintf(outAFilename, sizeof(outAFilename), OUTPUT_CHA, timestamp);
+    snprintf(outBFilename, sizeof(outBFilename), OUTPUT_CHB, timestamp);
+
+    if (bytes_captured > 0) // En caso que se ejecute desde consola
+        printf("\n-> Se capturaron %d bytes (%d registros)\n", bytes_captured, bytes_captured / 8);
+
+    printf("-> Convirtiendo archivo binario -> CSV\n");
+    fflush(stdout);
+
+    FILE *input = fopen(binFilename, "rb");
+    if (!input)
+    {
+        perror("Error al abrir archivo binario de entrada");
+        return;
+    }
+
+    FILE *output_chA = fopen(outAFilename, "w");
+    FILE *output_chB = fopen(outBFilename, "w");
+    if (!output_chA || !output_chB)
+    {
+        perror("Error al abrir archivo de salida");
+        fclose(input);
+        if (output_chA)
+            fclose(output_chA);
+        if (output_chB)
+            fclose(output_chB);
+        return;
+    }
+
+    fprintf(output_chA, "Index,Timestamp (ns),Value (mV)\n");
+    fprintf(output_chB, "Index,Timestamp (ns),Value (mV)\n");
+
+    // printf("Index\tChannel\tTimestamp\tValue\n");
+
+    while (fread(&buffer, 1, 8, input) == 8)
+    {
+        pulse = 0;
+        for (int i = 7; i >= 0; i--) // Los datos vienen al revés BIGENDIAN
+            pulse |= ((uint64_t)buffer[i]) << (8 * i);
+
+        ch = GetFieldFromPulse(pulse, MSK_CH, MSK_CH_OFF);
+        ts = GetFieldFromPulse(pulse, MSK_TS, MSK_TS_OFF);
+        vp = GetFieldFromPulse(pulse, MSK_VP, MSK_VP_OFF);
+
+        // printf("%lu\t%u\t%u\t\t%u\t\t(0x%x)\n", ii, ch, ts, vp, (unsigned int)pulse);
+
+        // if (ii++ % 800 == 0)
+        // {
+        //     printf(".");
+        //     fflush(stdout);
+        // }
+
+        switch (ch)
+        {
+        case 1:
+            fprintf(output_chA, "%zu,%lu,%.2f\n", index_chA++, (time + ts) * 10, vp * 3.21);
+            break;
+
+        case 2:
+            fprintf(output_chB, "%zu,%lu,%.2f\n", index_chB++, (time + ts) * 10, vp * 3.21);
+            break;
+
+        case 3:
+            of_count++;
+            time += (uint64_t)T_PERIOD;
+            break;
+
+        default:
+            break;
+        }
+    }
+
+    fclose(input);
+    fclose(output_chA);
+    fclose(output_chB);
+
+    printf("-> Conversión completa:\n");
+    printf("\tMarcas de tiempo: %lu\n", of_count);
+    printf("\tCHA: %s (%lu pulsos)\n", outAFilename, index_chA);
+    printf("\tCHB: %s (%lu pulsos)\n", outBFilename, index_chB);
+    fflush(stdout);
+
+    bytes_captured = 0;
+}

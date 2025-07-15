@@ -1,0 +1,27 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Compilar tar_serial_control",
+            "type": "shell",
+            "command": "gcc",
+            "args": [
+                "-g",
+                "tar_serial_control.c", // <- Asegurate que este nombre coincida con tu archivo fuente
+                "serial_port.c",
+                "binToCSV.c",
+                "-o",
+                "tar_serial_control", // <- Esto es el ejecutable de salida
+                "-lpthread"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}" // <- Ajustalo según tu estructura
+            },
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}
