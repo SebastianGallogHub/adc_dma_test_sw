@@ -32,11 +32,13 @@
 
 #include "../ZMOD/zmod.h"
 #include "../includes/log.h"
+#include "../USB/usb.h"
 
 /************************** Constant Definitions **************************/
 // Parámetros de calibración del canal
 #define SC2_LOW_GAIN_CALIB_GAIN		1.0
 #define SC2_LOW_GAIN_CALIB_ADITIVE	72.0
+#define LOG_BUFFER_SIZE 256
 
 /**************************** Type Definitions ******************************/
 
@@ -50,9 +52,23 @@ int ZMODADC1410_readUserCalibFromFlashIntoIP();
 /****************************************************************************/
 
 void ZMODADC1410_PrintConfigLog(int l){
+
 	LOG(l, "ZMOD Scope 1410-105 config:");
 	LOG(l+1, "CHA: LOW Gain - Res 3.21mV; DC Coupling");
 	LOG(l+1, "CHB: LOW Gain - Res 3.21mV; DC Coupling");
+
+#ifdef USB_COMM
+	static char usbLogBuffer[LOG_BUFFER_SIZE];
+
+	int len = snprintf(
+			usbLogBuffer,
+			LOG_BUFFER_SIZE,
+			"ZMOD Scope 1410-105 config:\r\n"
+			"CHA: LOW Gain - Res 3.21mV; DC Coupling\r\n"
+			"CHB: LOW Gain - Res 3.21mV; DC Coupling\r\n");
+
+	USB_SendBuffer(usbLogBuffer, len);
+#endif
 }
 
 void ZMODADC1410_Init(uintptr_t iicAddress, uintptr_t flashAddress)

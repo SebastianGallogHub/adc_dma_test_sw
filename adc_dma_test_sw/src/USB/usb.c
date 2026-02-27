@@ -155,7 +155,7 @@ out:
 	return ReturnStatus;
 }
 
-void USB_SendBuffer(u32 sendBufferAddr, int buffSizeBytes){
+void USB_SendBuffer(void *sendBufferAddr, int buffSizeBytes){
 	if (!tx_is_ready){
 		return;
 	}

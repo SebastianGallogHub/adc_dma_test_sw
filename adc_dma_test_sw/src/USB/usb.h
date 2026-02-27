@@ -24,14 +24,14 @@
 
 #include "xil_types.h"
 
-#define USB_COMM
+//#define USB_COMM
 
 #define USB_NUM_BUFS	 		16
 #define USB_MAX_PACKET_SIZE 	512
 
 int USB_Init();
 
-void USB_SendBuffer(u32 sendBufferAddr, int buffSizeBytes);
+void USB_SendBuffer(void *sendBufferAddr, int buffSizeBytes);
 int USB_DoneSendBuffer();
 
 

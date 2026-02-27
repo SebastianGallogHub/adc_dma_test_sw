@@ -29,6 +29,7 @@
 
 #include "../includes/log.h"
 #include "../includes/assert.h"
+#include "../USB/usb.h"
 #include "../SD_CARD/sd_card.h"
 #include "../AXITAR/axitar_axidma.h"
 #include "../ZMOD_ADC1410/zmodadc1410.h"
@@ -41,6 +42,8 @@
 
 // Para almacenar los datos en la SD hasta su envío a PC
 #define SECTORS_TO_WRITE 	16
+
+#define USB_LOG_BUFFER_SIZE 512
 
 /**************************** Type Definitions ******************************/
 
@@ -86,6 +89,31 @@ void AXITAR_PrintConfigLog(int l){
 		LOG(l+1, "CHB: DESHABILITADO");
 	else
 		LOG(l+1, "CHB: histéresis (%u ; %u)", AXITAR_LowHist(ch1_hist), AXITAR_HighHist(ch1_hist));
+
+#ifdef USB_COMM
+	static char usbLogBuffer[USB_LOG_BUFFER_SIZE];
+
+	int len = 0;
+
+	len += snprintf(usbLogBuffer + len, USB_LOG_BUFFER_SIZE - len, "AXI_TAR config:\r\n");
+
+	if (ch0_hist == AXITAR_DISABLE_CH_MASK)
+		len += snprintf(usbLogBuffer + len, USB_LOG_BUFFER_SIZE - len, "CHA: DESHABILITADO\r\n");
+	else
+		len += snprintf(usbLogBuffer + len, USB_LOG_BUFFER_SIZE - len, "CHA: histéresis (%u ; %u)\r\n",
+						AXITAR_LowHist(ch0_hist),
+						AXITAR_HighHist(ch0_hist));
+
+	if (ch1_hist == AXITAR_DISABLE_CH_MASK)
+		len += snprintf(usbLogBuffer + len, USB_LOG_BUFFER_SIZE - len, "CHB: DESHABILITADO\r\n");
+	else
+		len += snprintf(usbLogBuffer + len, USB_LOG_BUFFER_SIZE - len, "CHB: histéresis (%u ; %u)\r\n",
+						AXITAR_LowHist(ch1_hist),
+						AXITAR_HighHist(ch1_hist));
+
+	USB_SendBuffer(usbLogBuffer, len);
+#endif
+
 }
 
 int AXITAR_Start(){

@@ -52,7 +52,6 @@ u64 sector_rd_buffer[SD_WORDS_PER_SECTOR(AXITAR_AXIDMA_TRANSFER_LEN)] __attribut
 u64 sector_rd_buffer[USB_NUM_BUFS * SD_WORDS_PER_SECTOR(AXITAR_AXIDMA_TRANSFER_LEN)] __attribute__ ((aligned (64)));
 #endif
 
-
 /****************************************************************************/
 
 void mefSendDataAsync_Init(){
@@ -92,14 +91,14 @@ int mefSendDataAsync(){
 			if(SD_GetSectorsToRead() > 0) {
 				if(UART_DoneSendBuffer()){
 					SD_ReadNextSectors((unsigned char*)sector_rd_buffer, 1);
-					UART_SendBufferAsync((u32)sector_rd_buffer, SD_SECTOR_SIZE, AXITAR_AXIDMA_TRANSFER_LEN, cancelAsync);
+					UART_SendBufferAsync((void*)sector_rd_buffer, SD_SECTOR_SIZE, AXITAR_AXIDMA_TRANSFER_LEN, cancelAsync);
 				}
 			}
 #else
 			if(SD_GetSectorsToRead() > USB_NUM_BUFS) {
 				if(USB_DoneSendBuffer()){
 					SD_ReadNextSectors((unsigned char*)sector_rd_buffer, USB_NUM_BUFS);
-					USB_SendBuffer((u32)sector_rd_buffer, USB_NUM_BUFS * SD_SECTOR_SIZE);
+					USB_SendBuffer((void*)sector_rd_buffer, USB_NUM_BUFS * SD_SECTOR_SIZE);
 				}
 			}
 #endif
