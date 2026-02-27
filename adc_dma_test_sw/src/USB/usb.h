@@ -1,10 +1,10 @@
 /***************************************************************
  * Nombre del Proyecto : Registrador de Amplitud y Tiempo (TAR)
- * Archivo             : sd_card.h
- * Descripción         : Definiciones de constantes y funciones para lectura/escritura
- * 						 a bajo nivel en memoria SD.
+ * Archivo             : usb.h
+ * Descripción         : Definiciones de constantes y funciones para la
+ * 						 comunicación full-duplex mediante UART.
  * Autor               : Sebastián Nahuel Gallo
- * Fecha de creación   : 15/04/2024
+ * Fecha de creación   : 24/03/2024
  * Fecha de modificación: 11/06/2025
  * Versión             : v1.0
  *
@@ -19,21 +19,20 @@
  * autorización expresa por escrito del autor.
  ***************************************************************/
 
-#ifndef SRC_SD_CARD_SD_CARD_H_
-#define SRC_SD_CARD_SD_CARD_H_
+#ifndef SRC_USB_USB_H_
+#define SRC_USB_USB_H_
 
-#include "diskio.h"
-#include "ff.h"
+#include "xil_types.h"
 
-#define SD_SECTOR_SIZE 					512
-#define SD_WORDS_PER_SECTOR(dataSize) 	SD_SECTOR_SIZE / (dataSize)
+#define USB_COMM
 
-int SD_Init();
-int SD_GetSectorsToRead();
-//int SD_SetSectorsToWrite(unsigned int);
-int SD_WriteSectors(BYTE *buffer, UINT countSectors);
-int SD_ReadNextSectors(BYTE *out_buffer, UINT countSectors);
-void SD_ResetRingbuffer();
+#define USB_NUM_BUFS	 		16
+#define USB_MAX_PACKET_SIZE 	512
+
+int USB_Init();
+
+void USB_SendBuffer(u32 sendBufferAddr, int buffSizeBytes);
+int USB_DoneSendBuffer();
 
 
-#endif /* SRC_SD_CARD_SD_CARD_H_ */
+#endif /* SRC_USB_USB_H_ */

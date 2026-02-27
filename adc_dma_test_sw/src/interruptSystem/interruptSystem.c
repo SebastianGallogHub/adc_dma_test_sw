@@ -20,7 +20,7 @@
  ***************************************************************/
 
 /***************************** Include Files *******************************/
-#include "../InterruptSystem/interruptSystem.h"
+#include "../interruptSystem/interruptSystem.h"
 
 #include "xil_exception.h"
 #include "xscugic.h"

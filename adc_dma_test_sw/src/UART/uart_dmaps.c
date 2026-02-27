@@ -27,7 +27,7 @@
 #include "xil_exception.h"
 #include "xil_printf.h"
 
-#include "../InterruptSystem/interruptSystem.h"
+#include "../interruptSystem/interruptSystem.h"
 
 /************************** Constant Definitions **************************/
 

@@ -62,7 +62,7 @@ int SD_Init(){
 	return 0;
 }
 
-void SD_ResetRB(){
+void SD_ResetRingbuffer(){
 	sector_wr_idx = 0;
 	sector_rd_idx = 0;
 	limit = 0;
@@ -92,12 +92,12 @@ int SD_GetSectorsToRead(){
 		return limit - sector_rd_idx;
 }
 
-int SD_ReadNextSector(BYTE *out_buffer){
+int SD_ReadNextSectors(BYTE *out_buffer, UINT count){
 	if(sector_rd_idx >= sector_wr_idx) return 0; //Ya no queda nada por leer
 
 	DSTATUS res;
 
-	res = disk_read(0, out_buffer, sector_rd_idx, 1);
+	res = disk_read(0, out_buffer, sector_rd_idx, count);
 //	usleep(100000); // si
 //	usleep(10000); 	// si
 //	usleep(1000);	// no
@@ -110,9 +110,11 @@ int SD_ReadNextSector(BYTE *out_buffer){
 //	usleep(2450);	// no
 
 	if (res == RES_OK) {
-		sector_rd_idx ++;
-		if(sector_rd_idx > limit)
-			sector_rd_idx = 0;
+
+		if(sector_rd_idx + count > limit)
+			sector_rd_idx = sector_rd_idx + count - limit;
+		else
+			sector_rd_idx += count;
 
 		return 1;
 	}else {

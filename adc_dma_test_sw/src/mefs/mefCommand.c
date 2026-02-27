@@ -1,6 +1,6 @@
 /***************************************************************
  * Nombre del Proyecto : Registrador de Amplitud y Tiempo (TAR)
- * Archivo             : uart_mefCommand.c
+ * Archivo             : mefCommand.c
  * Descripción         : Archivo de implementación de mef que sintetiza
  * 						 el control de recepción e identificación de
  * 						 comandos por UART.
@@ -21,7 +21,8 @@
  ***************************************************************/
 
 /***************************** Include Files *******************************/
-#include "../UART/uart_mefCommand.h"
+#include "../includes/commands.h"
+#include "../mefs/mefCommand.h"
 
 /************************** Constant Definitions **************************/
 
@@ -43,68 +44,68 @@ volatile u32 parameter = 0;
 
 /****************************************************************************/
 
-UART_COMMAND UART_GetCommand(){
-	UART_COMMAND c = (UART_COMMAND)command;
+TAR_COMMAND mefCommand_GetCommand(){
+	TAR_COMMAND c = (TAR_COMMAND)command;
 	command = CMD_NONE;
 	return c;
 }
 
-u8 UART_HasParameter(){
+u8 mefCommand_HasParameter(){
 	return parameter_f;
 }
 
-u32 UART_GetParameter(){
+u32 mefCommand_GetParameter(){
 	u32 p = parameter;
 	parameter = 0;
 	parameter_f = 0;
 	return p;
 }
 
-void UART_mefCommand(u8 chr){
+void mefCommand(u8 chr){
 	static MEF_COMMAND_STATE state = WAITING_COMMAND;
 
 	switch (state) {
-	case WAITING_COMMAND:
-		if(chr == CMD_HEADER)
-			state = COMMAND_RECEIVED;
-		break;
+		case WAITING_COMMAND:
+			if(chr == CMD_HEADER)
+				state = COMMAND_RECEIVED;
+			break;
 
-	case COMMAND_RECEIVED:
-		if(chr == CMD_START ||
-		   chr == CMD_GET_CONF){
-			command = chr;
+		case COMMAND_RECEIVED:
+			if(chr == CMD_START ||
+			   chr == CMD_GET_CONF){
+				command = chr;
+				state = WAITING_COMMAND;
+			}
+
+			if(chr == CMD_STOP){
+				command = chr;
+				state = WAITING_COMMAND;
+			}
+
+			if(chr == CMD_CH0_H ||
+			   chr == CMD_CH1_H ){
+				command = chr;
+				parameter = 0;
+				parameter_f = 0;
+				parameter_count = 0;
+				state = WAITING_PARAMETER;
+			}
+
+			break;
+
+		case WAITING_PARAMETER:
+			parameter = (parameter << 8) | chr;
+			parameter_count ++;
+
+			if(parameter_count > 3)
+			{
+				parameter_f = 1;
+				state = WAITING_COMMAND;
+			}
+			break;
+
+		default:
 			state = WAITING_COMMAND;
-		}
-
-		if(chr == CMD_STOP){
-			command = chr;
-			state = WAITING_COMMAND;
-		}
-
-		if(chr == CMD_CH0_H ||
-		   chr == CMD_CH1_H ){
-			command = chr;
-			parameter = 0;
-			parameter_f = 0;
-			parameter_count = 0;
-			state = WAITING_PARAMETER;
-		}
-
-		break;
-
-	case WAITING_PARAMETER:
-		parameter = (parameter << 8) | chr;
-		parameter_count ++;
-
-		if(parameter_count > 3)
-		{
-			parameter_f = 1;
-			state = WAITING_COMMAND;
-		}
-		break;
-
-	default:
-		state = WAITING_COMMAND;
-		break;
+			break;
 	}
 }

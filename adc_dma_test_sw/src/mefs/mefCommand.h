@@ -1,10 +1,10 @@
 /***************************************************************
  * Nombre del Proyecto : Registrador de Amplitud y Tiempo (TAR)
- * Archivo             : sd_card.h
- * Descripción         : Definiciones de constantes y funciones para lectura/escritura
- * 						 a bajo nivel en memoria SD.
+ * Archivo             : mefCommand.h
+ * Descripción         : Definiciones de constantes y funciones para implementar
+ * 						 la recepción de comandos por UART.
  * Autor               : Sebastián Nahuel Gallo
- * Fecha de creación   : 15/04/2024
+ * Fecha de creación   : 18/04/2024
  * Fecha de modificación: 11/06/2025
  * Versión             : v1.0
  *
@@ -19,21 +19,16 @@
  * autorización expresa por escrito del autor.
  ***************************************************************/
 
-#ifndef SRC_SD_CARD_SD_CARD_H_
-#define SRC_SD_CARD_SD_CARD_H_
+#ifndef SRC_UART_UART_MEFCOMMAND_H_
+#define SRC_UART_UART_MEFCOMMAND_H_
 
-#include "diskio.h"
-#include "ff.h"
+#include "xil_types.h"
+#include "../includes/commands.h"
 
-#define SD_SECTOR_SIZE 					512
-#define SD_WORDS_PER_SECTOR(dataSize) 	SD_SECTOR_SIZE / (dataSize)
+void mefCommand(u8 chr);
 
-int SD_Init();
-int SD_GetSectorsToRead();
-//int SD_SetSectorsToWrite(unsigned int);
-int SD_WriteSectors(BYTE *buffer, UINT countSectors);
-int SD_ReadNextSectors(BYTE *out_buffer, UINT countSectors);
-void SD_ResetRingbuffer();
+TAR_COMMAND mefCommand_GetCommand();
+u8 mefCommand_HasParameter();
+u32 mefCommand_GetParameter();
 
-
-#endif /* SRC_SD_CARD_SD_CARD_H_ */
+#endif /* SRC_UART_UART_MEFCOMMAND_H_ */

@@ -28,8 +28,8 @@
 #include "sleep.h"
 
 #include "../UART/uart_dmaps.h"
-#include "../UART/uart_mefCommand.h"
-#include "../InterruptSystem/interruptSystem.h"
+#include "../mefs/mefCommand.h"
+#include "../interruptSystem/interruptSystem.h"
 
 /************************** Constant Definitions **************************/
 
@@ -44,7 +44,7 @@ typedef enum{
 /************************** Function Prototypes *****************************/
 void XUartPs_InterruptHandler_Wrapper(XUartPs *InstancePtr);
 void UART_Handler(void *CallBackRef, u32 Event, unsigned int EventData);
-void UART_mefCommand(u8 chr);
+
 
 /************************** Variable Definitions ***************************/
 static XUartPs UartPs;
@@ -219,7 +219,7 @@ void UART_Handler(void *CallBackRef, u32 Event, unsigned int EventData){
 		Event == XUARTPS_EVENT_RECV_TOUT) {
 
 		for (unsigned int i = 0; i < EventData; i++) {
-			UART_mefCommand(RecvBuffer[i]);
+			mefCommand(RecvBuffer[i]);
 		}
 
 		/*

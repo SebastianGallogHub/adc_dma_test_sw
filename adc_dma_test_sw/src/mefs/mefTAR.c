@@ -25,11 +25,13 @@
 
 #include "../includes/log.h"
 #include "../includes/assert.h"
+#include "../includes/commands.h"
+#include "../USB/usb.h"
 #include "../UART/uart.h"
-#include "../UART/uart_mefCommand.h"
+#include "../mefs/mefCommand.h"
 #include "../mefs/mefSendDataAsync.h"
 #include "../AXITAR/axitar.h"
-#include "../InterruptSystem/interruptSystem.h"
+#include "../interruptSystem/interruptSystem.h"
 
 
 /************************** Constant Definitions **************************/
@@ -52,15 +54,19 @@ typedef enum{
 /************************** Variable Definitions ***************************/
 
 MEF_TAR_STATE state;
-UART_COMMAND cmd = CMD_NONE;
+TAR_COMMAND cmd = CMD_NONE;
 u32 param = 0;
 
 /****************************************************************************/
 
 int mefTAR_Init(){
+#ifndef USB_COMM
 	// Como manipula el puerto serie hay que inicializarlo
 	// antes de empezar a mandar al terminal
 	UART_Init();
+#else
+	USB_Init();
+#endif
 
 	AXITAR_Init();
 
@@ -72,9 +78,11 @@ int mefTAR_Init(){
 			IntrSystem_Setup(),
 			"Fallo al inicializar el sistema de interrupciones");
 
+#ifndef USB_COMM
 	// Se inicializa la recepción siempre después de configurar
 	// el sistema de interrupciones
 	UART_SetupRx();
+#endif
 
 	state = IDLE;
 
@@ -84,7 +92,7 @@ int mefTAR_Init(){
 int mefTAR(){
 	switch(state){
 		case IDLE:
-			cmd = UART_GetCommand();
+			cmd = mefCommand_GetCommand();
 
 			if(cmd == CMD_CH0_H || cmd == CMD_CH1_H){
 				state = SET_CH_HYSTERESIS;
@@ -97,6 +105,8 @@ int mefTAR(){
 			if(cmd == CMD_START){
 				mefSendDataAsync_Reset();
 
+				// TODO Adaptar a USB agregando el mensaje de inicio con una marca de tiempo
+
 				ASSERT_SUCCESS(AXITAR_Start(), "Fallo al iniciar TAR");
 
 				state = MEASURE;
@@ -104,8 +114,8 @@ int mefTAR(){
 			break;
 
 		case SET_CH_HYSTERESIS:
-			if(UART_HasParameter()){
-				param = UART_GetParameter();
+			if(mefCommand_HasParameter()){
+				param = mefCommand_GetParameter();
 
 				if(cmd == CMD_CH0_H){
 					AXITAR_SetHysteresis(0, param);
@@ -121,7 +131,7 @@ int mefTAR(){
 
 		case SEND_CONFIG_LOG:
 			LOG(0, "{");
-			AXITAR_PrintConfigLog(0);
+			AXITAR_PrintConfigLog(0); // TODO Adaptar a USB
 			LOG(0, "}");
 
 			state = IDLE;
@@ -129,7 +139,7 @@ int mefTAR(){
 
 
 		case MEASURE:
-			cmd = UART_GetCommand();
+			cmd = mefCommand_GetCommand();
 
 			AXITAR_SaveDataAsync();
 

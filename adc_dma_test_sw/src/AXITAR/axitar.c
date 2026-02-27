@@ -32,7 +32,7 @@
 #include "../SD_CARD/sd_card.h"
 #include "../AXITAR/axitar_axidma.h"
 #include "../ZMOD_ADC1410/zmodadc1410.h"
-#include "../InterruptSystem/interruptSystem.h"
+#include "../interruptSystem/interruptSystem.h"
 
 /************************** Constant Definitions **************************/
 // Para configurar el ZMOD y su calibración

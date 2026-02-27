@@ -1,10 +1,10 @@
 /***************************************************************
  * Nombre del Proyecto : Registrador de Amplitud y Tiempo (TAR)
- * Archivo             : uart_mefCommand.h
- * Descripción         : Definiciones de constantes y funciones para implementar
- * 						 la recepción de comandos por UART.
+ * Archivo             : log.h
+ * Descripción         : Definiciones de constantes y macros para realizar
+ * 						 logs por UART durante debug.
  * Autor               : Sebastián Nahuel Gallo
- * Fecha de creación   : 18/04/2024
+ * Fecha de creación   : 05/09/2024
  * Fecha de modificación: 11/06/2025
  * Versión             : v1.0
  *
@@ -19,10 +19,8 @@
  * autorización expresa por escrito del autor.
  ***************************************************************/
 
-#ifndef SRC_UART_UART_MEFCOMMAND_H_
-#define SRC_UART_UART_MEFCOMMAND_H_
-
-#include "xil_types.h"
+#ifndef SRC_INCLUDES_COMMANDS_H_
+#define SRC_INCLUDES_COMMANDS_H_
 
 #define CMD_HEADER 0x25
 
@@ -33,12 +31,6 @@ typedef enum{
 	CMD_CH0_H = 0xA0,
 	CMD_CH1_H = 0xB0,
 	CMD_GET_CONF = 0xF0,
-}UART_COMMAND;
+}TAR_COMMAND;
 
-void UART_mefCommand(u8 chr);
-
-UART_COMMAND UART_GetCommand();
-u8 UART_HasParameter();
-u32 UART_GetParameter();
-
-#endif /* SRC_UART_UART_MEFCOMMAND_H_ */
+#endif /* SRC_INCLUDES_COMMANDS_H_ */

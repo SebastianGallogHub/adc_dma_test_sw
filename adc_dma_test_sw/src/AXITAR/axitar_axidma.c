@@ -25,7 +25,7 @@
 
 #include "../includes/log.h"
 #include "../includes/assert.h"
-#include "../InterruptSystem/interruptSystem.h"
+#include "../interruptSystem/interruptSystem.h"
 
 /************************** Constant Definitions **************************/
 

@@ -50,4 +50,4 @@
 #define B2MB(bytes) KB(bytes)/1024
 #define B2GB(bytes) MB(bytes)/1024
 
-#endif /* SRC_ASSERT_H_ */
+#endif /* SRC_INCLUDES_LOG_H_ */

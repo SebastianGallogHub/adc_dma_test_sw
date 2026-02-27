@@ -23,6 +23,7 @@
 /***************************** Include Files *******************************/
 #include "../mefs/mefSendDataAsync.h"
 
+#include "../USB/usb.h"
 #include "../UART/uart.h"
 #include "../AXITAR/axitar.h"
 #include "../SD_CARD/sd_card.h"
@@ -44,7 +45,13 @@ MEF_SEND_DATA_STATE st = WAITING_FOR_DATA_TO_SEND;
 
 u8 cancelAsync = 0;
 
+#ifndef USB_COMM
 u64 sector_rd_buffer[SD_WORDS_PER_SECTOR(AXITAR_AXIDMA_TRANSFER_LEN)] __attribute__ ((aligned (64)));
+#else
+// Cada sector es del mismo tamaño que un buffer de transferencia bulk (512 bytes) y hay 16 buffers
+u64 sector_rd_buffer[USB_NUM_BUFS * SD_WORDS_PER_SECTOR(AXITAR_AXIDMA_TRANSFER_LEN)] __attribute__ ((aligned (64)));
+#endif
+
 
 /****************************************************************************/
 
@@ -53,7 +60,7 @@ void mefSendDataAsync_Init(){
 }
 
 void mefSendDataAsync_Reset(){
-	SD_ResetRB();
+	SD_ResetRingbuffer();
 
 	cancelAsync = 0;
 
@@ -61,8 +68,9 @@ void mefSendDataAsync_Reset(){
 }
 
 void mefSendDataAsync_Cancel(){
+#ifndef USB_COMM
 	UART_SendBufferAsync_Cancel();
-
+#endif
 	cancelAsync = 1;
 }
 
@@ -79,12 +87,22 @@ int mefSendDataAsync(){
 			break;
 
 		case SENDING_DATA:
+
+#ifndef USB_COMM
 			if(SD_GetSectorsToRead() > 0) {
 				if(UART_DoneSendBuffer()){
-					SD_ReadNextSector((unsigned char*)sector_rd_buffer);
+					SD_ReadNextSectors((unsigned char*)sector_rd_buffer, 1);
 					UART_SendBufferAsync((u32)sector_rd_buffer, SD_SECTOR_SIZE, AXITAR_AXIDMA_TRANSFER_LEN, cancelAsync);
 				}
 			}
+#else
+			if(SD_GetSectorsToRead() > USB_NUM_BUFS) {
+				if(USB_DoneSendBuffer()){
+					SD_ReadNextSectors((unsigned char*)sector_rd_buffer, USB_NUM_BUFS);
+					USB_SendBuffer((u32)sector_rd_buffer, USB_NUM_BUFS * SD_SECTOR_SIZE);
+				}
+			}
+#endif
 
 			if(SD_GetSectorsToRead() <= 0){
 				st = AWAITING_LAST_DATA_SEND_DONE;
@@ -97,7 +115,12 @@ int mefSendDataAsync(){
 			break;
 
 		case AWAITING_LAST_DATA_SEND_DONE:
+
+#ifndef USB_COMM
 			if(UART_DoneSendBuffer()){
+#else
+			if(USB_DoneSendBuffer()){
+#endif
 				res = 1;
 				cancelAsync = 0;
 				st = WAITING_FOR_DATA_TO_SEND;
