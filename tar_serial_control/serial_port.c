@@ -13,11 +13,11 @@
 #include <string.h>
 
 /************************** Constant Definitions **************************/
-#define requires_param(c) c == CMD_CH0_H || c == CMD_CH1_H
 
 /**************************** Type Definitions ******************************/
 
 /************************** Function Prototypes *****************************/
+void serial_WriteByte(char chr);
 
 /************************** Variable Definitions ***************************/
 int serial_fd;
@@ -82,7 +82,7 @@ void serial_Flush()
     tcflush(serial_fd, TCIOFLUSH); // Limpia el buffer
 }
 
-void serial_SendCommand(SERIAL_COMMAND c, ...)
+void serial_SendCommand(TAR_COMMAND c, ...)
 {
     serial_Flush();
     serial_WriteByte((char)CMD_HEADER);

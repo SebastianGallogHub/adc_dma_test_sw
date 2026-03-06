@@ -52,6 +52,8 @@ int writeLogFile(char *buffer, int len)
         perror("\nError escribiendo en el archivo log\n");
         return 1;
     }
+
+    return 0;
 }
 
 /****************************************************************************/
@@ -135,7 +137,8 @@ void binToCSV()
 {
     uint8_t buffer[8];
     uint64_t pulse;
-    size_t index_chA = 0, index_chB = 0, ii = 0, of_count = 0;
+    // size_t ii = 0;
+    size_t index_chA = 0, index_chB = 0, of_count = 0;
     uint8_t ch = 0;
     uint32_t ts = 0;
     uint16_t vp = 0;

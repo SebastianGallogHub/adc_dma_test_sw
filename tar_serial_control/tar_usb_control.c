@@ -7,7 +7,7 @@
 #include <errno.h>
 #include <pthread.h>
 
-#include "serial_port.h"
+#include "usb.h"
 #include "binToCSV.h"
 
 /************************** Constant Definitions **************************/
@@ -31,12 +31,14 @@ int rx_thread_stop = 0;
 
 /****************************************************************************/
 
+// PARA COMPILAR
+// gcc tar_usb_control.c -o output/tar_usb_control -lusb-1.0
+
 int main(int argc, char *argv[])
 {
-    char *puerto = NULL;
+    int tEnsayo_s = 0;
     uint16_t hist0_low = 0, hist0_high = 0;
     uint16_t hist1_low = 0, hist1_high = 0;
-    int tEnsayo_s = 0;
 
     // Parseo de argumentos
     for (int i = 1; i < argc; i++)
@@ -60,23 +62,20 @@ int main(int argc, char *argv[])
         {
             tEnsayo_s = atoi(argv[++i]);
         }
-        else if (argv[i][0] != '-')
-        {
-            puerto = argv[i];
-        }
     }
 
-    if (!puerto || tEnsayo_s <= 0)
+    if (tEnsayo_s <= 0)
     {
         fprintf(stderr, "Error: argumentos inválidos o incompletos.\n");
         print_help(argv[0]);
         return 1;
     }
 
-    char buffer[1024];
+    // int bytes_read;
+    // unsigned char buffer[1024];
     pthread_t rx_thread;
 
-    if (serial_Init(puerto))
+    if (usb_Init())
         return 1;
 
     // do
@@ -87,26 +86,30 @@ int main(int argc, char *argv[])
     //     rx_thread_stop = 0;
 
     // Limpio el buffer Tx del micro
-    (int)serial_ReadBuffer(buffer, sizeof(buffer), 1000);
+    usb_Flush();
 
     sendHysteresis(hist0_low, hist0_high, hist1_low, hist1_high);
 
     if (readLOG())
         return 1;
 
+    printf("SALIDA DE PRUEBA\n");
+    
+    return 0;
+
     // Abro el archivo para que esté preparado
     openBinFile();
 
     // Evío comando de start
     printf("-> Iniciando medición: %d s\n", tEnsayo_s);
-    serial_SendCommand(CMD_START);
+    usb_SendCommand(CMD_START);
 
     // Creo el hilo de lectura
     if (pthread_create(&rx_thread, NULL, usbToBin_thread_func, NULL) != 0)
     {
         perror("No se pudo crear el hilo de recepción");
-        serial_SendCommand(CMD_STOP);
-        serial_Close();
+        usb_SendCommand(CMD_STOP);
+        usb_Close();
         return 1;
     }
 
@@ -114,7 +117,7 @@ int main(int argc, char *argv[])
     usleep(to_us(tEnsayo_s));
 
     // Envío comando de stop
-    serial_SendCommand(CMD_STOP);
+    usb_SendCommand(CMD_STOP);
     rx_thread_stop = 1;
 
     // Espero a que el hilo de lectura termine
@@ -133,22 +136,22 @@ int main(int argc, char *argv[])
     // while (resp == 's' || resp == 'S')
     //     ;
 
-    serial_Close();
+    usb_Close();
 
     return 0;
 }
 
 void *usbToBin_thread_func(void *arg)
 {
-    char buffer[800];
+    unsigned char buffer[BUFFER_SIZE];
     int bytes_read;
 
     while (1)
     {
-        bytes_read = serial_ReadBuffer(buffer, sizeof(buffer), 1000);
+        bytes_read = usb_ReadBuffer(buffer, sizeof(buffer));
 
         if (bytes_read > 0)
-            writeBinFile(buffer, bytes_read);
+            writeBinFile((char*)buffer, bytes_read);
         else if (rx_thread_stop)
             break;
     }
@@ -165,7 +168,7 @@ void sendHysteresis(uint16_t hist0_low, uint16_t hist0_high, uint16_t hist1_low,
     {
         printf("\t-> CHA: histéresis (%d ; %d)mV -> (%d ; %d)\n", hist0_low, hist0_high, to_cad(hist0_low), to_cad(hist0_high));
         fflush(stdout);
-        serial_SendCommand(CMD_CH0_H, to_hist(to_cad(hist0_low), to_cad(hist0_high)));
+        usb_SendCommand(CMD_CH0_H, to_hist(to_cad(hist0_low), to_cad(hist0_high)));
     }
     else
     {
@@ -173,13 +176,13 @@ void sendHysteresis(uint16_t hist0_low, uint16_t hist0_high, uint16_t hist1_low,
         fflush(stdout);
     }
 
-    usleep(1000000);
+    // usleep(1000000);
 
     if (hist1_high != 0 && hist1_low != 0)
     {
         printf("\t-> CHB: histéresis (%d ; %d)mV -> (%d ; %d)\n", hist1_low, hist1_high, to_cad(hist1_low), to_cad(hist1_high));
         fflush(stdout);
-        serial_SendCommand(CMD_CH1_H, to_hist(to_cad(hist1_low), to_cad(hist1_high)));
+        usb_SendCommand(CMD_CH1_H, to_hist(to_cad(hist1_low), to_cad(hist1_high)));
     }
     else
     {
@@ -187,7 +190,7 @@ void sendHysteresis(uint16_t hist0_low, uint16_t hist0_high, uint16_t hist1_low,
         fflush(stdout);
     }
 
-    usleep(1000000);
+    // usleep(1000000);
 }
 
 int readLOG()
@@ -195,14 +198,15 @@ int readLOG()
     int i = 0, j = 0;
     int log = 0;
     int bytes_read;
-    char buffer[1024];
+    unsigned char buffer[1024];
 
     // Leo el log del sistema
     printf("-> Leyendo LOG\n");
-    serial_SendCommand(CMD_GET_CONFIG);
+    usb_SendCommand(CMD_GET_CONFIG);
 
-    bytes_read = serial_ReadBuffer(buffer, sizeof(buffer), 1000);
+    bytes_read = usb_ReadBuffer(buffer, sizeof(buffer));
 
+    // Reviso que el log efectivamente haya llegado con formato
     if (bytes_read > 0)
     {
         while (1)
@@ -226,30 +230,29 @@ int readLOG()
             }
         }
 
+        // Escribo el log en un archivo
         openLogFile();
-        writeLogFile(buffer + i, j);
+        writeLogFile((char*)(buffer + i), j);
         closeLogFile();
 
+        // Escribo el log en la consola donde se ejecuta
         fwrite(buffer + i, 1, j, stdout);
         printf("\n");
         fflush(stdout);
-        
-        return 0;
     }
-
+    
     printf("\nERROR LEYENDO LOG\n");
-    serial_Close();
+    usb_Close();
     return 1;
 }
 
 void print_help(const char *prog_name)
 {
     printf("Uso:\n");
-    printf("  %s <puerto> -t <tiempo_s> [-ha <lowA> <highA>] [-hb <lowB> <highB>]\n ", prog_name);
+    printf("  %s -t <tiempo_s> [-ha <lowA> <highA>] [-hb <lowB> <highB>]\n ", prog_name);
     printf("\nEjemplo:\n");
-    printf("  %s /dev/ttyUSB1 -t 1 -ha 1000 3000 -hb 1000 3000\n", prog_name);
+    printf("  %s -t 1 -ha 1000 3000 -hb 1000 3000\n", prog_name);
     printf("\nOpciones:\n");
-    printf("  <puerto>         Dispositivo serie, por ejemplo /dev/ttyUSB1\n");
     printf("  -t  tiempo_s     Tiempo de adquisición en segundos\n");
     printf("  -ha low high     Histéresis canal A (opcional, si no se configura se deshabilita el hardware)\n");
     printf("  -hb low high     Histéresis canal B (opcional, si no se configura se deshabilita el hardware)\n");

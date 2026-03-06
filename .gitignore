@@ -114,3 +114,6 @@ scripts/tar_serial_control/190425/
 !*.xsa
 !*.xpfm
 !*makefile
+tar_serial_control/.vscode/launch.json
+tar_serial_control/.vscode/settings.json
+tar_serial_control/.vscode/tasks.json
