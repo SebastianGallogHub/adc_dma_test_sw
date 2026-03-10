@@ -14,6 +14,7 @@
 /**************************** Type Definitions ******************************/
 
 /************************** Function Prototypes *****************************/
+int printDeviceData(void);
 
 /************************** Variable Definitions ***************************/
 
@@ -50,7 +51,59 @@ int  usb_Init() {
 
     libusb_claim_interface(handle, 0);
 
-    // TODO datos del descriptor del usb
+    ret = printDeviceData();
+
+    return ret;
+}
+
+int printDeviceData(void){
+    int ret = 0;
+    libusb_device *dev;
+    unsigned char str[256];
+    struct libusb_device_descriptor desc;
+
+    /* Obtener descriptor */
+    dev = libusb_get_device(handle);
+    ret = libusb_get_device_descriptor(dev, &desc);
+    if (ret < 0) {
+        printf("Error obteniendo device descriptor\n");
+        return 1;
+    }
+
+    printf("Dispositivo USB:\n");
+    // printf("\tVID: 0x%04X\n", desc.idVendor);
+    // printf("\tPID: 0x%04X\n", desc.idProduct);
+    // printf("\tClase: 0x%02X\n", desc.bDeviceClass);
+    printf("\tUSB version: %x.%02x\n", desc.bcdUSB >> 8, desc.bcdUSB & 0xFF);
+
+    /* Manufacturer */
+    if (desc.iManufacturer) {
+        libusb_get_string_descriptor_ascii(handle,
+                                            desc.iManufacturer,
+                                            str,
+                                            sizeof(str));
+        printf("\tFabricante: %s\n", str);
+    }
+
+    /* Product */
+    if (desc.iProduct) {
+        libusb_get_string_descriptor_ascii(handle,
+                                            desc.iProduct,
+                                            str,
+                                            sizeof(str));
+        printf("\tProducto: %s\n", str);
+    }
+
+    /* Serial */
+    if (desc.iSerialNumber) {
+        libusb_get_string_descriptor_ascii(handle,
+                                            desc.iSerialNumber,
+                                            str,
+                                            sizeof(str));
+        printf("\tSerial: %s\n", str);
+    }
+
+    return 0;
 }
 
 void usb_Flush() {
@@ -106,7 +159,7 @@ int  usb_ReadBuffer(unsigned char *buffer, int len) {
 
     ret = libusb_bulk_transfer(handle,
                                EP_IN,
-                               buffer,
+                               (unsigned char *)buffer,
                                len,
                                &transferred,
                                TIMEOUT);
