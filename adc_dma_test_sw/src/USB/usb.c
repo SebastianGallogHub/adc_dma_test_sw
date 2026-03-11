@@ -116,7 +116,7 @@ int USB_Init() {
 
 	MemPtr = (u8 *)&Buffer[0];
 	memset(MemPtr,0,MEMORY_SIZE);
-	Xil_DCacheFlushRange((unsigned int)MemPtr, MEMORY_SIZE);
+	Xil_DCacheFlushRange((UINTPTR)MemPtr, MEMORY_SIZE);
 
 	DeviceConfig.DMAMemPhys = (u32) MemPtr;
 

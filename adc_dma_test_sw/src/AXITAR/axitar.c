@@ -23,7 +23,10 @@
 #include "../AXITAR/axitar.h"
 
 #include <sleep.h>
+#include <stdio.h>
 #include "xil_io.h"
+#include "xil_cache.h"
+#include "xil_types.h"
 #include "xparameters.h"
 #include "AXI_TAR.h" // Librería generada por Vivado
 
@@ -76,6 +79,9 @@ void AXITAR_Init() {
 }
 
 void AXITAR_PrintConfigLog(int l){
+#ifndef USB_COMM
+	LOG(0, "{");
+
 	ZMODADC1410_PrintConfigLog(l);
 
 	LOG(l, "AXI_TAR config:");
@@ -90,26 +96,34 @@ void AXITAR_PrintConfigLog(int l){
 	else
 		LOG(l+1, "CHB: histéresis (%u ; %u)", AXITAR_LowHist(ch1_hist), AXITAR_HighHist(ch1_hist));
 
-#ifdef USB_COMM
+	LOG(0, "}");
+#else
 	static char usbLogBuffer[USB_LOG_BUFFER_SIZE];
 
-	int len = 0;
+	int len = 1;
+	usbLogBuffer[0]= '{';
+
+	len += ZMODADC1410_ConfigLog(usbLogBuffer + len, USB_LOG_BUFFER_SIZE - len);
 
 	len += snprintf(usbLogBuffer + len, USB_LOG_BUFFER_SIZE - len, "AXI_TAR config:\r\n");
 
 	if (ch0_hist == AXITAR_DISABLE_CH_MASK)
-		len += snprintf(usbLogBuffer + len, USB_LOG_BUFFER_SIZE - len, "CHA: DESHABILITADO\r\n");
+		len += snprintf(usbLogBuffer + len, USB_LOG_BUFFER_SIZE - len, "\tCHA: DESHABILITADO\r\n");
 	else
-		len += snprintf(usbLogBuffer + len, USB_LOG_BUFFER_SIZE - len, "CHA: histéresis (%u ; %u)\r\n",
+		len += snprintf(usbLogBuffer + len, USB_LOG_BUFFER_SIZE - len, "\tCHA: histéresis (%u ; %u)\r\n",
 						AXITAR_LowHist(ch0_hist),
 						AXITAR_HighHist(ch0_hist));
 
 	if (ch1_hist == AXITAR_DISABLE_CH_MASK)
-		len += snprintf(usbLogBuffer + len, USB_LOG_BUFFER_SIZE - len, "CHB: DESHABILITADO\r\n");
+		len += snprintf(usbLogBuffer + len, USB_LOG_BUFFER_SIZE - len, "\tCHB: DESHABILITADO\r\n");
 	else
-		len += snprintf(usbLogBuffer + len, USB_LOG_BUFFER_SIZE - len, "CHB: histéresis (%u ; %u)\r\n",
+		len += snprintf(usbLogBuffer + len, USB_LOG_BUFFER_SIZE - len, "\tCHB: histéresis (%u ; %u)\r\n",
 						AXITAR_LowHist(ch1_hist),
 						AXITAR_HighHist(ch1_hist));
+
+	len += snprintf(usbLogBuffer + len, USB_LOG_BUFFER_SIZE - len, "}");
+
+	Xil_DCacheFlushRange((UINTPTR)usbLogBuffer, USB_LOG_BUFFER_SIZE);
 
 	USB_SendBuffer(usbLogBuffer, len);
 #endif

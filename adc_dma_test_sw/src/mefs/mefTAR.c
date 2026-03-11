@@ -130,9 +130,7 @@ int mefTAR(){
 			break;
 
 		case SEND_CONFIG_LOG:
-			LOG(0, "{");
-			AXITAR_PrintConfigLog(0); // TODO Adaptar a USB
-			LOG(0, "}");
+			AXITAR_PrintConfigLog(0);
 
 			state = IDLE;
 			break;

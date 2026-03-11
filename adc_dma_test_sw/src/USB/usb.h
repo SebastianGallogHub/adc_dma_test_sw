@@ -24,7 +24,7 @@
 
 #include "xil_types.h"
 
-//#define USB_COMM
+#define USB_COMM
 
 #define USB_NUM_BUFS	 		16
 #define USB_MAX_PACKET_SIZE 	512

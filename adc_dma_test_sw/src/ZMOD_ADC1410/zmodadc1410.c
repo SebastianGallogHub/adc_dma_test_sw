@@ -29,6 +29,9 @@
 #include "../ZMOD_ADC1410/zmodadc1410.h"
 
 #include <sleep.h>
+#include <stdio.h>
+#include "xil_cache.h"
+#include "xil_types.h"
 
 #include "../ZMOD/zmod.h"
 #include "../includes/log.h"
@@ -52,23 +55,20 @@ int ZMODADC1410_readUserCalibFromFlashIntoIP();
 /****************************************************************************/
 
 void ZMODADC1410_PrintConfigLog(int l){
-
 	LOG(l, "ZMOD Scope 1410-105 config:");
 	LOG(l+1, "CHA: LOW Gain - Res 3.21mV; DC Coupling");
 	LOG(l+1, "CHB: LOW Gain - Res 3.21mV; DC Coupling");
+}
 
-#ifdef USB_COMM
-	static char usbLogBuffer[LOG_BUFFER_SIZE];
-
+int ZMODADC1410_ConfigLog(char *buffer, size_t size) {
 	int len = snprintf(
-			usbLogBuffer,
-			LOG_BUFFER_SIZE,
+			buffer,
+			size,
 			"ZMOD Scope 1410-105 config:\r\n"
-			"CHA: LOW Gain - Res 3.21mV; DC Coupling\r\n"
-			"CHB: LOW Gain - Res 3.21mV; DC Coupling\r\n");
+			"\tCHA: LOW Gain - Res 3.21mV; DC Coupling\r\n"
+			"\tCHB: LOW Gain - Res 3.21mV; DC Coupling\r\n");
 
-	USB_SendBuffer(usbLogBuffer, len);
-#endif
+	return len;
 }
 
 void ZMODADC1410_Init(uintptr_t iicAddress, uintptr_t flashAddress)
