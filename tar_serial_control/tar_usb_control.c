@@ -176,7 +176,7 @@ void sendHysteresis(uint16_t hist0_low, uint16_t hist0_high, uint16_t hist1_low,
         fflush(stdout);
     }
 
-    // usleep(1000000);
+    usleep(1000000);
 
     if (hist1_high != 0 && hist1_low != 0)
     {
@@ -190,7 +190,7 @@ void sendHysteresis(uint16_t hist0_low, uint16_t hist0_high, uint16_t hist1_low,
         fflush(stdout);
     }
 
-    // usleep(1000000);
+    usleep(1000000);
 }
 
 int readLOG()
@@ -239,8 +239,10 @@ int readLOG()
         fwrite(buffer + i, 1, j, stdout);
         printf("\n");
         fflush(stdout);
+
+        return 0;
     }
-    
+
     printf("\nERROR LEYENDO LOG\n");
     usb_Close();
     return 1;
