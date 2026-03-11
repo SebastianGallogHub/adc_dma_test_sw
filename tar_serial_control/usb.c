@@ -164,8 +164,8 @@ int  usb_ReadBuffer(unsigned char *buffer, int len) {
                                &transferred,
                                TIMEOUT);
 
-    if (ret != 0 && transferred <= 0){
-        printf("Error leyendo del dispositivo USB\n");
+    if (ret != TIMEOUT_ERR && ret != 0 && transferred <= 0) {
+        printf("Error leyendo del dispositivo USB (err %d)\n", ret);
     }
 
     return transferred;

@@ -8,6 +8,7 @@
 #define EP_IN  0x81
 
 #define TIMEOUT 1000
+#define TIMEOUT_ERR -7
 #define BUFFER_SIZE 512 * 16
 
 #include "commands.h"
