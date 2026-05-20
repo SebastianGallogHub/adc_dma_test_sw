@@ -32,6 +32,7 @@
 int USB_Init();
 
 void USB_SendBuffer(void *sendBufferAddr, int buffSizeBytes);
+void USB_SendZLP(void);
 int USB_DoneSendBuffer();
 
 

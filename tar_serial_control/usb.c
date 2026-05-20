@@ -51,9 +51,9 @@ int  usb_Init() {
 
     libusb_claim_interface(handle, 0);
 
-    ret = printDeviceData();
+    // ret = printDeviceData();
 
-    return ret;
+    return 0;
 }
 
 int printDeviceData(void){
@@ -108,16 +108,16 @@ int printDeviceData(void){
 
 void usb_Flush() {
     int transferred = 0;
-    int buffer[BUFFER_SIZE];
+    int buffer[USB_BUFFER_SIZE];
 
-    // Leo todo lo que haya en un buffer hasta el TIMEOUT 
+    // Leo todo lo que haya en un buffer hasta el USB_TIMEOUT 
     // De ese modo se vacía el buffer IN del device
     (int)libusb_bulk_transfer(handle,
                               EP_IN,
                               (unsigned char *)buffer,
                               sizeof(buffer),
                               &transferred,
-                              TIMEOUT);
+                              USB_TIMEOUT);
 }
 
 void usb_SendCommand(TAR_COMMAND c, ...) {
@@ -149,10 +149,10 @@ void usb_SendCommand(TAR_COMMAND c, ...) {
                               (unsigned char *)buffer,
                               len,
                               &transferred,
-                              TIMEOUT);
+                              USB_TIMEOUT);
 }
 
-int  usb_ReadBuffer(unsigned char *buffer, int len) {
+int usb_ReadBuffer(unsigned char *buffer, int len, unsigned int timeout_ms) {
     int transferred = 0;
 
     int ret = 0;
@@ -162,10 +162,14 @@ int  usb_ReadBuffer(unsigned char *buffer, int len) {
                                (unsigned char *)buffer,
                                len,
                                &transferred,
-                               TIMEOUT);
+                               timeout_ms);
 
-    if (ret != TIMEOUT_ERR && ret != 0 && transferred <= 0) {
+    if (ret != USB_ERR_TIMEOUT && ret != 0 && transferred <= 0) {
         printf("Error leyendo del dispositivo USB (err %d)\n", ret);
+    }
+
+    if (ret == USB_ERR_TIMEOUT){
+        return -1;
     }
 
     return transferred;

@@ -23,6 +23,9 @@
 /***************************** Include Files *******************************/
 #include "../mefs/mefSendDataAsync.h"
 
+#include "xil_cache.h"
+
+#include "../includes/log.h"
 #include "../USB/usb.h"
 #include "../UART/uart.h"
 #include "../AXITAR/axitar.h"
@@ -73,14 +76,19 @@ void mefSendDataAsync_Cancel(){
 	cancelAsync = 1;
 }
 
+int sectors_send = 0;
+int shrt = 0;
+
 int mefSendDataAsync(){
 	int res = 0;
+	int sectors = 0;
 
 	switch (st){
 		case WAITING_FOR_DATA_TO_SEND:
-			if(SD_GetSectorsToRead() > 1 && !cancelAsync){
+			sectors = SD_GetSectorsToRead();
+			if(sectors >= 0){
 				st = SENDING_DATA;
-			} else {
+			} else if (cancelAsync) {
 				res = 1;
 			}
 			break;
@@ -88,28 +96,48 @@ int mefSendDataAsync(){
 		case SENDING_DATA:
 
 #ifndef USB_COMM
-			if(SD_GetSectorsToRead() > 0) {
+
+			sectors = SD_GetSectorsToRead();
+			if(sectors > 0) {
 				if(UART_DoneSendBuffer()){
 					SD_ReadNextSectors((unsigned char*)sector_rd_buffer, 1);
-					UART_SendBufferAsync((void*)sector_rd_buffer, SD_SECTOR_SIZE, AXITAR_AXIDMA_TRANSFER_LEN, cancelAsync);
+					UART_SendBufferAsync((u32)sector_rd_buffer, SD_SECTOR_SIZE, AXITAR_AXIDMA_TRANSFER_LEN, cancelAsync);
 				}
 			}
-#else
-			if(SD_GetSectorsToRead() > USB_NUM_BUFS) {
-				if(USB_DoneSendBuffer()){
-					SD_ReadNextSectors((unsigned char*)sector_rd_buffer, USB_NUM_BUFS);
-					USB_SendBuffer((void*)sector_rd_buffer, USB_NUM_BUFS * SD_SECTOR_SIZE);
-				}
-			}
-#endif
 
-			if(SD_GetSectorsToRead() <= 0){
+			// Como la transmisión es lenta, cuando se terminen los sectores
+			// se entiende que se terminó la transmisión
+			sectors = SD_GetSectorsToRead();
+			if(sectors <= 0){
 				st = AWAITING_LAST_DATA_SEND_DONE;
 			}
 
-			if(cancelAsync){
-				st = WAITING_FOR_DATA_TO_SEND;
+#else
+
+			sectors = SD_GetSectorsToRead();
+			if(sectors >= USB_NUM_BUFS) {
+				if(USB_DoneSendBuffer()){
+					SD_ReadNextSectors((unsigned char*)sector_rd_buffer, USB_NUM_BUFS);
+
+					USB_SendBuffer((void*)sector_rd_buffer, USB_NUM_BUFS * SD_SECTOR_SIZE);
+
+					sectors_send+=sectors;
+				}
+			} else if (sectors > 0) {
+				if(USB_DoneSendBuffer()){
+					SD_ReadNextSectors((unsigned char*)sector_rd_buffer, sectors);
+
+					USB_SendBuffer((void*)sector_rd_buffer, sectors * SD_SECTOR_SIZE);
+
+					sectors_send+=sectors;
+					shrt++;
+				}
 			}
+
+			if(cancelAsync){
+				st = AWAITING_LAST_DATA_SEND_DONE;
+			}
+#endif
 
 			break;
 
@@ -119,9 +147,16 @@ int mefSendDataAsync(){
 			if(UART_DoneSendBuffer()){
 #else
 			if(USB_DoneSendBuffer()){
+				sectors = SD_GetSectorsToRead();
+
+				SD_ResetRingbuffer(); // Ignoro lo que quedó después
+
+				USB_SendZLP();
 #endif
 				res = 1;
 				cancelAsync = 0;
+				sectors_send = 0;
+				shrt = 0;
 				st = WAITING_FOR_DATA_TO_SEND;
 			}
 

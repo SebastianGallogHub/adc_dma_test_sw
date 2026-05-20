@@ -43,6 +43,11 @@
 
 #define MS_OS_20_DESCRIPTOR_SET_TOTAL_LEN    46
 
+#define MS_OS_20_SET_HEADER_DESCRIPTOR          0x00
+#define MS_OS_20_SUBSET_HEADER_CONFIGURATION    0x01
+#define MS_OS_20_SUBSET_HEADER_FUNCTION         0x02
+#define MS_OS_20_FEATURE_COMPATIBLE_ID          0x03
+
 /**************************** Type Definitions *******************************/
 
 /***************** Macros (Inline Functions) Definitions *********************/

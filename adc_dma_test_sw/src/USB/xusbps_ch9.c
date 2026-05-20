@@ -57,6 +57,8 @@
 
 #include "sleep.h"
 
+#include "../includes/log.h"
+
 /* #define CH9_DEBUG */
 
 #ifdef CH9_DEBUG
@@ -128,6 +130,7 @@ int XUsbPs_Ch9HandleSetupPacket(XUsbPs *InstancePtr,
 #ifdef CH9_DEBUG
 		printf("vendor request %x\n", SetupData->bRequest);
 #endif
+		LOG(0, "HANDLER VENDOR REQ");
 		Status = XUsbPs_HandleVendorReq(InstancePtr, SetupData);
 		break;
 

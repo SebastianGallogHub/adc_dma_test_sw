@@ -176,3 +176,20 @@ platform generate
 platform clean
 platform generate
 platform generate
+platform clean
+platform generate
+platform clean
+platform generate
+platform clean
+platform generate
+platform clean
+platform generate
+platform active {adc_dma_bd_wrapper}
+domain active {zynq_fsbl}
+bsp reload
+bsp reload
+platform active {adc_dma_bd_wrapper}
+platform clean
+platform generate
+platform generate
+platform generate

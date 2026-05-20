@@ -16,6 +16,8 @@
 #define to_hist(low, high) ((uint32_t)high) << 16 | (uint16_t)low
 #define to_us(s) s * 1000 /*ms*/ * 1000 /*us*/
 
+#define USB_THREAD_READ_TIMEOUT 1000
+
 /**************************** Type Definitions ******************************/
 
 /************************** Function Prototypes *****************************/
@@ -71,31 +73,19 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    // int bytes_read;
-    // unsigned char buffer[1024];
     pthread_t rx_thread;
 
     if (usb_Init())
         return 1;
 
-    // do
-    // {
-    //     i = 0;
-    //     j = 0;
-    //     log = 0;
-    //     rx_thread_stop = 0;
-
     // Limpio el buffer Tx del micro
-    usb_Flush();
+    // printf("-> Limpiando buffer...\n");
+    // usb_Flush();
 
     sendHysteresis(hist0_low, hist0_high, hist1_low, hist1_high);
 
     if (readLOG())
         return 1;
-
-    printf("SALIDA DE PRUEBA\n");
-    
-    return 0;
 
     // Abro el archivo para que esté preparado
     openBinFile();
@@ -114,9 +104,10 @@ int main(int argc, char *argv[])
     }
 
     // Se detiene el hilo para recibir datos
-    usleep(to_us(tEnsayo_s));
+    usleep(to_us(tEnsayo_s*1.025));
 
     // Envío comando de stop
+    printf("\n-> STOP\n");
     usb_SendCommand(CMD_STOP);
     rx_thread_stop = 1;
 
@@ -124,36 +115,39 @@ int main(int argc, char *argv[])
     pthread_join(rx_thread, NULL);
 
     // Cierro el archivo binario
+    printf("-> CERRANDO BINARIO");
     closeBinFile();
 
     // Convierto a CSV
     binToCSV();
-
-    //     printf("\n");
-    //     printf("Repeat?\n");
-    //     scanf(" %c", &resp);
-    // }
-    // while (resp == 's' || resp == 'S')
-    //     ;
 
     usb_Close();
 
     return 0;
 }
 
+
 void *usbToBin_thread_func(void *arg)
 {
-    unsigned char buffer[BUFFER_SIZE];
+    unsigned char buffer[USB_BUFFER_SIZE];
     int bytes_read;
+    // int count_break = 1000;
 
     while (1)
     {
-        bytes_read = usb_ReadBuffer(buffer, sizeof(buffer));
+        bytes_read = usb_ReadBuffer(buffer, sizeof(buffer), USB_THREAD_READ_TIMEOUT); // timeout especial
 
         if (bytes_read > 0)
-            writeBinFile((char*)buffer, bytes_read);
+        {
+            // count_break = 1000;
+            writeBinFile((char *)buffer, bytes_read);   
+        }
         else if (rx_thread_stop)
+        {
+            // if (bytes_read <= 0 && rx_thread_stop && count_break-- <= 0)
+            printf("\n-> Hilo USB CERRADO (timeout %d)\n", USB_THREAD_READ_TIMEOUT);
             break;
+        }
     }
 
     return NULL;
@@ -176,7 +170,7 @@ void sendHysteresis(uint16_t hist0_low, uint16_t hist0_high, uint16_t hist1_low,
         fflush(stdout);
     }
 
-    usleep(1000000);
+    usleep(1500000); //1,5s
 
     if (hist1_high != 0 && hist1_low != 0)
     {
@@ -190,7 +184,7 @@ void sendHysteresis(uint16_t hist0_low, uint16_t hist0_high, uint16_t hist1_low,
         fflush(stdout);
     }
 
-    usleep(1000000);
+    usleep(1500000); //1,5s
 }
 
 int readLOG()
@@ -204,7 +198,7 @@ int readLOG()
     printf("-> Leyendo LOG\n");
     usb_SendCommand(CMD_GET_CONFIG);
 
-    bytes_read = usb_ReadBuffer(buffer, sizeof(buffer));
+    bytes_read = usb_ReadBuffer(buffer, sizeof(buffer), USB_TIMEOUT);
 
     // Reviso que el log efectivamente haya llegado con formato
     if (bytes_read > 0)

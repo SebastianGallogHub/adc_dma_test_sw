@@ -108,6 +108,7 @@ int mefTAR(){
 				// TODO Adaptar a USB agregando el mensaje de inicio con una marca de tiempo
 
 				ASSERT_SUCCESS(AXITAR_Start(), "Fallo al iniciar TAR");
+//				LOG(3, "START");
 
 				state = MEASURE;
 			}
@@ -118,10 +119,12 @@ int mefTAR(){
 				param = mefCommand_GetParameter();
 
 				if(cmd == CMD_CH0_H){
+//					LOG(3, "HIST 0");
 					AXITAR_SetHysteresis(0, param);
 				}
 
 				if(cmd == CMD_CH1_H){
+//					LOG(3, "HIST 1");
 					AXITAR_SetHysteresis(1, param);
 				}
 
@@ -131,7 +134,7 @@ int mefTAR(){
 
 		case SEND_CONFIG_LOG:
 			AXITAR_PrintConfigLog(0);
-
+//			LOG(3, "LOG");
 			state = IDLE;
 			break;
 
@@ -145,6 +148,12 @@ int mefTAR(){
 
 			if(cmd == CMD_STOP){
 				AXITAR_Stop();
+
+#ifdef USB_COMM
+				mefSendDataAsync(); // Por las dudas queda algo
+				mefSendDataAsync_Cancel(); // Hago que terminen al mismo tiempo
+#endif
+
 				state = AWAITING_LAST_DATA_SEND;
 			}
 			break;
@@ -153,8 +162,23 @@ int mefTAR(){
 			AXITAR_SaveDataAsync();
 
 			if(mefSendDataAsync()){
+//				LOG(3, "FIN");
 				state = IDLE;
 			}
+//			else {
+//				cmd = mefCommand_GetCommand();
+//
+//				if(cmd == CMD_CH0_H || cmd == CMD_CH1_H){
+//					AXITAR_Stop();
+//					state = SET_CH_HYSTERESIS;
+//				}
+//
+//				if(cmd == CMD_GET_CONF){
+//					AXITAR_Stop();
+//					state = SEND_CONFIG_LOG;
+//				}
+//			}
+
 			break;
 
 		default:

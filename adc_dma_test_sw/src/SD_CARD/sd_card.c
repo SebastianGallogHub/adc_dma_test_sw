@@ -104,7 +104,7 @@ int SD_ReadNextSectors(BYTE *out_buffer, UINT count){
 //	usleep(5000);	// si
 //	usleep(3000);	// si
 //	usleep(2000);	// no
-	usleep(2500);	// si
+//	usleep(2500);	// si****
 //	usleep(2300);	// no
 //	usleep(2400);	// no
 //	usleep(2450);	// no

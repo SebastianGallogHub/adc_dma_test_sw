@@ -44,7 +44,7 @@
 #define FLASH_ADDR_ADC   	0x30
 
 // Para almacenar los datos en la SD hasta su envío a PC
-#define SECTORS_TO_WRITE 	16
+#define SECTORS_TO_WRITE 	2
 
 #define USB_LOG_BUFFER_SIZE 512
 

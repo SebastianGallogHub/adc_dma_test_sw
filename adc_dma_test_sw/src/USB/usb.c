@@ -36,6 +36,7 @@
 
 #include "../mefs/mefCommand.h"
 #include "../interruptSystem/interruptSystem.h"
+#include "../includes/log.h"
 
 /************************** Constant Definitions *****************************/
 #define MEMORY_SIZE (64 * 1024)
@@ -155,6 +156,15 @@ out:
 	return ReturnStatus;
 }
 
+void USB_SendZLP(){
+	// Tengo que enviar un ZLP (Zero Length Packet) o un short packet (menor a 512)
+	// para que la transferencia bulk termine del lado del host
+	XUsbPs_EpBufferSend(&UsbInstance,
+						1,
+						NULL,
+						0);
+}
+
 void USB_SendBuffer(void *sendBufferAddr, int buffSizeBytes){
 	if (!tx_is_ready){
 		return;
@@ -196,13 +206,19 @@ static void XUsbPs_Ep0EventHandler(void *CallBackRef, u8 EpNum, u8 EventType, vo
 	/* Handle the Setup Packets received on Endpoint 0. */
 	case XUSBPS_EP_EVENT_SETUP_DATA_RECEIVED:
 		Status = XUsbPs_EpGetSetupData(InstancePtr, EpNum, &SetupData);
-		if (XST_SUCCESS == Status) {
-			/* Handle the setup packet. */
+		 if (Status == XST_SUCCESS) {
+
+			// 1. Primero WindowsSupport
+			if (XUsbPs_Ch9HandleSetupPacket_WindowsSupport(InstancePtr, &SetupData) == XST_SUCCESS)
+			{
+				break; // YA respondimos
+			}
+
+			LOG(0, "HANDLE SETUP PACKET");
+			// 2. Luego handler estándar (incluye vendor)
 			(int) XUsbPs_Ch9HandleSetupPacket(InstancePtr, &SetupData);
-
-			(int) XUsbPs_Ch9HandleSetupPacket_WindowsSupport(InstancePtr, &SetupData);
-
 		}
+
 		break;
 
 	case XUSBPS_EP_EVENT_DATA_RX:
